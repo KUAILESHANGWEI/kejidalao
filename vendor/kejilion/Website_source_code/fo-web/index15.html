@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SNI 生态演进图鉴 - SNI0.COM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --accent-blue: #3b82f6;
+            --bg-dark: #050505;
+            --card-gray: #0f1115;
+            --border-gray: #1f2937;
+        }
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: var(--bg-dark);
+            color: #f3f4f6;
+            overflow-x: hidden;
+        }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        
+        /* 网格背景 */
+        .grid-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: 
+                linear-gradient(rgba(59, 130, 246, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(59, 130, 246, 0.05) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: -1;
+        }
+
+        /* 渐变遮罩 */
+        .vignette {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at center, transparent 0%, var(--bg-dark) 80%);
+            z-index: -1;
+        }
+
+        /* 侧边装饰线 */
+        .decor-line {
+            position: absolute;
+            left: 2rem;
+            width: 1px;
+            background: linear-gradient(to bottom, var(--accent-blue), transparent);
+            height: 100%;
+        }
+
+        /* 玻璃拟态卡片 */
+        .eco-card {
+            background: var(--card-gray);
+            border: 1px solid var(--border-gray);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .eco-card:hover {
+            border-color: var(--accent-blue);
+            background: #14171d;
+            transform: translateX(10px);
+        }
+
+        .data-tag {
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border: 1px solid #374151;
+            border-radius: 4px;
+            color: #9ca3af;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="grid-bg"></div>
+    <div class="vignette"></div>
+
+    <!-- 装饰导航 -->
+    <header class="p-8 flex justify-between items-center relative z-10">
+        <div class="flex items-baseline space-x-3">
+            <span class="text-2xl font-bold tracking-tighter italic">SNI<span class="text-blue-500">_ENV</span></span>
+            <span class="mono text-[10px] text-zinc-500">PROTOCOL_ECOSYSTEM_ANALYSIS</span>
+        </div>
+        <div class="hidden md:flex space-x-8 text-[11px] mono uppercase tracking-widest text-zinc-400">
+            <span>Network_Layer</span>
+            <span>Security_Layer</span>
+            <span>Policy_Layer</span>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-8 py-20 relative">
+        <div class="decor-line"></div>
+
+        <!-- 核心导言 -->
+        <section class="mb-32 pl-12">
+            <h1 class="text-7xl font-bold mb-6 tracking-tighter leading-none">
+                技术<br><span class="text-blue-500">共生性</span>
+            </h1>
+            <p class="text-xl text-zinc-400 max-w-2xl font-light">
+                SNI 并不是孤立进化的。它的每一次跃迁，都伴随着互联网底层地壳的剧烈运动——从 IPv4 的枯竭到隐私意识的觉醒。
+            </p>
+        </section>
+
+        <!-- 生态模块 1: 底层协议的倒逼 -->
+        <section class="mb-40 pl-12">
+            <div class="flex items-center space-x-4 mb-12">
+                <span class="mono text-blue-500 text-lg">01/</span>
+                <h2 class="text-3xl font-bold uppercase tracking-tight">IP 枯竭与虚拟化的倒逼</h2>
+            </div>
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="eco-card p-8 rounded-sm">
+                    <div class="data-tag mb-4">Infrastructure Layer</div>
+                    <h3 class="text-xl font-bold mb-4">IPv4 资源紧缺</h3>
+                    <p class="text-sm text-zinc-500 leading-relaxed">
+                        当公网 IP 变成一种稀缺商品，SNI 成了“合租房”的钥匙。没有它，数以亿计的小微站点将无法承担 HTTPS 的高昂成本。它不仅是技术，更是互联网去中心化的防线。
+                    </p>
+                </div>
+                <div class="space-y-4">
+                    <div class="p-6 border border-zinc-800 rounded-sm">
+                        <div class="text-[10px] mono text-zinc-600 mb-2">METRIC_REPORT</div>
+                        <div class="text-2xl font-bold">99.9% <span class="text-sm font-normal text-zinc-500">Shared IP Efficiency</span></div>
+                    </div>
+                    
+                </div>
+            </div>
+        </section>
+
+        <!-- 生态模块 2: 安全边界的演变 -->
+        <section class="mb-40 pl-12">
+            <div class="flex items-center space-x-4 mb-12">
+                <span class="mono text-blue-500 text-lg">02/</span>
+                <h2 class="text-3xl font-bold uppercase tracking-tight">CA 民主化与 HTTPS 浪潮</h2>
+            </div>
+            <div class="eco-card p-10 rounded-sm overflow-hidden relative">
+                <div class="relative z-10 flex flex-col md:flex-row gap-12">
+                    <div class="md:w-1/2">
+                        <h3 class="text-2xl font-bold mb-6 italic">从奢侈品到基础设施</h3>
+                        <p class="text-zinc-400 text-sm leading-loose">
+                            Let's Encrypt 的兴起与 SNI 的普及是相辅相成的。证书不再是巨头的专利。SNI 让云服务商能够通过自动化脚本（如 ACME 协议）为数百万个子域名瞬间配置加密，真正实现了安全协议的“民主化”。
+                        </p>
+                    </div>
+                    <div class="md:w-1/2 bg-zinc-950 p-6 border border-zinc-800 mono text-xs">
+                        <div class="text-blue-500 mb-2">// Automated Certificate Flow</div>
+                        <div class="text-zinc-600">Checking domain records...</div>
+                        <div class="text-zinc-400">Received SNI hello: <span class="text-white">user-site.com</span></div>
+                        <div class="text-zinc-400">Matching Cert: <span class="text-emerald-500">MATCH_FOUND</span></div>
+                        <div class="mt-4 text-zinc-600 italic">>> Handshake Completed.</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 生态模块 3: 隐私博弈的升级 -->
+        <section class="mb-40 pl-12">
+            <div class="flex items-center space-x-4 mb-12">
+                <span class="mono text-blue-500 text-lg">03/</span>
+                <h2 class="text-3xl font-bold uppercase tracking-tight">审查与隐私的拉锯战</h2>
+            </div>
+            <div class="grid md:grid-cols-3 gap-6">
+                <div class="eco-card p-6 md:col-span-2">
+                    <h3 class="font-bold mb-4">明文时代的落幕</h3>
+                    <p class="text-zinc-500 text-sm italic mb-6">“谁看过了那张敲门的字条？”</p>
+                    <p class="text-zinc-400 text-sm leading-relaxed">
+                        在 ECH 普及前，SNI 是网络审查的“完美把柄”。GFW 等中间设备正是通过嗅探明文 SNI 实现精准屏蔽。这种“周遭压力”迫使协议专家推出了 ESNI 并最终演化为 ECH，旨在彻底终结中间人的窥视。
+                    </p>
+                </div>
+                <div class="bg-blue-600/10 border border-blue-500/30 p-8 flex flex-col justify-center">
+                    <div class="text-blue-500 text-4xl font-black mb-4">ECH</div>
+                    <div class="text-[10px] mono text-blue-400">ULTIMATE_PRIVACY_SHIELD</div>
+                    <p class="text-xs mt-4 text-zinc-500">加密 Client Hello 将让 SNI 彻底进入黑盒时代。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 结尾总结 -->
+        <section class="mt-60 border-t border-zinc-900 pt-20">
+            <div class="flex flex-col md:flex-row justify-between items-end gap-12">
+                <div class="max-w-xl">
+                    <div class="text-blue-500 mono text-xs mb-4">CONCLUSION_SUMMARY</div>
+                    <h2 class="text-4xl font-bold tracking-tighter mb-6 italic">SNI 不止是协议，它是生态的脉动。</h2>
+                    <p class="text-zinc-500 font-light">
+                        它因资源的匮乏而生，在云的繁荣中壮大，又在对隐私的极致追求中选择了“隐身”。理解 SNI，就是理解现代互联网的生存法则。
+                    </p>
+                </div>
+                <div class="mono text-[10px] text-zinc-700 text-right uppercase leading-loose">
+                    Server Name Indication<br>
+                    RFC 6066 / RFC 9460<br>
+                    Infrastructure Node: Edge_01
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="p-12 text-center mono text-[9px] text-zinc-800 uppercase tracking-[0.4em]">
+        Design for Technical Architecture Awareness // 2026
+    </footer>
+
+    <script>
+        // 简单的进入动画
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = "1";
+                    entry.target.style.transform = "translateY(0)";
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('section').forEach(section => {
+            section.style.opacity = "0";
+            section.style.transform = "translateY(30px)";
+            section.style.transition = "all 0.8s cubic-bezier(0.16, 1, 0.3, 1)";
+            observer.observe(section);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SNI - Server Name Indication 技术解析</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --accent-gold: #D4AF37;
+            --accent-light: #F9DF7B;
+            --bg-dark: #050505;
+            --card-dark: #0f0f0f;
+        }
+        body {
+            font-family: 'Space Grotesk', -apple-system, sans-serif;
+            background-color: var(--bg-dark);
+            color: #a1a1aa;
+            scroll-behavior: smooth;
+        }
+        .code-font {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .text-gradient-gold {
+            background: linear-gradient(135deg, #FFF 0%, var(--accent-gold) 50%, var(--accent-light) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .gold-border {
+            position: relative;
+            background: var(--card-dark);
+            border: 1px solid #222;
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+        .gold-border:hover {
+            border-color: var(--accent-gold);
+            box-shadow: 0 0 25px rgba(212, 175, 55, 0.1);
+        }
+        .bg-grid-gold {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='rgba(212, 175, 55, 0.02)'%3E%3Cpath d='M0 .5H31.5V32'/%3E%3C/svg%3E");
+        }
+        .blur-orb-gold {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(212, 175, 55, 0.08) 0%, transparent 70%);
+            filter: blur(80px);
+            z-index: -1;
+        }
+        .gold-button {
+            background: linear-gradient(135deg, var(--accent-gold), var(--accent-light));
+            color: #000;
+            transition: all 0.3s ease;
+        }
+        .gold-button:hover {
+            opacity: 0.9;
+            transform: scale(1.02);
+            box-shadow: 0 10px 20px rgba(212, 175, 55, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-grid-gold">
+
+    <!-- Navbar -->
+    <nav class="fixed top-0 w-full z-50 border-b border-white/5 bg-black/80 backdrop-blur-xl">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="w-3 h-3 bg-gradient-to-tr from-yellow-600 to-yellow-200 rounded-full shadow-[0_0_10px_rgba(212,175,55,0.5)]"></div>
+                <span class="text-white font-bold tracking-tighter text-xl">SNI0.COM</span>
+            </div>
+            <div class="hidden md:flex space-x-10 text-[10px] uppercase tracking-[0.2em] font-bold">
+                <a href="#definition" class="text-zinc-500 hover:text-yellow-500 transition">Definition</a>
+                <a href="#workflow" class="text-zinc-500 hover:text-yellow-500 transition">Workflow</a>
+                <a href="#benefits" class="text-zinc-500 hover:text-yellow-500 transition">Benefits</a>
+                <a href="#specs" class="text-zinc-500 hover:text-yellow-500 transition">Specs</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <header class="relative pt-48 pb-32 px-6 flex flex-col items-center text-center overflow-hidden">
+        <div class="blur-orb-gold top-0 -left-20"></div>
+        <div class="blur-orb-gold bottom-0 -right-20"></div>
+        
+        <div class="inline-block px-4 py-1 border border-yellow-600/30 rounded-full text-[10px] font-bold text-yellow-500 uppercase tracking-[0.3em] mb-10">
+            Professional Network Protocol
+        </div>
+        <h1 class="text-6xl md:text-8xl font-bold text-white tracking-tight mb-8">
+            <span class="text-gradient-gold">Server Name</span><br>Indication
+        </h1>
+        <p class="max-w-2xl text-zinc-500 text-lg md:text-xl leading-relaxed mb-12 font-light">
+            SNI 协议通过在加密握手初期明确目标域名，彻底革新了多站点 HTTPS 部署的逻辑。它是现代云计算与虚拟主机不可或缺的技术底层。
+        </p>
+        <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-6">
+            <a href="#workflow" class="gold-button px-12 py-4 rounded-full font-bold">
+                深度技术解析
+            </a>
+            <a href="https://tools.ietf.org/html/rfc6066" target="_blank" class="border border-zinc-800 text-zinc-400 px-12 py-4 rounded-full font-bold hover:bg-zinc-900 transition">
+                RFC 文档
+            </a>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-6 space-y-48 pb-40">
+        
+        <!-- Definition Section -->
+        <section id="definition" class="grid md:grid-cols-2 gap-20 items-center">
+            <div class="order-2 md:order-1">
+                <div class="gold-border rounded-[2rem] p-12 space-y-8">
+                    <h2 class="text-3xl font-bold text-white">协议背景</h2>
+                    <p class="text-zinc-400 leading-relaxed">
+                        在传统 SSL 架构下，服务器必须在解密流量前出示证书。然而对于共享 IP 的多域名环境，服务器面临着“不知道访客找谁”的困境。
+                    </p>
+                    <div class="h-px bg-gradient-to-r from-yellow-900/50 to-transparent w-full"></div>
+                    <p class="text-zinc-400 leading-relaxed font-light">
+                        SNI 的出现通过在 <span class="text-yellow-500 code-font">Client Hello</span> 包中注入域名字段，赋予了服务器在加密建立前进行“精准分流”的能力。
+                    </p>
+                </div>
+            </div>
+            <div class="order-1 md:order-2 space-y-6">
+                <div class="text-7xl font-black text-white/5">01</div>
+                <h3 class="text-4xl font-bold text-white leading-tight">打破单 IP 证书<br><span class="text-yellow-600">部署瓶颈</span></h3>
+            </div>
+        </section>
+
+        <!-- Workflow Section -->
+        <section id="workflow" class="space-y-20">
+            <div class="text-center">
+                <h2 class="text-4xl font-bold text-white mb-4">技术执行链路</h2>
+                <p class="text-yellow-600/60 italic uppercase tracking-[0.3em] text-[10px] font-bold">TLS Handshake Sequence</p>
+            </div>
+            
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="gold-border p-10 rounded-2xl group">
+                    <div class="text-yellow-600 font-mono text-xs mb-6 tracking-widest">PHASE 01 / TCP</div>
+                    <h4 class="text-white font-bold mb-4">基础连接</h4>
+                    <p class="text-sm text-zinc-500 leading-relaxed">底层的 TCP 连接建立，确定物理链路可达性。</p>
+                </div>
+                <div class="gold-border p-10 rounded-2xl bg-gradient-to-b from-yellow-500/10 to-transparent border-yellow-600/30">
+                    <div class="text-yellow-500 font-mono text-xs mb-6 tracking-widest">PHASE 02 / SNI</div>
+                    <h4 class="text-white font-bold mb-4">域名申明</h4>
+                    <p class="text-sm text-zinc-400 leading-relaxed">客户端发送 Client Hello，在扩展字段中包含 <span class="text-yellow-500">SNI Header</span>。</p>
+                </div>
+                <div class="gold-border p-10 rounded-2xl group">
+                    <div class="text-yellow-600 font-mono text-xs mb-6 tracking-widest">PHASE 03 / CERTS</div>
+                    <h4 class="text-white font-bold mb-4">证书匹配</h4>
+                    <p class="text-sm text-zinc-500 leading-relaxed">服务器解析主机名，从映射表中提取匹配的 SSL 证书进行响应。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Feature List -->
+        <section id="benefits" class="grid md:grid-cols-2 gap-16">
+            <div class="space-y-6">
+                <h2 class="text-3xl font-bold text-white">核心优势</h2>
+                <p class="text-zinc-500 font-light">SNI 不仅是技术进步，更是成本与效率的平衡点。</p>
+                <div class="pt-8">
+                    <div class="flex items-center space-x-4 mb-6">
+                        <div class="w-10 h-10 rounded-full border border-yellow-600/20 flex items-center justify-center text-yellow-600">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        </div>
+                        <span class="text-white font-semibold">极致性能分发</span>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <div class="w-10 h-10 rounded-full border border-yellow-600/20 flex items-center justify-center text-yellow-600">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.407 2.67 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.407-2.67-1M12 16.5V18"></path></svg>
+                        </div>
+                        <span class="text-white font-semibold">大幅降低 IP 开销</span>
+                    </div>
+                </div>
+            </div>
+            <div class="grid gap-6">
+                <div class="p-8 bg-zinc-900/30 rounded-3xl border border-zinc-800">
+                    <h4 class="text-white font-bold mb-2">云计算基石</h4>
+                    <p class="text-sm text-zinc-500 leading-relaxed">现代负载均衡器（ALB/NLB）均基于 SNI 机制实现多租户证书隔离。</p>
+                </div>
+                <div class="p-8 bg-zinc-900/30 rounded-3xl border border-zinc-800">
+                    <h4 class="text-white font-bold mb-2">零延迟损耗</h4>
+                    <p class="text-sm text-zinc-500 leading-relaxed">作为 TLS 扩展协议，它不会增加额外的往返时间（RTT）。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Specs Section -->
+        <section id="specs" class="space-y-12">
+            <div class="flex items-center space-x-6">
+                <h2 class="text-zinc-500 uppercase tracking-[0.4em] text-[10px] font-black whitespace-nowrap">Technical Matrix</h2>
+                <div class="h-px bg-zinc-900 flex-grow"></div>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-12 text-center">
+                <div class="space-y-2">
+                    <div class="text-3xl font-bold text-white tracking-tighter italic">RFC 6066</div>
+                    <div class="text-yellow-600/60 text-[10px] font-bold uppercase">Standards</div>
+                </div>
+                <div class="space-y-2">
+                    <div class="text-3xl font-bold text-white tracking-tighter italic">99.8%</div>
+                    <div class="text-yellow-600/60 text-[10px] font-bold uppercase">Support Rate</div>
+                </div>
+                <div class="space-y-2">
+                    <div class="text-3xl font-bold text-white tracking-tighter italic">TLS 1.3+</div>
+                    <div class="text-yellow-600/60 text-[10px] font-bold uppercase">Next Gen</div>
+                </div>
+                <div class="space-y-2">
+                    <div class="text-3xl font-bold text-white tracking-tighter italic">Any IP</div>
+                    <div class="text-yellow-600/60 text-[10px] font-bold uppercase">Flexibility</div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-black pt-32 pb-16 px-6">
+        <div class="max-w-6xl mx-auto">
+            <div class="grid md:grid-cols-3 gap-16 mb-24">
+                <div class="col-span-1">
+                    <div class="flex items-center space-x-3 mb-6">
+                        <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                        <span class="text-white font-bold tracking-tighter text-2xl">SNI0.COM</span>
+                    </div>
+                    <p class="text-zinc-600 text-sm font-light">致力于解析最底层、最核心的互联网基础设施协议。</p>
+                </div>
+                <div class="col-span-2 flex justify-end space-x-24">
+                    <div class="space-y-6">
+                        <h5 class="text-[10px] font-bold text-white uppercase tracking-widest">Protocol Docs</h5>
+                        <ul class="text-zinc-500 text-sm space-y-3 font-light">
+                            <li><a href="#" class="hover:text-yellow-500 transition">TLS Extensions</a></li>
+                            <li><a href="#" class="hover:text-yellow-500 transition">ECH Security</a></li>
+                        </ul>
+                    </div>
+                    <div class="space-y-6">
+                        <h5 class="text-[10px] font-bold text-white uppercase tracking-widest">Contact</h5>
+                        <ul class="text-zinc-500 text-sm space-y-3 font-light">
+                            <li><a href="#" class="hover:text-yellow-500 transition">Infrastructure Blog</a></li>
+                            <li><a href="#" class="hover:text-yellow-500 transition">System Status</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-zinc-900 pt-12 flex flex-col md:flex-row justify-between items-center gap-6">
+                <div class="text-[10px] text-zinc-700 font-bold tracking-[0.2em] uppercase">
+                    © 2026 PRECISION INFRASTRUCTURE DESIGN
+                </div>
+                <div class="flex space-x-8 text-[10px] text-zinc-700 font-bold uppercase tracking-widest">
+                    <a href="#" class="hover:text-zinc-400">Security</a>
+                    <a href="#" class="hover:text-zinc-400">Policy</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const observerOptions = { threshold: 0.15 };
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = "1";
+                    entry.target.style.transform = "translateY(0)";
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('section').forEach(el => {
+            el.style.opacity = "0";
+            el.style.transform = "translateY(30px)";
+            el.style.transition = "all 1s cubic-bezier(0.23, 1, 0.32, 1)";
+            observer.observe(el);
+        });
+    </script>
+</body>
+</html>

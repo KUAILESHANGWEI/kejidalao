@@ -1,6 +1,6 @@
 <br><br><br>
 <div align="center">
-  <img src="https://kejilion.sh/kejilionsh_logo.webp?v=2" alt="logo" width="650">
+  <img src="https://github.com/KUAILESHANGWEI/kejidalao/kejilionsh_logo.webp?v=2" alt="logo" width="650">
 </div>
 
 <div align="center" style="margin-top:-200px;">
@@ -86,20 +86,20 @@ KejiLion's Shell script tool is an all-in-one script toolbox designed for Linux 
 
 ## 🚀 一键安装 (One-Click Installation) CN
 ```bash
-bash <(curl -sL kejilion.sh)
+bash <(curl -sL https://raw.githubusercontent.com/KUAILESHANGWEI/kejidalao/main/kejilion.sh)
 ```
 
 ## 🚀 一键安装 (One-Click Installation) EN
 ```bash
-bash <(curl -sL kejilion.sh) en
+bash <(curl -sL https://raw.githubusercontent.com/KUAILESHANGWEI/kejidalao/main/kejilion.sh) en
 ```
 
 <br><br>
 
 ## 🖼️ 效果图预览 (Preview)
 <p>
-  <img src="https://kejilion.sh/img/screenshots/kejilionsh.webp" alt="中文版" width="48%" style="display:inline-block; margin-right:10px;"/>
-  <img src="https://kejilion.sh/img/screenshots/kejilionsh_en.webp" alt="English Version" width="48%" style="display:inline-block;"/>
+  <img src="https://github.com/KUAILESHANGWEI/kejidalao/img/screenshots/kejilionsh.webp" alt="中文版" width="48%" style="display:inline-block; margin-right:10px;"/>
+  <img src="https://github.com/KUAILESHANGWEI/kejidalao/img/screenshots/kejilionsh_en.webp" alt="English Version" width="48%" style="display:inline-block;"/>
 </p>
 
 
@@ -149,4 +149,4 @@ Feel free to support us with USTD TRC20 donations.
 <br><br>
 
 ## ⭐ Star History
-[![Star History Chart](https://api.star-history.com/svg?repos=kejilion/sh&type=Date)](https://star-history.com/#kejilion/sh&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=KUAILESHANGWEI/kejidalao&type=Date)](https://star-history.com/#KUAILESHANGWEI/kejidalao&Date)

@@ -22,13 +22,13 @@ TechLion의 Shell Script Tool은 Linux 모니터링, 테스트, 관리를 위해
 
 ## 🚀 원클릭 설치
 ```bash
-bash <(curl -sL kejilion.sh) kr
+bash <(curl -sL https://raw.githubusercontent.com/KUAILESHANGWEI/kejidalao/main/kejilion.sh) kr
 ```
 ***
 
 ## 🖼️ 실제 화면 미리보기 (Preview)
 
-<img src="https://kejilion.sh/img/screenshots/kejilionsh_kr.webp" alt="한국어 버전 미리보기" width="75%"/>
+<img src="https://github.com/KUAILESHANGWEI/kejidalao/img/screenshots/kejilionsh_kr.webp" alt="한국어 버전 미리보기" width="75%"/>
 
 
 
@@ -65,4 +65,4 @@ bash <(curl -sL kejilion.sh) kr
 ***
 
 ## 스타 역사
-[![별 역사 차트](https://api.star-history.com/svg?repos=kejilion/sh&type=Date)](https://star-history.com/#kejilion/sh&Date)
+[![별 역사 차트](https://api.star-history.com/svg?repos=KUAILESHANGWEI/kejidalao&type=Date)](https://star-history.com/#KUAILESHANGWEI/kejidalao&Date)

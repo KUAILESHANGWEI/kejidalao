@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sni0 news</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Libre+Franklin:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Libre+Franklin', sans-serif;
+            background-color: #fff;
+            color: #000;
+            line-height: 1.5;
+        }
+
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        header {
+            background-color: #f2f2f2;
+            border-bottom: 2px solid #009900;
+            padding: 10px 0;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .nav-link {
+            color: #000;
+            text-decoration: none;
+            font-weight: bold;
+            margin-right: 20px;
+        }
+
+        .nav-link:hover {
+            color: #009900;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: 40px;
+            margin-top: 30px;
+        }
+
+        .sidebar h3 {
+            font-size: 14px;
+            text-transform: uppercase;
+            color: #666;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+            margin-bottom: 30px;
+        }
+
+        .sidebar ul li {
+            font-size: 13px;
+            margin-bottom: 5px;
+        }
+
+        .sidebar ul li a {
+            color: #009900;
+            text-decoration: none;
+        }
+
+        .sidebar ul li a:hover {
+            text-decoration: underline;
+        }
+
+        h1, h2 {
+            color: #009900;
+            font-weight: normal;
+        }
+
+        .news-item {
+            margin-bottom: 15px;
+        }
+
+        .news-date {
+            font-weight: bold;
+            margin-right: 10px;
+            color: #333;
+        }
+
+        .feature-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .feature-table td {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+        }
+
+        .feature-table tr:hover {
+            background-color: #f9f9f9;
+        }
+
+        .status-badge {
+            background-color: #009900;
+            color: #fff;
+            padding: 2px 6px;
+            font-size: 11px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+
+        footer {
+            margin-top: 60px;
+            padding: 20px 0;
+            border-top: 1px solid #ddd;
+            font-size: 12px;
+            color: #888;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="container flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <div style="background-color: #009900; color: white; padding: 5px 15px; font-weight: bold; font-size: 24px;">
+                    sni0
+                </div>
+                <span class="mono font-bold text-lg">sni0.com</span>
+            </div>
+            <nav>
+                <a href="#" class="nav-link">news</a>
+                <a href="#" class="nav-link">download</a>
+                <a href="#" class="nav-link">documentation</a>
+                <a href="#" class="nav-link">support</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container main-grid">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <h3>Basic Info</h3>
+            <ul>
+                <li><a href="#">About sni0</a></li>
+                <li><a href="#">Roadmap</a></li>
+                <li><a href="#">License</a></li>
+                <li><a href="#">Security</a></li>
+            </ul>
+
+            <h3>Download</h3>
+            <ul>
+                <li><a href="#">Mainline version</a></li>
+                <li><a href="#">Stable version</a></li>
+                <li><a href="#">Legacy versions</a></li>
+            </ul>
+
+            <h3>Documentation</h3>
+            <ul>
+                <li><a href="#">Install Guide</a></li>
+                <li><a href="#">ECH Configuration</a></li>
+                <li><a href="#">TLS 1.3 Tuning</a></li>
+                <li><a href="#">Anycast Setup</a></li>
+            </ul>
+
+            <h3>Contribution</h3>
+            <ul>
+                <li><a href="#">GitHub Repository</a></li>
+                <li><a href="#">Mailing Lists</a></li>
+                <li><a href="#">Bug Tracker</a></li>
+            </ul>
+        </aside>
+
+        <!-- Content -->
+        <main>
+            <h1>What is sni0?</h1>
+            <p>
+                <strong>sni0</strong> [pronounced <i>S-N-I-zero</i>] is a high-performance privacy proxy and cryptographic engine 
+                designed to address the visibility of Server Name Indication (SNI) in the TLS handshake. It provides 
+                advanced Encrypted Client Hello (ECH) support, Anycast network routing, and massive throughput 
+                scalability for privacy-conscious infrastructures.
+            </p>
+
+            <h2 class="mt-8">Latest News</h2>
+            <div class="news-item">
+                <span class="news-date">14 Jan 2026</span>
+                <a href="#" class="text-green-700 underline">sni0-1.25.4 mainline version has been released.</a>
+            </div>
+            <div class="news-item">
+                <span class="news-date">02 Dec 2025</span>
+                <a href="#" class="text-green-700 underline">Security advisory: ECH padding vulnerability fixed in 1.25.3.</a>
+            </div>
+            <div class="news-item">
+                <span class="news-date">15 Nov 2025</span>
+                <a href="#" class="text-green-700 underline">sni0-1.24.0 stable version has been released.</a>
+            </div>
+
+            <h2 class="mt-8">Core Features</h2>
+            <table class="feature-table">
+                <tr>
+                    <td><strong>ECH Acceleration</strong></td>
+                    <td>Native support for Encrypted Client Hello with zero latency penalty.</td>
+                    <td><span class="status-badge">STABLE</span></td>
+                </tr>
+                <tr>
+                    <td><strong>TLS 1.3 Hardening</strong></td>
+                    <td>Strict compliance with RFC 8446, disabling legacy insecure suites.</td>
+                    <td><span class="status-badge">STABLE</span></td>
+                </tr>
+                <tr>
+                    <td><strong>Dynamic Anycast</strong></td>
+                    <td>Automatic BGP route optimization for edge nodes.</td>
+                    <td><span class="status-badge">NEW</span></td>
+                </tr>
+                <tr>
+                    <td><strong>Post-Quantum KEM</strong></td>
+                    <td>Experimental support for Kyber hybrid key exchange.</td>
+                    <td><span class="status-badge">BETA</span></td>
+                </tr>
+                <tr>
+                    <td><strong>Lua Scripting</strong></td>
+                    <td>Extendable request handling using embedded LuaJIT.</td>
+                    <td><span class="status-badge">STABLE</span></td>
+                </tr>
+            </table>
+
+            <h2 class="mt-8">Example Configuration</h2>
+            <pre class="bg-gray-100 p-4 rounded mono text-sm overflow-x-auto">
+sni0 {
+    worker_processes  auto;
+
+    security {
+        ech_mode on;
+        ech_config_path /etc/sni0/ech.config;
+        tls_protocols TLSv1.3;
+    }
+
+    upstream edge_nodes {
+        anycast_group global_cluster;
+        keepalive 64;
+    }
+
+    server {
+        listen 443 ssl http2;
+        server_name sni0.com;
+
+        location / {
+            proxy_pass http://edge_nodes;
+            privacy_headers on;
+        }
+    }
+}
+            </pre>
+        </main>
+    </div>
+
+    <footer>
+        <div class="container">
+            &copy; 2026 SNI0 Project. All rights reserved. <br>
+            Developed with a focus on privacy and high-performance networking.
+        </div>
+    </footer>
+
+</body>
+</html>

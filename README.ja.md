@@ -21,13 +21,13 @@ TechLion のシェル スクリプト ツールは、Linux の監視、テスト
 
 ## 🚀 ワンクリックインストール
 ```bash
-bash <(curl -sL kejilion.sh) jp
+bash <(curl -sL https://raw.githubusercontent.com/KUAILESHANGWEI/kejidalao/main/kejilion.sh) jp
 ```
 
 ***
 ## 🖼️ 実際のスクリーンショット
 
-<img src="https://kejilion.sh/img/screenshots/kejilionsh_jp.webp" alt="日本語版プレビュー" width="75%"/>
+<img src="https://github.com/KUAILESHANGWEI/kejidalao/img/screenshots/kejilionsh_jp.webp" alt="日本語版プレビュー" width="75%"/>
 
 
 ***
@@ -62,4 +62,4 @@ bash <(curl -sL kejilion.sh) jp
 ***
 
 ## スターの歴史
-[![星の歴史チャート](https://api.star-history.com/svg?repos=kejilion/sh&type=Date)](https://star-history.com/#kejilion/sh&Date)
+[![星の歴史チャート](https://api.star-history.com/svg?repos=KUAILESHANGWEI/kejidalao&type=Date)](https://star-history.com/#KUAILESHANGWEI/kejidalao&Date)

@@ -1,6 +1,6 @@
 <br><br><br>
 <div align="center">
-<img src="https://kejilion.sh/img/screenshots/kejilionsh_logo.webp?v=2" alt="логотип" width="650">
+<img src="https://github.com/KUAILESHANGWEI/kejidalao/img/screenshots/kejilionsh_logo.webp?v=2" alt="логотип" width="650">
 </div>
 
 <div align="center" style="margin-top:-200px;">
@@ -85,12 +85,12 @@ Shell Script Tool от TechLion — это комплексный набор и�
 
 ## 🚀 Установка в один клик
 ```bash
-bash <(curl -sL kejilion.sh) ru
+bash <(curl -sL https://raw.githubusercontent.com/KUAILESHANGWEI/kejidalao/main/kejilion.sh) ru
 ```
 <br><br>
 
 ## 🖼️ Предпросмотр интерфейса
-<img src="https://kejilion.sh/img/screenshots/kejilionsh_ru.webp" alt="Предпросмотр русской версии" width="75%"/>
+<img src="https://github.com/KUAILESHANGWEI/kejidalao/img/screenshots/kejilionsh_ru.webp" alt="Предпросмотр русской версии" width="75%"/>
 
 
 
@@ -124,4 +124,4 @@ bash <(curl -sL kejilion.sh) ru
 <br><br>
 
 ## ⭐ Звездные тренды
-[![Таблица истории звезд](https://api.star-history.com/svg?repos=kejilion/sh&type=Date)](https://star-history.com/#kejilion/sh&Date)
+[![Таблица истории звезд](https://api.star-history.com/svg?repos=KUAILESHANGWEI/kejidalao&type=Date)](https://star-history.com/#KUAILESHANGWEI/kejidalao&Date)

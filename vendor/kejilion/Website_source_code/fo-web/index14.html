@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SNI 技术演进全景图 - SNI0.COM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --pulse-green: #10b981;
+            --deep-space: #0a0a0c;
+            --border-zinc: #27272a;
+        }
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--deep-space);
+            color: #d1d1d6;
+            overflow-x: hidden;
+        }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        
+        /* 脉动背景效果 */
+        .bg-pulse {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.03) 0%, transparent 70%);
+            z-index: -1;
+        }
+
+        /* 时间轴核心线 */
+        .timeline-line {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, transparent, var(--border-zinc) 5%, var(--border-zinc) 95%, transparent);
+            transform: translateX(-50%);
+        }
+
+        .pulse-dot {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 12px;
+            height: 12px;
+            background: var(--pulse-green);
+            border-radius: 50%;
+            box-shadow: 0 0 15px var(--pulse-green);
+        }
+
+        /* 内容卡片 */
+        .tech-card {
+            background: rgba(20, 20, 23, 0.8);
+            border: 1px solid var(--border-zinc);
+            backdrop-filter: blur(10px);
+            transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+        .tech-card:hover {
+            border-color: var(--pulse-green);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.1);
+        }
+
+        /* 故事性文本增强 */
+        .story-text {
+            line-height: 1.8;
+            letter-spacing: 0.02em;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg-pulse"></div>
+
+    <!-- 顶部导航 -->
+    <nav class="fixed top-0 w-full z-50 border-b border-white/5 bg-black/50 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <div class="w-2 h-6 bg-emerald-500"></div>
+                <span class="text-white font-bold tracking-tighter text-xl mono">SNI0.LAB</span>
+            </div>
+            <div class="text-[10px] mono text-emerald-500 font-bold uppercase tracking-[0.3em]">
+                SNI: The Soul of Virtual Hosting
+            </div>
+        </div>
+    </nav>
+
+    <!-- 巨幕区 -->
+    <section class="relative pt-40 pb-20 px-6 text-center overflow-hidden">
+        <div class="max-w-4xl mx-auto">
+            <h1 class="text-6xl md:text-8xl font-black text-white tracking-tighter mb-8 italic uppercase">
+                SNI <span class="text-emerald-500">Legacy</span>
+            </h1>
+            <p class="text-zinc-400 text-lg md:text-xl font-light leading-relaxed mb-12 story-text">
+                这是一个关于“敲门声”的故事。从最初的盲目寻找，到后来的精准投递，再到未来的隐形通信。
+                SNI 不仅仅是一个协议扩展，它是互联网从昂贵奢侈走向普惠大众的关键推手。
+            </p>
+        </div>
+    </section>
+
+    <!-- 时间轴区域 -->
+    <section class="relative max-w-6xl mx-auto px-6 pb-40">
+        <div class="timeline-line"></div>
+
+        <!-- 节点 1: 前世 - 荒蛮时代的代价 -->
+        <div class="relative mb-40 flex flex-col md:flex-row items-center">
+            <div class="pulse-dot top-0"></div>
+            <div class="md:w-1/2 md:pr-20 text-right mb-8 md:mb-0">
+                <div class="mono text-emerald-500 text-sm font-bold mb-2">PAST LIFE / 2000s Early</div>
+                <h2 class="text-3xl font-bold text-white mb-4">前世：昂贵的独立公寓</h2>
+                <p class="text-zinc-500 leading-relaxed story-text">
+                    在 SNI 诞生前，每一个 HTTPS 网站都必须独占一个昂贵的 IPv4 地址。就像每个居民都必须拥有一栋带门牌号的独立别墅，不能共用公寓楼。这导致了 IP 地址的极度浪费和建站成本的居高不下。
+                </p>
+            </div>
+            <div class="md:w-1/2 md:pl-20">
+                <div class="tech-card p-8 rounded-2xl">
+                    <div class="mb-4 text-emerald-500 mono text-xs">Legacy Architecture</div>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center p-3 bg-white/5 rounded">
+                            <span class="text-zinc-400">1 Domain</span>
+                            <span class="text-white">1 IP Address</span>
+                        </div>
+                        <p class="text-[10px] text-zinc-500 italic">“当时，只有巨头公司才付得起 HTTPS 的门票钱。”</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 节点 2: 今生 - 共享经济的钥匙 -->
+        <div class="relative mb-40 flex flex-col md:flex-row items-center">
+            <div class="pulse-dot top-0"></div>
+            <div class="md:w-1/2 md:pr-20 order-2 md:order-1">
+                <div class="tech-card p-8 rounded-2xl">
+                    
+                    <div class="mt-6 p-4 bg-emerald-500/5 border-l-2 border-emerald-500 text-xs text-emerald-400">
+                        突破：SNI 允许一个 IP 托管无限个域名。
+                    </div>
+                </div>
+            </div>
+            <div class="md:w-1/2 md:pl-20 order-1 md:order-2 mb-8 md:mb-0">
+                <div class="mono text-emerald-500 text-sm font-bold mb-2">PRESENT / 2011 - NOW</div>
+                <h2 class="text-3xl font-bold text-white mb-4">今生：精准的投递员</h2>
+                <p class="text-zinc-500 leading-relaxed story-text">
+                    SNI (Server Name Indication) 的出现，就像是在公共公寓的大门口增加了一位投递员。客户端在敲门（握手）时，先递上一张小纸条：“我要找的是 302 室的 example.com”。从此，万千网站得以共享同一个 IP，开启了云计算和 CDN 的繁荣时代。
+                </p>
+            </div>
+        </div>
+
+        <!-- 节点 3: 阴影 - 隐私的裂缝 -->
+        <div class="relative mb-40 flex flex-col md:flex-row items-center">
+            <div class="pulse-dot top-0"></div>
+            <div class="md:w-1/2 md:pr-20 text-right mb-8 md:mb-0">
+                <div class="mono text-rose-500 text-sm font-bold mb-2">SHADOW / 2018 Vulnerability</div>
+                <h2 class="text-3xl font-bold text-white mb-4">阴影：被偷窥的纸条</h2>
+                <p class="text-zinc-500 leading-relaxed story-text">
+                    然而，这张“纸条”是明文书写的。虽然屋里的谈话是加密的，但路过的人都能看到纸条上写的域名。这意味着你的 ISP 甚至监听者，依然知道你去了哪家“公寓”。隐私在最后一公里依然存在裂缝。
+                </p>
+            </div>
+            <div class="md:w-1/2 md:pl-20">
+                <div class="tech-card p-8 rounded-2xl border-rose-500/20">
+                    <div class="text-rose-500 mono text-[10px] mb-4 uppercase">Security Insight</div>
+                    <div class="bg-black/40 p-4 rounded-lg border border-rose-900/30">
+                        <div class="flex justify-between items-center text-xs mono text-zinc-500">
+                            <span>TCP Data Stream</span>
+                            <span class="text-rose-500">SNI Visible</span>
+                        </div>
+                        <div class="mt-2 text-white mono">Target: hidden-service.org</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 节点 4: 未来 - 终极的隐身斗篷 -->
+        <div class="relative flex flex-col md:flex-row items-center">
+            <div class="pulse-dot top-0"></div>
+            <div class="md:w-1/2 md:pr-20 order-2 md:order-1">
+                <div class="tech-card p-10 rounded-3xl bg-emerald-500/10 border-emerald-500/40 relative overflow-hidden">
+                    <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-emerald-500/20 rounded-full blur-3xl"></div>
+                    <div class="flex items-center space-x-3 mb-6">
+                        <div class="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center">
+                            <svg class="w-5 h-5 text-black" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a5 5 0 00-5 5v2a2 2 0 00-2 2v5a2 2 0 002 2h10a2 2 0 002-2v-5a2 2 0 00-2-2H7V7a3 3 0 016 0h2a5 5 0 00-5-5z"></path></svg>
+                        </div>
+                        <span class="text-white font-bold">ECH 加密模式</span>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                            <span class="text-xs text-zinc-300">内层 Client Hello 整体加密</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                            <span class="text-xs text-zinc-300">只有最终的服务商能解开真相</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="md:w-1/2 md:pl-20 order-1 md:order-2 mb-8 md:mb-0">
+                <div class="mono text-emerald-500 text-sm font-bold mb-2">FUTURE / BEYOND 2026</div>
+                <h2 class="text-3xl font-bold text-white mb-4">未来：隐身的信使</h2>
+                <p class="text-zinc-500 leading-relaxed story-text">
+                    未来的 SNI 将进化为 <span class="text-white font-bold italic">ECH (Encrypted Client Hello)</span>。投递员不再通过纸条认人，而是通过一个只有目标公寓才能开启的保险箱。在外部观察者看来，所有人去往的都是同一个“加密迷雾”。
+                </p>
+            </div>
+        </div>
+
+    </section>
+
+    <!-- 总结区 -->
+    <section class="max-w-4xl mx-auto px-6 py-40 text-center">
+        <div class="h-px bg-zinc-800 w-24 mx-auto mb-12"></div>
+        <h3 class="text-3xl font-bold text-white mb-6">演进的终点是隐私</h3>
+        <p class="text-zinc-500 font-light leading-loose story-text max-w-2xl mx-auto">
+            从“一个地址一个人”的奢侈，到“精准投递”的效率，再到“完全加密”的自由。
+            SNI 的故事，本质上是人类在数字世界里，不断追求<span class="text-emerald-500">连接效率</span>与<span class="text-emerald-500">个体隐私</span>极限平衡的过程。
+        </p>
+    </section>
+
+    <!-- 页脚 -->
+    <footer class="border-t border-zinc-900 py-12 px-6">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center text-[10px] mono text-zinc-600 tracking-widest uppercase">
+            <div>© 2026 SNI0.LAB / Infrastructure Story</div>
+            <div class="mt-4 md:mt-0 space-x-8">
+                <a href="#" class="hover:text-emerald-500 transition">GitHub</a>
+                <a href="#" class="hover:text-emerald-500 transition">Whitepaper</a>
+                <a href="#" class="hover:text-emerald-500 transition">Privacy</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('opacity-100', 'translate-y-0');
+                    entry.target.classList.remove('opacity-0', 'translate-y-10');
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.relative.mb-40, .relative.flex').forEach(el => {
+            el.classList.add('transition-all', 'duration-1000', 'ease-out', 'opacity-0', 'translate-y-10');
+            observer.observe(el);
+        });
+    </script>
+</body>
+</html>

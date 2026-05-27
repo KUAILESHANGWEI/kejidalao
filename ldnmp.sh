@@ -15,13 +15,13 @@ apt install -y curl wget sudo socat unzip tar htop
 curl -fsSL https://get.docker.com | sh
 
 # 安装 Docker Compose
-curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose && chmod +x /usr/local/bin/docker-compose
+curl -L "https://github.com/KUAILESHANGWEI/kejidalao/releases/download/third-party-assets/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose && chmod +x /usr/local/bin/docker-compose
 
 # 创建必要的目录和文件
 cd /home && mkdir -p web/html web/mysql web/certs web/conf.d web/redis && touch web/docker-compose.yml
 
 # 下载 docker-compose.yml 文件并进行替换
-wget -O /home/web/docker-compose.yml https://raw.githubusercontent.com/kejilion/docker/main/LNMP-docker-compose-4.yml
+wget -O /home/web/docker-compose.yml https://raw.githubusercontent.com/KUAILESHANGWEI/kejidalao/main/vendor/kejilion/docker/LNMP-docker-compose-4.yml
 
 
 # 在 docker-compose.yml 文件中进行替换

@@ -7,4 +7,4 @@
 ## 🚀 نصب با یک کلیک (One-Click Installation) FA
 
 ```bash
-bash <(curl -sL kejilion.sh) ir
+bash <(curl -sL https://raw.githubusercontent.com/KUAILESHANGWEI/kejidalao/main/kejilion.sh) ir

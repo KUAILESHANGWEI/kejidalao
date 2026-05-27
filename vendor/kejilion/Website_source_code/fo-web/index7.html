@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>☆★☆ 欢迎来到 SNI0 的秘密基地 ☆★☆</title>
+    <style>
+        /* 90年代网页最核心的背景：星空瓷砖 */
+        body {
+            background-color: #000033;
+            background-image: url('https://www.transparenttextures.com/patterns/stardust.png');
+            color: #ffffff;
+            font-family: "Times New Roman", "宋体", serif;
+            margin: 0;
+            padding: 20px;
+            cursor: default;
+        }
+
+        /* 传统的蓝紫色链接 */
+        a { color: #00ffff; text-decoration: underline; }
+        a:visited { color: #ff00ff; }
+        a:hover { color: #ffffff; background-color: #0000ff; }
+
+        /* 居中主容器，模拟 640x480 分辨率下的布局 */
+        .main-container {
+            max-width: 760px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        /* 3D 效果标题 */
+        .web-title {
+            font-size: 36px;
+            font-weight: bold;
+            color: #ffff00;
+            text-shadow: 3px 3px #ff0000, 6px 6px #000000;
+            font-style: italic;
+            margin: 20px 0;
+            border: 5px ridge #ffd700;
+            padding: 10px;
+        }
+
+        /* 霓虹灯闪烁 */
+        .neon-blink {
+            animation: neon 0.5s ease-in-out infinite alternate;
+        }
+        @keyframes neon {
+            from { opacity: 1; text-shadow: 0 0 10px #fff, 0 0 20px #0ff; }
+            to { opacity: 0.7; text-shadow: 0 0 5px #fff, 0 0 10px #0ff; }
+        }
+
+        /* 施工中图标容器 */
+        .construction {
+            display: inline-block;
+            margin: 15px;
+            font-weight: bold;
+            color: #ff0;
+        }
+
+        /* Winamp 样式的播放器模拟 */
+        .winamp-player {
+            width: 275px;
+            background: #333;
+            border: 2px solid #666;
+            margin: 20px auto;
+            padding: 5px;
+            font-family: Arial, sans-serif;
+            text-align: left;
+        }
+        .winamp-title {
+            background: #000080;
+            color: #0ff;
+            font-size: 10px;
+            padding: 2px 5px;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        /* 侧边栏布局采用 Table */
+        table.layout-grid {
+            width: 100%;
+            border: none;
+            margin-top: 30px;
+        }
+
+        .sidebar {
+            width: 150px;
+            vertical-align: top;
+            background: #000066;
+            border: 2px outset #3333ff;
+            padding: 10px;
+        }
+
+        .content {
+            padding-left: 20px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        /* 像素访客计数器 */
+        .visitor-counter {
+            background: #000;
+            border: 2px inset #555;
+            padding: 5px 10px;
+            color: #0f0;
+            font-family: "Courier New", monospace;
+            font-size: 20px;
+            letter-spacing: 3px;
+            display: inline-block;
+        }
+
+        /* 分割线 */
+        hr {
+            border: 0;
+            height: 10px;
+            background-image: linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000);
+            margin: 20px 0;
+        }
+
+        /* 88x31 按钮样式 */
+        .web-button {
+            width: 88px;
+            height: 31px;
+            border: 1px solid #fff;
+            margin: 2px;
+            display: inline-block;
+            background: #666;
+            font-size: 9px;
+            line-height: 31px;
+            color: #fff;
+            text-decoration: none;
+        }
+
+        /* 原始表单样式 */
+        input[type="text"], textarea {
+            background-color: #000;
+            border: 2px inset #fff;
+            color: #0f0;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .fire-text {
+            color: #ff4500;
+            font-weight: bold;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <!-- 头部 -->
+        <div class="web-title">SNI0 互联网加密实验室</div>
+        
+        <marquee scrollamount="8" style="border: 2px solid #0ff; background: #000066; color: #fff; padding: 5px;">
+            欢迎来到我的个人主页！本站最佳浏览环境：Netscape Navigator 3.0 或 Internet Explorer 4.0，分辨率 800x600，64K 色。
+        </marquee>
+
+        <div class="construction">
+            <img src="https://img.icons8.com/color/48/000000/under-construction.png" width="32"><br>
+            [ 本站正在施工中 ]
+        </div>
+
+        <hr>
+
+        <!-- 模拟播放器 -->
+        <div class="winamp-player">
+            <div class="winamp-title">1. SNI0 - The Cyber Anthem (Handshaking Mix).mp3</div>
+            <div style="display:flex; justify-content: space-between; margin-top: 5px;">
+                <span style="color:#0f0; font-size: 10px;">03:45</span>
+                <div style="color:#666; font-size: 10px;">kbps: 128 / khz: 44.1</div>
+            </div>
+            <div style="margin-top: 5px;">
+                <button>■</button> <button>▶</button> <button>||</button> <button>«</button> <button>»</button>
+            </div>
+        </div>
+
+        <!-- 主体表格布局 -->
+        <table class="layout-grid">
+            <tr>
+                <td class="sidebar">
+                    <p><b>导航菜单</b></p>
+                    <p><a href="#">关于我</a></p>
+                    <p><a href="#">秘密下载区</a></p>
+                    <p><a href="#">我的日记</a></p>
+                    <p><a href="#">我的收藏夹</a></p>
+                    <p><a href="#">留言板</a></p>
+                    <hr>
+                    <p><b>友情链接</b></p>
+                    <div class="web-button">Yahoo!</div>
+                    <div class="web-button">GeoCities</div>
+                    <div class="web-button">Lycos</div>
+                    <div class="web-button">Altavista</div>
+                </td>
+                <td class="content">
+                    <h2 class="neon-blink">什么是加密连接？</h2>
+                    <p>你好，访客！你是否担心在信息高速公路上裸奔？SNI0 致力于研究最前沿的 <b>TLS 代理</b> 与 <b>加密 SNI</b> 技术。即使在这个拨号上网的时代，隐私也应该是每个人的基本权利。</p>
+                    
+                    <p><span class="fire-text">最新爆料：</span> 我们在加密通道中实现了 128-bit 密钥的完美支持！不再担心黑客嗅探你的账号！</p>
+
+                    <center>
+                        <img src="https://via.placeholder.com/468x60?text=AD:+JOIN+THE+CYBER+REVOLUTION+NOW!" style="border: 1px solid #ff0;">
+                    </center>
+
+                    <h3>给我的留言</h3>
+                    <form onsubmit="alert('谢谢你的留言！'); return false;">
+                        您的昵称：<br>
+                        <input type="text" name="name"><br>
+                        您的电子邮箱 (E-mail)：<br>
+                        <input type="text" name="email"><br>
+                        留言内容：<br>
+                        <textarea rows="4"></textarea><br>
+                        <input type="submit" value=" 点击发送邮件 ">
+                    </form>
+                </td>
+            </tr>
+        </table>
+
+        <hr>
+
+        <!-- 底部计数器 -->
+        <div>
+            <p>您是来到这个秘密空间的第</p>
+            <div class="visitor-counter">00074219</div>
+            <p>位赛伯成员</p>
+        </div>
+
+        <!-- 底部图标 -->
+        <div style="margin: 20px 0;">
+            <a href="#"><img src="https://via.placeholder.com/88x31?text=Made+with+Notepad" alt="Notepad"></a>
+            <a href="#"><img src="https://via.placeholder.com/88x31?text=Netscape+Ready" alt="Netscape"></a>
+            <a href="#"><img src="https://via.placeholder.com/88x31?text=Best+IE4.0" alt="IE"></a>
+            <a href="#"><img src="https://via.placeholder.com/88x31?text=No+Frames" alt="No Frames"></a>
+        </div>
+
+        <p style="font-size: 10px; color: #888;">
+            (C) 1997 SNI0 Cybernetic Research Group. <br>
+            建议使用 16-bit 增强色查看本站以获得最佳视觉效果。
+        </p>
+    </div>
+
+</body>
+</html>

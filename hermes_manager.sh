@@ -961,7 +961,7 @@ show_menu() {
     case $choice in
         1)
             echo -e "${YELLOW}开始安装 Hermes Agent...${NC}"
-            curl -fsSL https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh | bash
+            curl -fsSL https://raw.githubusercontent.com/KUAILESHANGWEI/kejidalao/main/vendor/github/NousResearch/hermes-agent/scripts/install.sh | bash
             refresh_hermes_path
             hermes gateway install
             hermes gateway start

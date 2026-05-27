@@ -20,14 +20,14 @@
 
 ## 🚀 一鍵安裝
 ```bash
-bash <(curl -sL kejilion.sh) tw
+bash <(curl -sL https://raw.githubusercontent.com/KUAILESHANGWEI/kejidalao/main/kejilion.sh) tw
 ```
 
 ***
 
 ## 🖼️ 실제 화면 미리보기 (Preview)
 
-<img src="https://kejilion.sh/img/screenshots/kejilionsh_tw.webp" alt="한국어 버전 미리보기" width="75%"/>
+<img src="https://github.com/KUAILESHANGWEI/kejidalao/img/screenshots/kejilionsh_tw.webp" alt="한국어 버전 미리보기" width="75%"/>
 
 
 
@@ -64,4 +64,4 @@ bash <(curl -sL kejilion.sh) tw
 ***
 
 ## Star History
-[![Star History Chart](https://api.star-history.com/svg?repos=kejilion/sh&type=Date)](https://star-history.com/#kejilion/sh&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=KUAILESHANGWEI/kejidalao&type=Date)](https://star-history.com/#KUAILESHANGWEI/kejidalao&Date)

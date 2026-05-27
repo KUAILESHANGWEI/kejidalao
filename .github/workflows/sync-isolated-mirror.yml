@@ -1,0 +1,113 @@
+name: Sync isolated mirror
+
+on:
+  schedule:
+    - cron: "23 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TARGET_REPO: KUAILESHANGWEI/kejidalao
+      UPSTREAM_REPO: kejilion/sh
+
+    steps:
+      - name: Checkout mirror
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Sync vendored kejilion resources
+        run: |
+          set -euo pipefail
+          repos=(nginx docker config Website_source_code python-for-vps apps)
+          rm -rf vendor/kejilion
+          mkdir -p vendor/kejilion
+          for repo in "${repos[@]}"; do
+            git clone --depth 1 "https://github.com/kejilion/${repo}.git" "vendor/kejilion/${repo}"
+            rm -rf "vendor/kejilion/${repo}/.git"
+          done
+          mkdir -p vendor/missuo
+          git clone --depth 1 "https://github.com/missuo/OpenAI-Checker.git" "vendor/missuo/OpenAI-Checker"
+          rm -rf "vendor/missuo/OpenAI-Checker/.git"
+          github_repos=(
+            MoeClub/Note
+            NousResearch/hermes-agent
+            bin456789/reinstall
+            byJoey/cmdbox
+            hr3lxphr6j/bililive-go
+            i-abc/Speedtest
+            leitbogioro/Tools
+            linkwarden/linkwarden
+            linuxserver/fail2ban-confs
+            ludashi2020/backtrace
+            nezhahq/scripts
+            oneclickvirt/pve
+            paperless-ngx/paperless-ngx
+            ylx2016/Linux-NetSpeed
+            zhucaidan/mtr_trace
+            spiritLHLS/ecs
+            yeahwu/check
+            magicblack/maccms_down
+          )
+          for repo in "${github_repos[@]}"; do
+            git clone --depth 1 "https://github.com/${repo}.git" "vendor/github/${repo}"
+            rm -rf "vendor/github/${repo}/.git"
+          done
+          keep="$(mktemp -d)"
+          keep_paths=(
+            vendor/github/MoeClub/Note/InstallNET.sh
+            vendor/github/NousResearch/hermes-agent/scripts/install.sh
+            vendor/github/bin456789/reinstall/reinstall.sh
+            vendor/github/byJoey/cmdbox/install.sh
+            vendor/github/hr3lxphr6j/bililive-go/config.yml
+            vendor/github/i-abc/Speedtest/speedtest.sh
+            vendor/github/leitbogioro/Tools/Linux_reinstall/InstallNET.sh
+            vendor/github/linkwarden/linkwarden/.env.sample
+            vendor/github/linkwarden/linkwarden/docker-compose.yml
+            vendor/github/linuxserver/fail2ban-confs/filter.d/nginx-418.conf
+            vendor/github/linuxserver/fail2ban-confs/filter.d/nginx-bad-request.conf
+            vendor/github/linuxserver/fail2ban-confs/filter.d/nginx-deny.conf
+            vendor/github/linuxserver/fail2ban-confs/filter.d/nginx-unauthorized.conf
+            vendor/github/ludashi2020/backtrace/install.sh
+            vendor/github/magicblack/maccms_down/maccms10.zip
+            vendor/github/nezhahq/scripts/install.sh
+            vendor/github/oneclickvirt/pve/scripts/install_pve.sh
+            vendor/github/paperless-ngx/paperless-ngx/docker/compose/.env
+            vendor/github/paperless-ngx/paperless-ngx/docker/compose/docker-compose.postgres-tika.yml
+            vendor/github/spiritLHLS/ecs/ecs.sh
+            vendor/github/yeahwu/check/check.sh
+            vendor/github/ylx2016/Linux-NetSpeed/tcpx.sh
+            vendor/github/zhucaidan/mtr_trace/mtr_trace.sh
+          )
+          for path in "${keep_paths[@]}"; do
+            mkdir -p "${keep}/$(dirname "${path#vendor/github/}")"
+            cp "$path" "${keep}/${path#vendor/github/}"
+          done
+          rm -rf vendor/github
+          mkdir -p vendor
+          mv "$keep" vendor/github
+
+      - name: Apply localization rewrite
+        run: node scripts/localize-repo.js "$GITHUB_WORKSPACE"
+
+      - name: Commit vendored updates
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          if git diff --staged --quiet; then
+            echo "No vendored changes."
+          else
+            git commit -m "chore: sync isolated upstream resources"
+            git push
+          fi
+
+      - name: Mirror release assets
+        run: bash scripts/sync-release-assets.sh
