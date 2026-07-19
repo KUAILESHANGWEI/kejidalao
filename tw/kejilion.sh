@@ -354,7 +354,7 @@ enable() {
 
 break_end() {
 	  echo -e "${gl_lv}操作完成${gl_bai}"
-	  echo "按任意鍵繼續..."
+	  echo "按任意键继续..."
 	  read -n 1 -s -r -p ""
 	  echo ""
 	  clear
@@ -791,7 +791,7 @@ docker_ipv6_off() {
 
 	# 檢查設定檔是否存在
 	if [ ! -f "$CONFIG_FILE" ]; then
-		echo -e "${gl_hong}設定檔不存在${gl_bai}"
+		echo -e "${gl_hong}配置文件不存在${gl_bai}"
 		return
 	fi
 
@@ -2120,7 +2120,7 @@ web_security() {
 			  echo "1. 安裝防禦程序"
 			  echo "------------------------"
 			  echo "5. 查看SSH攔截記錄 6. 查看網站攔截記錄"
-			  echo "7. 檢視防禦規則清單 8. 查看日誌即時監控"
+			  echo "7. 查看防御规则列表               8. 查看日志实时监控"
 			  echo "------------------------"
 			  echo "11. 設定攔截參數 12. 清除所有拉黑的IP"
 			  echo "------------------------"
@@ -2198,7 +2198,7 @@ web_security() {
 					  remove fail2ban
 					  rm -rf /etc/fail2ban
 					  crontab -l | grep -v "CF-Under-Attack.sh" | crontab - 2>/dev/null
-					  echo "Fail2Ban防禦程序已卸載"
+					  echo "Fail2Ban防御程序已卸载"
 					  break
 					  ;;
 
@@ -4148,7 +4148,7 @@ EOF
 }
 
 add_forwarding_service() {
-	send_stats "新增frp內網服務"
+	send_stats "添加frp内网服务"
 	# 提示使用者輸入服務名稱和轉發訊息
 	read -e -p "請輸入服務名稱:" service_name
 	read -e -p "請輸入轉送類型 (tcp/udp) [回​​車預設tcp]:" service_type
@@ -5681,7 +5681,7 @@ bbrv3() {
 					done
 				done
 
-				echo "軟體來源中找不到適合此CPU的XanMod核心包" >&2
+				echo "软件源中未找到适配此CPU的XanMod内核包" >&2
 				return 1
 		  }
 
@@ -5948,7 +5948,7 @@ clamav_scan() {
 		MOUNT_PARAMS+="--mount type=bind,source=${dir},target=/mnt/host${dir} "
 	done
 
-	# 建構 clamscan 指令參數
+	# 构建 clamscan 命令参数
 	local SCAN_PARAMS=""
 	for dir in "$@"; do
 		SCAN_PARAMS+="/mnt/host${dir} "
@@ -6319,7 +6319,7 @@ LIMITS
 	# ── BBR 持久化 ──
 	if [ "$CC" = "bbr" ]; then
 		echo "tcp_bbr" > /etc/modules-load.d/bbr.conf 2>/dev/null
-		# 清理旧的 sysctl.conf 里的 bbr 配置（避免冲突）
+		# 清理舊的 sysctl.conf 裡的 bbr 設定（避免衝突）
 		sed -i '/net.ipv4.tcp_congestion_control/d' /etc/sysctl.conf 2>/dev/null
 	fi
 
@@ -6913,7 +6913,7 @@ kj_ssh_parse_remote() {
 	fi
 
 	if ! kj_ssh_validate_host "$remote_host"; then
-		echo "错误: SSH 主机地址格式不正确。"
+		echo "錯誤: SSH 主機位址格式不正確。"
 		return 1
 	fi
 
@@ -6936,7 +6936,7 @@ kj_ssh_read_auth() {
 			read -s -p "請輸入密碼:" password_or_key
 			echo
 			if [ -z "$password_or_key" ]; then
-				echo "錯誤: 密碼不能為空。"
+				echo "错误: 密码不能为空。"
 				return 1
 			fi
 			KJ_SSH_AUTH_METHOD="password"
@@ -7311,7 +7311,7 @@ disk_manager() {
 		list_partitions
 		echo "------------------------"
 		echo "1. 掛載分割區 2. 卸載分割區 3. 檢視已掛載分割區"
-		echo "4. 格式化分区      5. 检查分区状态"
+		echo "4. 格式化分割區 5. 檢查分割區狀態"
 		echo "------------------------"
 		echo "0. 返回上一級選單"
 		echo "------------------------"
@@ -7645,7 +7645,7 @@ linux_info() {
 
 	local swap_info=$(free -m | awk 'NR==3{used=$3; total=$2; if (total == 0) {percentage=0} else {percentage=used*100/total}; printf "%dM/%dM (%d%%)", used, total, percentage}')
 
-	local runtime=$(cat /proc/uptime | awk -F. '{run_days=int($1 / 86400);run_hours=int(($1 % 86400) / 3600);run_minutes=int(($1% 3600) / 60); if (run_days > 0) printf("%d天 ", run_days); if (run_hours > 0) printf("%d時 ", run_hours); printf("%d分\n", run_minutes)}')
+	local runtime=$(cat /proc/uptime | awk -F. '{run_days=int($1 / 86400);run_hours=int(($1 % 86400) / 3600);run_minutes=int(($1 % 3600) / 60); if (run_days > 0) printf("%d天 ", run_days); if (run_hours > 0) printf("%d时 ", run_hours); printf("%d分\n", run_minutes)}')
 
 	local timezone=$(current_timezone)
 
@@ -7811,7 +7811,7 @@ linux_tools() {
 			  clear
 			  echo "工具已安裝，使用方法如下："
 			  socat -h
-			  send_stats "安裝socat"
+			  send_stats "安装socat"
 			  ;;
 			5)
 			  clear
@@ -8729,7 +8729,7 @@ linux_test() {
 			  ;;
 		  2)
 			  clear
-			  send_stats "Region流媒体解锁测试"
+			  send_stats "Region串流解鎖測試"
 			  bash <(curl -L -s check.unlock.media)
 			  ;;
 		  3)
@@ -9676,7 +9676,7 @@ linux_ldnmp() {
 
 	  27)
 	  clear
-	  webname="AI繪畫提示詞產生器"
+	  webname="AI绘画提示词生成器"
 	  send_stats "安裝$webname"
 	  echo "開始部署$webname"
 	  add_yuming
@@ -10523,7 +10523,7 @@ if fatal_errors:
         print(line)
     for err in fatal_errors:
         print(err)
-    print('❌ 模型同步失敗：存在 provider 同步後無可用模型，已中止寫入')
+    print('❌ 模型同步失败：存在 provider 同步后无可用模型，已中止写入')
     raise SystemExit(2)
 
 if changed:
@@ -10594,8 +10594,8 @@ PY
 
 
 
-	# OpenClaw API 協定偵測邏輯已移除：不再自動偵測/判定 API 類型。
-	# 说明：API 类型由用户显式配置（models.providers.<name>.api），脚本不再尝试调用 /responses 做推断。
+	# OpenClaw API 协议探测逻辑已移除：不再自动探测/判定 API 类型。
+	# 說明：API 類型由使用者明確配置（models.providers.<name>.api），腳本不再嘗試呼叫 /responses 做推論。
 
 	# 建構模型配置 JSON
 	build-openclaw-provider-models-json() {
@@ -11035,7 +11035,7 @@ work = copy.deepcopy(obj)
 models_cfg = work.setdefault('models', {})
 providers = models_cfg.get('providers', {})
 if not isinstance(providers, dict) or not providers:
-    print('❌ 未检测到 API providers，无法同步')
+    print('❌ 未偵測到 API providers，無法同步')
     raise SystemExit(2)
 
 provider = providers.get(target)
@@ -11256,7 +11256,7 @@ fix-openclaw-provider-protocol-interactive() {
 		return 1
 	fi
 
-	read -erp "请输入要切换协议的 API 名称(provider): " provider_name
+	read -erp "請輸入要切換協定的 API 名稱(provider):" provider_name
 	if [ -z "$provider_name" ]; then
 		echo "❌ provider 名稱不能為空"
 		break_end
@@ -11318,10 +11318,10 @@ PY
 			start_gateway
 			;;
 		2)
-			echo "❌ 切換失敗：provider 不存在或未配置"
+			echo "❌ 切换失败：provider 不存在或未配置"
 			;;
 		3)
-			echo "❌ 切換失敗：協定值非法"
+			echo "❌ 切换失败：协议值非法"
 			;;
 		*)
 			echo "❌ 切換失敗：請檢查設定檔結構或日誌輸出"
@@ -12987,7 +12987,7 @@ if os.path.isdir(agents_root):
 		openclaw_root=$(dirname "$config_file")
 		mkdir -p "$openclaw_root"
 
-		echo "⚠️ 高风险操作：项目还原会覆盖 OpenClaw 配置与工作区内容。"
+		echo "⚠️ 高風險操作：專案還原會涵蓋 OpenClaw 設定與工作區內容。"
 		echo "⚠️ 還原前將執行 manifest/sha256 校驗、白名單恢復、gateway 停啟與健康檢查。"
 		read -e -p "請輸入確認詞【我已知高風險並繼續還原】後繼續:" confirm_text
 		if [ "$confirm_text" != "我已知高風險並持續還原" ]; then
@@ -13716,7 +13716,7 @@ PY
 			return 1
 		fi
 		if ! qmd --version >/dev/null 2>&1; then
-			echo "❌ qmd 安装后仍无法运行"
+			echo "❌ qmd 安裝後仍無法運作"
 			return 1
 		fi
 		OPENCLAW_MEMORY_QMD_PATH="$qmd_path"
@@ -13951,7 +13951,7 @@ EOF
 			openclaw_memory_render_auto_summary
 			return 0
 		fi
-		echo "♻️ 重启 OpenClaw 网关"
+		echo "♻️ 重啟 OpenClaw 網關"
 		if declare -F start_gateway >/dev/null 2>&1; then
 			start_gateway
 		else
@@ -14054,7 +14054,7 @@ EOF
 		echo "目前 includeDefaultMemory: ${include_dm:-未設定}"
 		echo ""
 		if [ "$include_dm" = "false" ]; then
-			echo "⚠️ 检测到 includeDefaultMemory=false"
+			echo "⚠️ 偵測到 includeDefaultMemory=false"
 			echo "這會導致預設記憶檔案（MEMORY.md + memory/*.md）不被索引"
 			echo "所以 Indexed 會一直顯示 0/N"
 			echo ""
@@ -14303,7 +14303,7 @@ EOF
 				read -e -p "二次確認：輸入 force 使用全量（留空為增量）:" confirm_step2
 				if [ "$confirm_step2" = "force" ]; then
 					echo "⚠️ 全量重建更徹底，但耗時更長。"
-					echo "推荐：输入 rebuild 进行安全重建（先备份索引库）。"
+					echo "建議：輸入 rebuild 進行安全重建（先備份索引庫）。"
 					read -e -p "第三次確認：輸入 rebuild 執行安全重建；直接回車繼續普通 force:" confirm_step3
 					if [ "$confirm_step3" = "rebuild" ]; then
 						openclaw_memory_rebuild_index_all
@@ -14542,7 +14542,7 @@ PY
 
 		mkdir -p "$HOME/.openclaw"
 
-		# 生成 JSON 并通过 openclaw approvals set --stdin 写入（优先）
+		# 產生 JSON 並透過 openclaw approvals set --stdin 寫入（優先）
 		# 若 CLI 不支援則回退直接寫文件
 		local json_payload
 		json_payload=$(python3 -c '
@@ -14645,7 +14645,7 @@ try:
     print("提示策略 (Ask):" + str(d.get("ask", "(unset)")))
     print("無UI兜底 (AskFallback):" + str(d.get("askFallback", "(unset)")))
 except Exception:
-    print("  (配置文件解析失败)")
+    print("(設定檔解析失敗)")
 '
 		else
 			echo "(未配置，強制使用系統內建安全兜底策略)"
@@ -15044,7 +15044,7 @@ PY
 		config_file=$(openclaw_multiagent_config_file)
 		default_agent=$(openclaw_multiagent_default_agent)
 		echo "設定檔: ${config_file:-$(openclaw_permission_config_file)}"
-		echo "默认智能体: $default_agent"
+		echo "預設智能體:$default_agent"
 		python3 -c '
 import json,sys
 agents=json.loads(sys.argv[1] or "[]")
@@ -15423,7 +15423,7 @@ openclaw_backup_restore_menu() {
 
 		domains=$(openclaw_find_webui_domain)
 		if [ -n "$domains" ]; then
-			echo "網域地址："
+			echo "網域名稱地址："
 			echo "$domains" | while read d; do
 				echo "https://${d}/#token=${token}"
 			done
@@ -21283,7 +21283,7 @@ linux_file() {
 		echo "1. 進入目錄 2. 建立目錄 3. 修改目錄權限 4. 重新命名目錄"
 		echo "5. 刪除目錄 6. 返回上一層選單目錄"
 		echo "------------------------"
-		echo "11. 建立檔案 12. 編輯檔案 13. 修改檔案權限 14. 重新命名文件"
+		echo "11. 建立文件 12. 編輯文件 13. 修改文件權限 14. 重新命名文件"
 		echo "15. 刪除文件"
 		echo "------------------------"
 		echo "21. 壓縮檔案目錄 22. 解壓縮檔案目錄 23. 行動檔案目錄 24. 複製檔案目錄"
