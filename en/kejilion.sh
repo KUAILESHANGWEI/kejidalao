@@ -36,7 +36,7 @@ quanju_canshu
 
 
 
-# Define a function to execute the command
+# 定义一个函数来执行命令
 run_command() {
 	if [ "$zhushi" -eq 0 ]; then
 		"$@"
@@ -63,9 +63,9 @@ CheckFirstRun_true() {
 
 
 
-# A function that collects function buried information and records the current script version number, usage time, system version, CPU architecture, machine country and function name used by the user. It does not involve any sensitive information, so don’t worry! Please believe me!
-# Why is this function designed? The purpose is to better understand the functions that users like to use, and to further optimize the functions and launch more functions that meet user needs.
-# The full text can be searched for the send_stats function call location. It is transparent and open source. If you have any concerns, you can refuse to use it.
+# 收集功能埋点信息的函数，记录当前脚本版本号，使用时间，系统版本，CPU架构，机器所在国家和用户使用的功能名称，绝对不涉及任何敏感信息，请放心！请相信我！
+# 为什么要设计这个功能，目的更好的了解用户喜欢使用的功能，进一步优化功能推出更多符合用户需求的功能。
+# 全文可搜搜 send_stats 函数调用位置，透明开源，如有顾虑可拒绝使用。
 
 
 
@@ -123,19 +123,19 @@ CheckFirstRun_false() {
 # Prompt user to agree to terms
 UserLicenseAgreement() {
 	clear
-	echo -e "${gl_kjlan}Welcome to the technology lion script toolbox${gl_bai}"
-	echo "When using the script for the first time, please read and agree to the User License Agreement."
-	echo "User License Agreement: https://blog.kejilion.pro/user-license-agreement/"
+	echo -e "${gl_kjlan}欢迎使用科技lion脚本工具箱${gl_bai}"
+	echo "首次使用脚本，请先阅读并同意用户许可协议。"
+	echo "用户许可协议: https://blog.kejilion.pro/user-license-agreement/"
 	echo -e "----------------------"
-	read -e -p "Do you agree to the above terms? (y/n):" user_input
+	read -e -p "是否同意以上条款？(y/n): " user_input
 
 
 	if [ "$user_input" = "y" ] || [ "$user_input" = "Y" ]; then
-		send_stats "License agreement"
+		send_stats "许可同意"
 		sed -i 's/^permission_granted="false"/permission_granted="true"/' ~/kejilion.sh
 		sed -i 's/^permission_granted="false"/permission_granted="true"/' /usr/local/bin/k
 	else
-		send_stats "permission denied"
+		send_stats "许可拒绝"
 		clear
 		exit
 	fi
@@ -179,13 +179,13 @@ ipv6_address=$(curl -s --max-time 1 https://v6.ipinfo.io/ip && echo)
 
 install() {
 	if [ $# -eq 0 ]; then
-		echo "No package parameters provided!"
+		echo "未提供软件包参数!"
 		return 1
 	fi
 
 	for package in "$@"; do
 		if ! command -v "$package" &>/dev/null; then
-			echo -e "${gl_kjlan}Installing$package...${gl_bai}"
+			echo -e "${gl_kjlan}正在安装 $package...${gl_bai}"
 			if command -v dnf &>/dev/null; then
 				dnf -y update
 				dnf install -y epel-release
@@ -231,11 +231,11 @@ check_disk_space() {
 	local available_space_mb=$(df -m "$path" | awk 'NR==2 {print $4}')
 
 	if [ "$available_space_mb" -lt "$required_space_mb" ]; then
-		echo -e "${gl_huang}hint:${gl_bai}Not enough disk space!"
-		echo "Current available space: $((available_space_mb/1024))G"
-		echo "Minimum required space:${required_gb}G"
-		echo "The installation cannot continue. Please clear the disk space and try again."
-		send_stats "Not enough disk space"
+		echo -e "${gl_huang}提示: ${gl_bai}磁盘空间不足！"
+		echo "当前可用空间: $((available_space_mb/1024))G"
+		echo "最小需求空间: ${required_gb}G"
+		echo "无法继续安装，请清理磁盘空间后重试。"
+		send_stats "磁盘空间不足"
 		break_end
 		kejilion
 	fi
@@ -255,7 +255,7 @@ install_dependency() {
 
 remove() {
 	if [ $# -eq 0 ]; then
-		echo "No package parameters provided!"
+		echo "未提供软件包参数!"
 		return 1
 	fi
 
@@ -302,39 +302,39 @@ systemctl() {
 restart() {
 	systemctl restart "$1"
 	if [ $? -eq 0 ]; then
-		echo "$1The service has been restarted."
+		echo "$1 服务已重启。"
 	else
 		echo "Error: Restart$1 服务失败。"
 	fi
 }
 
-# Start service
+# 启动服务
 start() {
 	systemctl start "$1"
 	if [ $? -eq 0 ]; then
 		echo "$1 服务已启动。"
 	else
-		echo "错误：启动 $1Service failed."
+		echo "错误：启动 $1 服务失败。"
 	fi
 }
 
-# Stop service
+# 停止服务
 stop() {
 	systemctl stop "$1"
 	if [ $? -eq 0 ]; then
 		echo "$1 服务已停止。"
 	else
-		echo "错误：停止 $1Service failed."
+		echo "错误：停止 $1 服务失败。"
 	fi
 }
 
-# Check service status
+# 查看服务状态
 status() {
 	systemctl status "$1"
 	if [ $? -eq 0 ]; then
-		echo "$1Service status is shown."
+		echo "$1 服务状态已显示。"
 	else
-		echo "错误：无法显示 $1 服务状态。"
+		echo "Error: cannot be displayed$1 服务状态。"
 	fi
 }
 
@@ -353,8 +353,8 @@ enable() {
 
 
 break_end() {
-	  echo -e "${gl_lv}Operation completed${gl_bai}"
-	  echo "按任意键继续..."
+	  echo -e "${gl_lv}操作完成${gl_bai}"
+	  echo "Press any key to continue..."
 	  read -n 1 -s -r -p ""
 	  echo ""
 	  clear
@@ -480,26 +480,26 @@ docker_ps() {
 while true; do
 	clear
 	send_stats "Docker容器管理"
-	echo "Docker container list"
+	echo "Docker容器列表"
 	docker ps -a --format "table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}"
 	echo ""
-	echo "Container operations"
+	echo "容器操作"
 	echo "------------------------"
 	echo "1. 创建新的容器"
 	echo "------------------------"
-	echo "2. Start the specified container 6. Start all containers"
-	echo "3. Stop the specified container 7. Stop all containers"
-	echo "4. Delete the specified container 8. Delete all containers"
+	echo "2. 启动指定容器             6. 启动所有容器"
+	echo "3. 停止指定容器             7. 停止所有容器"
+	echo "4. 删除指定容器             8. 删除所有容器"
 	echo "5. 重启指定容器             9. 重启所有容器"
 	echo "------------------------"
 	echo "11. 进入指定容器           12. 查看容器日志"
-	echo "13. 查看容器网络           14. 查看容器占用"
+	echo "13. Check the container network 14. Check the container occupancy"
 	echo "------------------------"
-	echo "15. Enable container port access 16. Close container port access"
+	echo "15. 开启容器端口访问       16. 关闭容器端口访问"
 	echo "------------------------"
-	echo "0. Return to the previous menu"
+	echo "0. 返回上一级选单"
 	echo "------------------------"
-	read -e -p "Please enter your choice:" sub_choice
+	read -e -p "请输入你的选择: " sub_choice
 	case $sub_choice in
 		1)
 			send_stats "新建容器"
@@ -508,7 +508,7 @@ while true; do
 			;;
 		2)
 			send_stats "启动指定容器"
-			read -e -p "Please enter the container name (please separate multiple container names with spaces):" dockername
+			read -e -p "请输入容器名（多个容器名请用空格分隔）: " dockername
 			docker start $dockername
 			;;
 		3)
@@ -517,25 +517,25 @@ while true; do
 			docker stop $dockername
 			;;
 		4)
-			send_stats "Delete the specified container"
-			read -e -p "Please enter the container name (please separate multiple container names with spaces):" dockername
+			send_stats "删除指定容器"
+			read -e -p "请输入容器名（多个容器名请用空格分隔）: " dockername
 			docker rm -f $dockername
 			;;
 		5)
-			send_stats "Restart the specified container"
+			send_stats "重启指定容器"
 			read -e -p "请输入容器名（多个容器名请用空格分隔）: " dockername
 			docker restart $dockername
 			;;
 		6)
-			send_stats "Start all containers"
+			send_stats "启动所有容器"
 			docker start $(docker ps -a -q)
 			;;
 		7)
-			send_stats "Stop all containers"
+			send_stats "停止所有容器"
 			docker stop $(docker ps -q)
 			;;
 		8)
-			send_stats "Delete all containers"
+			send_stats "删除所有容器"
 			read -e -p "$(echo -e "${gl_hong}注意: ${gl_bai}确定删除所有容器吗？(Y/N): ")" choice
 			case "$choice" in
 			  [Yy])
@@ -544,23 +544,23 @@ while true; do
 			  [Nn])
 				;;
 			  *)
-				echo "Invalid selection, please enter Y or N."
+				echo "无效的选择，请输入 Y 或 N。"
 				;;
 			esac
 			;;
 		9)
-			send_stats "Restart all containers"
+			send_stats "重启所有容器"
 			docker restart $(docker ps -q)
 			;;
 		11)
-			send_stats "Enter the container"
-			read -e -p "Please enter the container name:" dockername
+			send_stats "进入容器"
+			read -e -p "请输入容器名: " dockername
 			docker exec -it $dockername /bin/sh
 			break_end
 			;;
 		12)
-			send_stats "View container logs"
-			read -e -p "Please enter the container name:" dockername
+			send_stats "查看容器日志"
+			read -e -p "请输入容器名: " dockername
 			docker logs $dockername
 			break_end
 			;;
@@ -569,7 +569,7 @@ while true; do
 			echo ""
 			container_ids=$(docker ps -q)
 			echo "------------------------------------------------------------"
-			printf "%-25s %-25s %-25s\n" "容器名称" "network name" "IP address"
+			printf "%-25s %-25s %-25s\n" "容器名称" "网络名称" "IP地址"
 			for container_id in $container_ids; do
 				local container_info=$(docker inspect --format '{{ .Name }}{{ range $network, $config := .NetworkSettings.Networks }} {{ $network }} {{ $config.IPAddress }}{{ end }}' "$container_id")
 				local container_name=$(echo "$container_info" | awk '{print $1}')
@@ -589,7 +589,7 @@ while true; do
 			;;
 
 		15)
-			send_stats "Allow container port access"
+			send_stats "允许容器端口访问"
 			read -e -p "请输入容器名: " docker_name
 			ip_address
 			clear_container_rules "$docker_name" "$ipv4_address"
@@ -599,8 +599,8 @@ while true; do
 			;;
 
 		16)
-			send_stats "Block container port access"
-			read -e -p "Please enter the container name:" docker_name
+			send_stats "阻止容器端口访问"
+			read -e -p "请输入容器名: " docker_name
 			ip_address
 			block_container_port "$docker_name" "$ipv4_address"
 			local docker_port=$(docker port $docker_name | awk -F'[:]' '/->/ {print $NF}' | uniq)
@@ -619,16 +619,16 @@ done
 docker_image() {
 while true; do
 	clear
-	send_stats "Docker image management"
-	echo "Docker image list"
+	send_stats "Docker镜像管理"
+	echo "Docker镜像列表"
 	docker image ls
 	echo ""
-	echo "镜像操作"
+	echo "Mirror operation"
 	echo "------------------------"
-	echo "1. Get the specified image 3. Delete the specified image"
-	echo "2. Update the specified image 4. Delete all images"
+	echo "1. 获取指定镜像             3. 删除指定镜像"
+	echo "2. 更新指定镜像             4. 删除所有镜像"
 	echo "------------------------"
-	echo "0. Return to the previous menu"
+	echo "0. 返回上一级选单"
 	echo "------------------------"
 	read -e -p "Please enter your choice:" sub_choice
 	case $sub_choice in
@@ -636,7 +636,7 @@ while true; do
 			send_stats "Pull image"
 			read -e -p "Please enter the image name (please separate multiple image names with spaces):" imagenames
 			for name in $imagenames; do
-				echo -e "${gl_kjlan}Obtaining image:$name${gl_bai}"
+				echo -e "${gl_kjlan}正在获取镜像: $name${gl_bai}"
 				docker pull $name
 			done
 			;;
@@ -644,13 +644,13 @@ while true; do
 			send_stats "更新镜像"
 			read -e -p "请输入镜像名（多个镜像名请用空格分隔）: " imagenames
 			for name in $imagenames; do
-				echo -e "${gl_kjlan}正在更新镜像: $name${gl_bai}"
+				echo -e "${gl_kjlan}Updating image:$name${gl_bai}"
 				docker pull $name
 			done
 			;;
 		3)
 			send_stats "删除镜像"
-			read -e -p "请输入镜像名（多个镜像名请用空格分隔）: " imagenames
+			read -e -p "Please enter the image name (please separate multiple image names with spaces):" imagenames
 			for name in $imagenames; do
 				docker rmi -f $name
 			done
@@ -733,12 +733,12 @@ install_crontab() {
 				service cron start
 				;;
 			*)
-				echo "不支持的发行版: $ID"
+				echo "Unsupported distributions:$ID"
 				return
 				;;
 		esac
 	else
-		echo "无法确定操作系统。"
+		echo "Unable to determine operating system."
 		return
 	fi
 
@@ -759,7 +759,7 @@ docker_ipv6_on() {
 		echo "$REQUIRED_IPV6_CONFIG" | jq . > "$CONFIG_FILE"
 		restart docker
 	else
-		# 使用jq处理配置文件的更新
+		# Use jq to handle configuration file updates
 		local ORIGINAL_CONFIG=$(<"$CONFIG_FILE")
 
 		# 检查当前配置是否已经有 ipv6 设置
@@ -772,9 +772,9 @@ docker_ipv6_on() {
 			UPDATED_CONFIG=$(echo "$ORIGINAL_CONFIG" | jq '. + {"fixed-cidr-v6": "2001:db8:1::/64"}')
 		fi
 
-		# 对比原始配置与新配置
+		# Compare original configuration to new configuration
 		if [[ "$ORIGINAL_CONFIG" == "$UPDATED_CONFIG" ]]; then
-			echo -e "${gl_huang}当前已开启ipv6访问${gl_bai}"
+			echo -e "${gl_huang}IPv6 access is currently enabled${gl_bai}"
 		else
 			echo "$UPDATED_CONFIG" | jq . > "$CONFIG_FILE"
 			restart docker
@@ -789,13 +789,13 @@ docker_ipv6_off() {
 
 	local CONFIG_FILE="/etc/docker/daemon.json"
 
-	# 检查配置文件是否存在
+	# Check if the configuration file exists
 	if [ ! -f "$CONFIG_FILE" ]; then
 		echo -e "${gl_hong}配置文件不存在${gl_bai}"
 		return
 	fi
 
-	# 读取当前配置
+	# Read current configuration
 	local ORIGINAL_CONFIG=$(<"$CONFIG_FILE")
 
 	# 使用jq处理配置文件的更新
@@ -860,7 +860,7 @@ open_port() {
 		iptables -D INPUT -p tcp --dport $port -j DROP 2>/dev/null
 		iptables -D INPUT -p udp --dport $port -j DROP 2>/dev/null
 
-		# 添加打开规则
+		# Add open rule
 		if ! iptables -C INPUT -p tcp --dport $port -j ACCEPT 2>/dev/null; then
 			iptables -I INPUT 1 -p tcp --dport $port -j ACCEPT
 		fi
@@ -879,7 +879,7 @@ open_port() {
 close_port() {
 	local ports=($@)  # 将传入的参数转换为数组
 	if [ ${#ports[@]} -eq 0 ]; then
-		echo "请提供至少一个端口号"
+		echo "Please provide at least one port number"
 		return 1
 	fi
 
@@ -927,7 +927,7 @@ allow_ip() {
 		# 删除已存在的阻止规则
 		iptables -D INPUT -s $ip -j DROP 2>/dev/null
 
-		# 添加允许规则
+		# Add allow rule
 		if ! iptables -C INPUT -s $ip -j ACCEPT 2>/dev/null; then
 			iptables -I INPUT 1 -s $ip -j ACCEPT
 			echo "已放行IP $ip"
@@ -979,7 +979,7 @@ enable_ddos_defense() {
 	iptables -A INPUT -p udp -m limit --limit 3000/s -j ACCEPT
 	iptables -A INPUT -p udp -j DROP
 
-	send_stats "Turn on DDoS defense"
+	send_stats "开启DDoS防御"
 }
 
 # 关闭DDoS防御
@@ -1707,7 +1707,7 @@ nginx_upgrade() {
   docker restart $ldnmp_pods > /dev/null 2>&1
 
   send_stats "更新$ldnmp_pods"
-  echo "更新${ldnmp_pods}完成"
+  echo "renew${ldnmp_pods}Finish"
 
 }
 
@@ -1730,7 +1730,7 @@ phpmyadmin_upgrade() {
   echo "用户名: $dbuse"
   echo "密码: $dbusepasswd"
   echo
-  send_stats "启动$ldnmp_pods"
+  send_stats "start up$ldnmp_pods"
 }
 
 
@@ -1740,20 +1740,20 @@ cf_purge_cache() {
   local EMAIL
   local ZONE_IDS
 
-  # 检查配置文件是否存在
+  # Check if the configuration file exists
   if [ -f "$CONFIG_FILE" ]; then
-	# 从配置文件读取 API_TOKEN 和 zone_id
+	# Read API_TOKEN and zone_id from configuration file
 	read API_TOKEN EMAIL ZONE_IDS < "$CONFIG_FILE"
 	# 将 ZONE_IDS 转换为数组
 	ZONE_IDS=($ZONE_IDS)
   else
 	# 提示用户是否清理缓存
-	read -e -p "需要清理 Cloudflare 的缓存吗？（y/n）: " answer
+	read -e -p "Need to clear Cloudflare's cache? (y/n):" answer
 	if [[ "$answer" == "y" ]]; then
 	  echo "CF信息保存在$CONFIG_FILE，可以后期修改CF信息"
-	  read -e -p "请输入你的 API_TOKEN: " API_TOKEN
-	  read -e -p "请输入你的CF用户名: " EMAIL
-	  read -e -p "请输入 zone_id（多个用空格分隔）: " -a ZONE_IDS
+	  read -e -p "Please enter your API_TOKEN:" API_TOKEN
+	  read -e -p "Please enter your CF username:" EMAIL
+	  read -e -p "Please enter zone_id (separate multiple with spaces):" -a ZONE_IDS
 
 	  mkdir -p /home/web/config/
 	  echo "$API_TOKEN $EMAIL ${ZONE_IDS[*]}" > "$CONFIG_FILE"
@@ -2821,7 +2821,7 @@ clear_host_port_rules() {
 	fi
 
 
-	echo "已允许IP+端口访问该服务"
+	echo "IP+port has been allowed to access the service"
 	save_iptables_rules
 
 }
@@ -2882,22 +2882,22 @@ while true; do
 	echo "------------------------"
 	echo "1. 安装              2. 更新            3. 卸载"
 	echo "------------------------"
-	echo "5. Add domain name access 6. Delete domain name access"
-	echo "7. Allow IP+port access 8. Block IP+port access"
+	echo "5. 添加域名访问      6. 删除域名访问"
+	echo "7. 允许IP+端口访问   8. 阻止IP+端口访问"
 	echo "------------------------"
 	echo "0. 返回上一级选单"
 	echo "------------------------"
-	read -e -p "Please enter your choice:" choice
+	read -e -p "请输入你的选择: " choice
 	 case $choice in
 		1)
 			setup_docker_dir
 			check_disk_space $app_size /home/docker
 			while true; do
-				read -e -p "输入应用对外服务端口，回车默认使用${docker_port}port:" app_port
+				read -e -p "输入应用对外服务端口，回车默认使用${docker_port}端口: " app_port
 				local app_port=${app_port:-${docker_port}}
 
 				if ss -tuln | grep -q ":$app_port "; then
-					echo -e "${gl_hong}错误: ${gl_bai}port$app_port 已被占用，请更换一个端口"
+					echo -e "${gl_hong}错误: ${gl_bai}port$app_portAlready occupied, please change a port"
 					send_stats "应用端口已被占用"
 				else
 					local docker_port=$app_port
@@ -2933,7 +2933,7 @@ while true; do
 			echo ""
 			$docker_use
 			$docker_passwd
-			send_stats "更新$docker_name"
+			send_stats "renew$docker_name"
 			;;
 		3)
 			docker rm -f "$docker_name"
@@ -2947,7 +2947,7 @@ while true; do
 			;;
 
 		5)
-			echo "${docker_name}Domain name access settings"
+			echo "${docker_name}域名访问设置"
 			send_stats "${docker_name}域名访问设置"
 			add_yuming
 			ldnmp_Proxy ${yuming} 127.0.0.1 ${docker_port}
@@ -2960,12 +2960,12 @@ while true; do
 			;;
 
 		7)
-			send_stats "允许IP访问 ${docker_name}"
+			send_stats "Allow IP access${docker_name}"
 			clear_container_rules "$docker_name" "$ipv4_address"
 			;;
 
 		8)
-			send_stats "Block IP access${docker_name}"
+			send_stats "阻止IP访问 ${docker_name}"
 			block_container_port "$docker_name" "$ipv4_address"
 			;;
 
@@ -3002,10 +3002,10 @@ docker_app_plus() {
 		fi
 		echo ""
 		echo "------------------------"
-		echo "1. Install 2. Update 3. Uninstall"
+		echo "1. 安装             2. 更新             3. 卸载"
 		echo "------------------------"
-		echo "5. Add domain name access 6. Delete domain name access"
-		echo "7. Allow IP+port access 8. Block IP+port access"
+		echo "5. 添加域名访问     6. 删除域名访问"
+		echo "7. 允许IP+端口访问  8. 阻止IP+端口访问"
 		echo "------------------------"
 		echo "0. Return to the previous menu"
 		echo "------------------------"
@@ -3016,11 +3016,11 @@ docker_app_plus() {
 				check_disk_space $app_size /home/docker
 
 				while true; do
-					read -e -p "Enter the application external service port and press Enter to use it by default.${docker_port}port:" app_port
+					read -e -p "Enter the application external service port and press Enter to use it by default.${docker_port}端口: " app_port
 					local app_port=${app_port:-${docker_port}}
 
 					if ss -tuln | grep -q ":$app_port "; then
-						echo -e "${gl_hong}mistake:${gl_bai}port$app_portAlready occupied, please change a port"
+						echo -e "${gl_hong}mistake:${gl_bai}端口 $app_portAlready occupied, please change a port"
 						send_stats "Application port is occupied"
 					else
 						local docker_port=$app_port
@@ -3040,7 +3040,7 @@ docker_app_plus() {
 			2)
 				docker_app_update
 				add_app_id
-				send_stats "$app_namerenew"
+				send_stats "$app_name 更新"
 				;;
 
 			3)
@@ -3053,7 +3053,7 @@ docker_app_plus() {
 
 			5)
 				echo "${docker_name}Domain name access settings"
-				send_stats "${docker_name}Domain name access settings"
+				send_stats "${docker_name}域名访问设置"
 				add_yuming
 				ldnmp_Proxy ${yuming} 127.0.0.1 ${docker_port}
 				block_container_port "$docker_name" "$ipv4_address"
@@ -3064,11 +3064,11 @@ docker_app_plus() {
 				web_del
 				;;
 			7)
-				send_stats "Allow IP access${docker_name}"
+				send_stats "允许IP访问 ${docker_name}"
 				clear_container_rules "$docker_name" "$ipv4_address"
 				;;
 			8)
-				send_stats "Block IP access${docker_name}"
+				send_stats "阻止IP访问 ${docker_name}"
 				block_container_port "$docker_name" "$ipv4_address"
 				;;
 			*)
@@ -3153,7 +3153,7 @@ tmux_run_d() {
 local base_name="tmuxd"
 local tmuxd_ID=1
 
-# Function to check if session exists
+# 检查会话是否存在的函数
 session_exists() {
   tmux has-session -t $1 2>/dev/null
 }
@@ -3163,7 +3163,7 @@ while session_exists "$base_name-$tmuxd_ID"; do
   local tmuxd_ID=$((tmuxd_ID + 1))
 done
 
-# Create a new tmux session
+# 创建新的 tmux 会话
 tmux new -d -s "$base_name-$tmuxd_ID" "$tmuxd"
 
 
@@ -3220,7 +3220,7 @@ f2b_sshd() {
 }
 
 # Basic parameter configuration: ban duration (bantime), time window (findtime), number of retries (maxretry)
-# illustrate:
+# 说明：
 # - Prioritize writing to /etc/fail2ban/jail.d/sshd.local (overwrites the default jail configuration and is not easy to lose when upgrading)
 # - If it is Alpine and the jail names are different, still write sshd.local; Fail2Ban will match according to the jail name.
 f2b_basic_config() {
@@ -3420,7 +3420,7 @@ nginx_install_status() {
 
 ldnmp_web_on() {
 	  clear
-	  echo "your$webnameIt's built!"
+	  echo "您的 $webnameIt's built!"
 	  echo "https://$yuming"
 	  echo "------------------------"
 	  echo "$webnameThe installation information is as follows:"
@@ -3433,7 +3433,7 @@ nginx_web_on() {
 	local ipv4_pattern='^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$'
 	local ipv6_pattern='^(([0-9A-Fa-f]{1,4}:){1,7}:|([0-9A-Fa-f]{1,4}:){7,7}[0-9A-Fa-f]{1,4}|::1)$'
 
-	echo "your$webnameIt's built!"
+	echo "您的 $webnameIt's built!"
 
 	if [[ "$yuming" =~ $ipv4_pattern || "$yuming" =~ $ipv6_pattern ]]; then
 		mv /home/web/conf.d/"$yuming".conf /home/web/conf.d/"${yuming}_${access_port}".conf
@@ -3452,7 +3452,7 @@ ldnmp_wp() {
   # wordpress
   webname="WordPress"
   yuming="${1:-}"
-  send_stats "Install$webname"
+  send_stats "安装$webname"
   echo "Start deployment$webname"
   if [ -z "$yuming" ]; then
 	add_yuming
@@ -3495,7 +3495,7 @@ ldnmp_wp() {
 
 ldnmp_Proxy() {
 	clear
-	webname="Reverse proxy-IP+port"
+	webname="反向代理-IP+端口"
 	yuming="${1:-}"
 	reverseproxy="${2:-}"
 	port="${3:-}"
@@ -3553,8 +3553,8 @@ ldnmp_Proxy_backend() {
 	clear
 	webname="Reverse proxy-load balancing"
 
-	send_stats "Install$webname"
-	echo "Start deployment$webname"
+	send_stats "安装$webname"
+	echo "开始部署 $webname"
 	if [ -z "$yuming" ]; then
 		add_yuming
 	fi
@@ -3562,7 +3562,7 @@ ldnmp_Proxy_backend() {
 	check_ip_and_get_access_port "$yuming"
 
 	if [ -z "$reverseproxy_port" ]; then
-		read -e -p "Please enter your multiple anti-generation IP+ports separated by spaces (for example, 127.0.0.1:3000 127.0.0.1:3002):" reverseproxy_port
+		read -e -p "请输入你的多个反代IP+端口用空格隔开（例如 127.0.0.1:3000 127.0.0.1:3002）： " reverseproxy_port
 	fi
 
 	nginx_install_status
@@ -3584,7 +3584,7 @@ ldnmp_Proxy_backend() {
 		upstream_servers="$upstream_servers    server $server;\n"
 	done
 
-	sed -i "s/# dynamically add/$upstream_servers/g" /home/web/conf.d/$yuming.conf
+	sed -i "s/# 动态添加/$upstream_servers/g" /home/web/conf.d/$yuming.conf
 
 
 	update_nginx_listen_port "$yuming" "$access_port"
@@ -3602,20 +3602,20 @@ ldnmp_Proxy_backend() {
 list_stream_services() {
 
 	STREAM_DIR="/home/web/stream.d"
-	printf "%-25s %-18s %-25s %-20s\n" "Service name" "Communication type" "local address" "后端地址"
+	printf "%-25s %-18s %-25s %-20s\n" "服务名" "通信类型" "本机地址" "后端地址"
 
 	if [ -z "$(ls -A "$STREAM_DIR")" ]; then
 		return
 	fi
 
 	for conf in "$STREAM_DIR"/*; do
-		# Service name takes file name
+		# 服务名取文件名
 		service_name=$(basename "$conf" .conf)
 
 		# 获取 upstream 块中的 server 后端 IP:端口
 		backend=$(grep -Po '(?<=server )[^;]+' "$conf" | head -n1)
 
-		# Get listen port
+		# 获取 listen 端口
 		listen_port=$(grep -Po '(?<=listen )[^;]+' "$conf" | head -n1)
 
 		# 默认本地 IP
@@ -3653,7 +3653,7 @@ stream_panel() {
 		clear
 		check_docker_app
 		check_docker_image_update $docker_name
-		echo -e "Stream four-layer proxy forwarding tool$check_docker $update_status"
+		echo -e "Stream四层代理转发工具 $check_docker $update_status"
 		echo "NGINX Stream 是 NGINX 的 TCP/UDP 代理模块，用于实现高性能的 传输层流量转发和负载均衡。"
 		echo "------------------------"
 		if [ -d "/home/web/stream.d" ]; then
@@ -3665,7 +3665,7 @@ stream_panel() {
 		echo "------------------------"
 		echo "4. 添加转发服务       5. 修改转发服务       6. 删除转发服务"
 		echo "------------------------"
-		echo "0. Return to the previous menu"
+		echo "0. 返回上一级选单"
 		echo "------------------------"
 		read -e -p "输入你的选择: " choice
 		case $choice in
@@ -3681,11 +3681,11 @@ stream_panel() {
 				send_stats "更新Stream四层代理"
 				;;
 			3)
-				read -e -p "Are you sure you want to delete the nginx container? This may affect website functionality! (y/N):" confirm
+				read -e -p "确定要删除 nginx 容器吗？这可能会影响网站功能！(y/N): " confirm
 				if [[ "$confirm" =~ ^[Yy]$ ]]; then
 					docker rm -f nginx
 					sed -i "/\b${app_id}\b/d" /home/docker/appno.txt
-					send_stats "Update Stream four-layer proxy"
+					send_stats "更新Stream四层代理"
 					echo "nginx 容器已删除。"
 				else
 					echo "操作已取消。"
@@ -3699,7 +3699,7 @@ stream_panel() {
 				send_stats "添加四层代理"
 				;;
 			5)
-				send_stats "Edit forwarding configuration"
+				send_stats "编辑转发配置"
 				read -e -p "请输入你要编辑的服务名: " stream_name
 				install nano
 				nano /home/web/stream.d/$stream_name.conf
@@ -3707,11 +3707,11 @@ stream_panel() {
 				send_stats "修改四层代理"
 				;;
 			6)
-				send_stats "Delete forwarding configuration"
+				send_stats "删除转发配置"
 				read -e -p "请输入你要删除的服务名: " stream_name
 				rm /home/web/stream.d/$stream_name.conf > /dev/null 2>&1
 				docker restart nginx
-				send_stats "Delete layer 4 proxy"
+				send_stats "删除四层代理"
 				;;
 			*)
 				break
@@ -3725,7 +3725,7 @@ stream_panel() {
 
 ldnmp_Proxy_backend_stream() {
 	clear
-	webname="Stream four-layer proxy-load balancing"
+	webname="Stream四层代理-负载均衡"
 
 	send_stats "安装$webname"
 	echo "开始部署 $webname"
@@ -3733,16 +3733,16 @@ ldnmp_Proxy_backend_stream() {
 	# 获取代理名称
 	read -erp "请输入代理转发名称 (如 mysql_proxy): " proxy_name
 	if [ -z "$proxy_name" ]; then
-		echo "Name cannot be empty"; return 1
+		echo "名称不能为空"; return 1
 	fi
 
-	# Get listening port
+	# 获取监听端口
 	read -erp "请输入本机监听端口 (如 3306): " listen_port
 	if ! [[ "$listen_port" =~ ^[0-9]+$ ]]; then
 		echo "端口必须是数字"; return 1
 	fi
 
-	echo "Please select agreement type:"
+	echo "请选择协议类型："
 	echo "1. TCP    2. UDP"
 	read -erp "请输入序号 [1-2]: " proto_choice
 
@@ -3752,7 +3752,7 @@ ldnmp_Proxy_backend_stream() {
 		*) echo "无效选择"; return 1 ;;
 	esac
 
-	read -e -p "Please enter one or more of your backend IP+ports separated by spaces (for example, 10.13.0.2:3306 10.13.0.3:3306):" reverseproxy_port
+	read -e -p "请输入你的一个或者多个后端IP+端口用空格隔开（例如 10.13.0.2:3306 10.13.0.3:3306）： " reverseproxy_port
 
 	nginx_install_status
 	cd /home && mkdir -p web/stream.d
@@ -3769,13 +3769,13 @@ ldnmp_Proxy_backend_stream() {
 		upstream_servers="$upstream_servers    server $server;\n"
 	done
 
-	sed -i "s/# dynamically add/$upstream_servers/g" /home/web/stream.d/$proxy_name.conf
+	sed -i "s/# 动态添加/$upstream_servers/g" /home/web/stream.d/$proxy_name.conf
 
 	docker exec nginx nginx -s reload
 	clear
-	echo "your$webnameIt's built!"
+	echo "您的 $webname 搭建好了！"
 	echo "------------------------"
-	echo "Visit address:"
+	echo "访问地址:"
 	ip_address
 	if [ -n "$ipv4_address" ]; then
 		echo "$ipv4_address:${listen_port}"
@@ -3814,12 +3814,12 @@ ldnmp_web_status() {
 		local db_output="${gl_lv}${db_count}${gl_bai}"
 
 		clear
-		send_stats "LDNMP site management"
-		echo "LDNMP environment"
+		send_stats "LDNMP站点管理"
+		echo "LDNMP环境"
 		echo "------------------------"
 		ldnmp_v
 
-		echo -e "Site:${output}Certificate expiration time"
+		echo -e "站点: ${output}                      证书到期时间"
 		echo -e "------------------------"
 		for cert_file in /home/web/certs/*_cert.pem; do
 		  local domain=$(basename "$cert_file" | sed 's/_cert.pem//')
@@ -3851,35 +3851,35 @@ ldnmp_web_status() {
 
 		echo "------------------------"
 		echo ""
-		echo -e "database:${db_output}"
+		echo -e "数据库: ${db_output}"
 		echo -e "------------------------"
 		local dbrootpasswd=$(grep -oP 'MYSQL_ROOT_PASSWORD:\s*\K.*' /home/web/docker-compose.yml | tr -d '[:space:]')
 		docker exec mysql mysql -u root -p"$dbrootpasswd" -e "SHOW DATABASES;" 2> /dev/null | grep -Ev "Database|information_schema|mysql|performance_schema|sys"
 
 		echo "------------------------"
 		echo ""
-		echo "site directory"
+		echo "站点目录"
 		echo "------------------------"
-		echo -e "data${gl_hui}/home/web/html${gl_bai}Certificate${gl_hui}/home/web/certs${gl_bai}Configuration${gl_hui}/home/web/conf.d${gl_bai}"
+		echo -e "数据 ${gl_hui}/home/web/html${gl_bai}     证书 ${gl_hui}/home/web/certs${gl_bai}     配置 ${gl_hui}/home/web/conf.d${gl_bai}"
 		echo "------------------------"
 		echo ""
-		echo "operate"
+		echo "操作"
 		echo "------------------------"
-		echo "1. Apply/update domain name certificate 2. Clone site domain name"
-		echo "3. Clear site cache 4. Create associated site"
-		echo "5. View the access log 6. View the error log"
-		echo "7. Edit global configuration 8. Edit site configuration"
-		echo "9. Manage site database 10. View site analysis reports"
+		echo "1.  申请/更新域名证书               2.  克隆站点域名"
+		echo "3.  清理站点缓存                    4.  创建关联站点"
+		echo "5.  查看访问日志                    6.  查看错误日志"
+		echo "7.  编辑全局配置                    8.  编辑站点配置"
+		echo "9.  管理站点数据库                  10. 查看站点分析报告"
 		echo "------------------------"
-		echo "20. Delete specified site data"
+		echo "20. 删除指定站点数据"
 		echo "------------------------"
-		echo "0. Return to the previous menu"
+		echo "0. 返回上一级选单"
 		echo "------------------------"
-		read -e -p "Please enter your choice:" sub_choice
+		read -e -p "请输入你的选择: " sub_choice
 		case $sub_choice in
 			1)
-				send_stats "Apply for a domain name certificate"
-				read -e -p "Please enter your domain name:" yuming
+				send_stats "申请域名证书"
+				read -e -p "请输入你的域名: " yuming
 				install_certbot
 				docker run --rm -v /etc/letsencrypt/:/etc/letsencrypt certbot/certbot delete --cert-name "$yuming" -n 2>/dev/null
 				install_ssltls
@@ -3888,9 +3888,9 @@ ldnmp_web_status() {
 				;;
 
 			2)
-				send_stats "Clone site domain name"
-				read -e -p "Please enter the old domain name:" oddyuming
-				read -e -p "Please enter new domain name:" yuming
+				send_stats "克隆站点域名"
+				read -e -p "请输入旧域名: " oddyuming
+				read -e -p "请输入新域名: " yuming
 				install_certbot
 				install_ssltls
 				certs_status
@@ -3910,7 +3910,7 @@ ldnmp_web_status() {
 					done
 				done
 
-				# Website directory replacement
+				# 网站目录替换
 				cp -r /home/web/html/$oddyuming /home/web/html/$yuming
 
 				find /home/web/html/$yuming -type f -exec sed -i "s/$odd_dbname/$dbname/g" {} +
@@ -3928,10 +3928,10 @@ ldnmp_web_status() {
 				web_cache
 				;;
 			4)
-				send_stats "Create associated sites"
-				echo -e "Associate a new domain name with the existing site for access"
-				read -e -p "Please enter an existing domain name:" oddyuming
-				read -e -p "Please enter new domain name:" yuming
+				send_stats "创建关联站点"
+				echo -e "为现有的站点再关联一个新域名用于访问"
+				read -e -p "请输入现有的域名: " oddyuming
+				read -e -p "请输入新域名: " yuming
 				install_certbot
 				install_ssltls
 				certs_status
@@ -3950,7 +3950,7 @@ ldnmp_web_status() {
 				break_end
 				;;
 			6)
-				send_stats "View error log"
+				send_stats "查看错误日志"
 				tail -n 200 /home/web/log/nginx/error.log
 				break_end
 				;;
@@ -3973,7 +3973,7 @@ ldnmp_web_status() {
 				break_end
 				;;
 			10)
-				send_stats "View site data"
+				send_stats "查看站点数据"
 				install goaccess
 				goaccess --log-format=COMBINED /home/web/log/nginx/access.log
 				;;
@@ -4150,7 +4150,7 @@ EOF
 add_forwarding_service() {
 	send_stats "添加frp内网服务"
 	# 提示用户输入服务名称和转发信息
-	read -e -p "Please enter service name:" service_name
+	read -e -p "请输入服务名称: " service_name
 	read -e -p "请输入转发类型 (tcp/udp) [回车默认tcp]: " service_type
 	local service_type=${service_type:-tcp}
 	read -e -p "请输入内网IP [回车默认127.0.0.1]: " local_ip
@@ -4415,13 +4415,13 @@ frps_panel() {
 
 			8)
 				send_stats "阻止IP访问"
-				echo "If you have reversed domain name access, you can use this function to block IP+port access, which is safer."
+				echo "如果你已经反代域名访问了，可用此功能阻止IP+端口访问，这样更安全。"
 				read -e -p "请输入需要阻止的端口: " frps_port
 				block_host_port "$frps_port" "$ipv4_address"
 				;;
 
 			00)
-				send_stats "Refresh FRP service status"
+				send_stats "刷新FRP服务状态"
 				echo "已经刷新FRP服务状态"
 				;;
 
@@ -4445,7 +4445,7 @@ frpc_panel() {
 		check_docker_image_update $docker_name
 		echo -e "FRP客户端 $check_frp $update_status"
 		echo "与服务端对接，对接后可创建内网穿透服务到互联网访问"
-		echo "Official website introduction:${gh_https_url}github.com/fatedier/frp/"
+		echo "官网介绍: ${gh_https_url}github.com/fatedier/frp/"
 		echo "视频教学: https://www.bilibili.com/video/BV1yMw6e2EwL?t=173.9"
 		echo "------------------------"
 		if [ -d "/home/frp/" ]; then
@@ -4454,13 +4454,13 @@ frpc_panel() {
 		fi
 		echo ""
 		echo "------------------------"
-		echo "1. Install 2. Update 3. Uninstall"
+		echo "1. 安装               2. 更新               3. 卸载"
 		echo "------------------------"
 		echo "4. 添加对外服务       5. 删除对外服务       6. 手动配置服务"
 		echo "------------------------"
 		echo "0. 返回上一级选单"
 		echo "------------------------"
-		read -e -p "Enter your selection:" choice
+		read -e -p "输入你的选择: " choice
 		case $choice in
 			1)
 				install jq grep ss
@@ -4468,7 +4468,7 @@ frpc_panel() {
 				configure_frpc
 
 				add_app_id
-				echo "The FRP client has been installed"
+				echo "FRP客户端已经安装完成"
 				;;
 			2)
 				crontab -l | grep -v 'frpc' | crontab - > /dev/null 2>&1
@@ -4478,7 +4478,7 @@ frpc_panel() {
 				donlond_frp frpc
 
 				add_app_id
-				echo "The FRP client has been updated"
+				echo "FRP客户端已经更新完成"
 				;;
 
 			3)
@@ -4529,74 +4529,74 @@ yt_menu_pro() {
 	while true; do
 
 		if [ -x "/usr/local/bin/yt-dlp" ]; then
-		   local YTDLP_STATUS="${gl_lv}Installed${gl_bai}"
+		   local YTDLP_STATUS="${gl_lv}已安装${gl_bai}"
 		else
-		   local YTDLP_STATUS="${gl_hui}Not installed${gl_bai}"
+		   local YTDLP_STATUS="${gl_hui}未安装${gl_bai}"
 		fi
 
 		clear
-		send_stats "yt-dlp download tool"
+		send_stats "yt-dlp 下载工具"
 		echo -e "yt-dlp $YTDLP_STATUS"
-		echo -e "yt-dlp is a powerful video download tool that supports thousands of sites such as YouTube, Bilibili, Twitter, etc."
-		echo -e "Official website address:${gh_https_url}github.com/yt-dlp/yt-dlp"
+		echo -e "yt-dlp 是一个功能强大的视频下载工具，支持 YouTube、Bilibili、Twitter 等数千站点。"
+		echo -e "官网地址：${gh_https_url}github.com/yt-dlp/yt-dlp"
 		echo "-------------------------"
-		echo "Downloaded video list:"
-		ls -td "$VIDEO_DIR"/*/ 2>/dev/null || echo "(None yet)"
+		echo "已下载视频列表:"
+		ls -td "$VIDEO_DIR"/*/ 2>/dev/null || echo "（暂无）"
 		echo "-------------------------"
-		echo "1. Install 2. Update 3. Uninstall"
+		echo "1.  安装               2.  更新               3.  卸载"
 		echo "-------------------------"
-		echo "5. Single video download 6. Batch video download 7. Custom parameter download"
-		echo "8. Download as MP3 audio 9. Delete video directory 10. Cookie management (under development)"
+		echo "5.  单个视频下载       6.  批量视频下载       7.  自定义参数下载"
+		echo "8.  下载为MP3音频      9.  删除视频目录       10. Cookie管理（开发中）"
 		echo "-------------------------"
-		echo "0. Return to the previous menu"
+		echo "0. 返回上一级选单"
 		echo "-------------------------"
-		read -e -p "Please enter option number:" choice
+		read -e -p "请输入选项编号: " choice
 
 		case $choice in
 			1)
-				send_stats "Installing yt-dlp..."
-				echo "Installing yt-dlp..."
+				send_stats "正在安装 yt-dlp..."
+				echo "正在安装 yt-dlp..."
 				install ffmpeg
 				curl -L ${gh_https_url}github.com/KUAILESHANGWEI/kejidalao/releases/download/third-party-assets/yt-dlp -o /usr/local/bin/yt-dlp
 				chmod a+rx /usr/local/bin/yt-dlp
 
 				add_app_id
-				echo "The installation is complete. Press any key to continue..."
+				echo "安装完成。按任意键继续..."
 				read ;;
 			2)
-				send_stats "Updating yt-dlp..."
-				echo "Updating yt-dlp..."
+				send_stats "正在更新 yt-dlp..."
+				echo "正在更新 yt-dlp..."
 				yt-dlp -U
 
 				add_app_id
-				echo "Update completed. Press any key to continue..."
+				echo "更新完成。按任意键继续..."
 				read ;;
 			3)
-				send_stats "Uninstalling yt-dlp..."
-				echo "Uninstalling yt-dlp..."
+				send_stats "正在卸载 yt-dlp..."
+				echo "正在卸载 yt-dlp..."
 				rm -f /usr/local/bin/yt-dlp
 
 				sed -i "/\b${app_id}\b/d" /home/docker/appno.txt
-				echo "Uninstallation completed. Press any key to continue..."
+				echo "卸载完成。按任意键继续..."
 				read ;;
 			5)
-				send_stats "Single video download"
-				read -e -p "Please enter video link:" url
+				send_stats "单个视频下载"
+				read -e -p "请输入视频链接: " url
 				yt-dlp -P "$VIDEO_DIR" -f "bv*+ba/b" --merge-output-format mp4 \
 					--write-subs --sub-langs all \
 					--write-thumbnail --embed-thumbnail \
 					--write-info-json \
 					-o "$VIDEO_DIR/%(title)s/%(title)s.%(ext)s" \
 					--no-overwrites --no-post-overwrites "$url"
-				read -e -p "Download completed, press any key to continue..." ;;
+				read -e -p "下载完成，按任意键继续..." ;;
 			6)
-				send_stats "Batch video download"
+				send_stats "批量视频下载"
 				install nano
 				if [ ! -f "$URL_FILE" ]; then
-				  echo -e "# Enter multiple video link addresses\n# https://www.bilibili.com/bangumi/play/ep733316?spm_id_from=333.337.0.0&from_spmid=666.25.episode.0" > "$URL_FILE"
+				  echo -e "# 输入多个视频链接地址\n# https://www.bilibili.com/bangumi/play/ep733316?spm_id_from=333.337.0.0&from_spmid=666.25.episode.0" > "$URL_FILE"
 				fi
 				nano $URL_FILE
-				echo "Start batch download now..."
+				echo "现在开始批量下载..."
 				yt-dlp -P "$VIDEO_DIR" -f "bv*+ba/b" --merge-output-format mp4 \
 					--write-subs --sub-langs all \
 					--write-thumbnail --embed-thumbnail \
@@ -4604,31 +4604,31 @@ yt_menu_pro() {
 					-a "$URL_FILE" \
 					-o "$VIDEO_DIR/%(title)s/%(title)s.%(ext)s" \
 					--no-overwrites --no-post-overwrites
-				read -e -p "Batch download completed, press any key to continue..." ;;
+				read -e -p "批量下载完成，按任意键继续..." ;;
 			7)
-				send_stats "Custom video download"
-				read -e -p "Please enter the complete yt-dlp parameters (excluding yt-dlp):" custom
+				send_stats "自定义视频下载"
+				read -e -p "请输入完整 yt-dlp 参数（不含 yt-dlp）: " custom
 				yt-dlp -P "$VIDEO_DIR" $custom \
 					--write-subs --sub-langs all \
 					--write-thumbnail --embed-thumbnail \
 					--write-info-json \
 					-o "$VIDEO_DIR/%(title)s/%(title)s.%(ext)s" \
 					--no-overwrites --no-post-overwrites
-				read -e -p "Execution completed, press any key to continue..." ;;
+				read -e -p "执行完成，按任意键继续..." ;;
 			8)
-				send_stats "MP3 download"
-				read -e -p "Please enter video link:" url
+				send_stats "MP3下载"
+				read -e -p "请输入视频链接: " url
 				yt-dlp -P "$VIDEO_DIR" -x --audio-format mp3 \
 					--write-subs --sub-langs all \
 					--write-thumbnail --embed-thumbnail \
 					--write-info-json \
 					-o "$VIDEO_DIR/%(title)s/%(title)s.%(ext)s" \
 					--no-overwrites --no-post-overwrites "$url"
-				read -e -p "Audio download complete, press any key to continue..." ;;
+				read -e -p "音频下载完成，按任意键继续..." ;;
 
 			9)
-				send_stats "Delete video"
-				read -e -p "Please enter the name of the deleted video:" rmdir
+				send_stats "删除视频"
+				read -e -p "请输入删除视频名称: " rmdir
 				rm -rf "$VIDEO_DIR/$rmdir"
 				;;
 			*)
@@ -4664,7 +4664,7 @@ set_timedate() {
 
 
 
-# Fix dpkg interruption problem
+# 修复dpkg中断问题
 fix_dpkg() {
 	pkill -9 -f 'apt|dpkg'
 	rm -f /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock
@@ -4673,7 +4673,7 @@ fix_dpkg() {
 
 
 linux_update() {
-	echo -e "${gl_kjlan}System update in progress...${gl_bai}"
+	echo -e "${gl_kjlan}正在系统更新...${gl_bai}"
 	if command -v dnf &>/dev/null; then
 		dnf -y update
 	elif command -v yum &>/dev/null; then
@@ -4692,7 +4692,7 @@ linux_update() {
 	elif command -v opkg &>/dev/null; then
 		opkg update
 	else
-		echo "Unknown package manager!"
+		echo "未知的包管理器!"
 		return
 	fi
 }
@@ -4700,7 +4700,7 @@ linux_update() {
 
 
 linux_clean() {
-	echo -e "${gl_kjlan}System cleaning in progress...${gl_bai}"
+	echo -e "${gl_kjlan}正在系统清理...${gl_bai}"
 	if command -v dnf &>/dev/null; then
 		rpm --rebuilddb
 		dnf autoremove -y
@@ -4729,13 +4729,13 @@ linux_clean() {
 		journalctl --vacuum-size=500M
 
 	elif command -v apk &>/dev/null; then
-		echo "Clean package manager cache..."
+		echo "清理包管理器缓存..."
 		apk cache clean
-		echo "Delete system log..."
+		echo "删除系统日志..."
 		rm -rf /var/log/*
-		echo "Delete APK cache..."
+		echo "删除APK缓存..."
 		rm -rf /var/cache/apk/*
-		echo "Delete temporary files..."
+		echo "删除临时文件..."
 		rm -rf /tmp/*
 
 	elif command -v pacman &>/dev/null; then
@@ -4753,23 +4753,23 @@ linux_clean() {
 		journalctl --vacuum-size=500M
 
 	elif command -v opkg &>/dev/null; then
-		echo "Delete system log..."
+		echo "删除系统日志..."
 		rm -rf /var/log/*
-		echo "Delete temporary files..."
+		echo "删除临时文件..."
 		rm -rf /tmp/*
 
 	elif command -v pkg &>/dev/null; then
-		echo "Clean up unused dependencies..."
+		echo "清理未使用的依赖..."
 		pkg autoremove -y
-		echo "Clean package manager cache..."
+		echo "清理包管理器缓存..."
 		pkg clean -y
-		echo "Delete system log..."
+		echo "删除系统日志..."
 		rm -rf /var/log/*
-		echo "Delete temporary files..."
+		echo "删除临时文件..."
 		rm -rf /tmp/*
 
 	else
-		echo "Unknown package manager!"
+		echo "未知的包管理器!"
 		return
 	fi
 	return
@@ -4779,13 +4779,13 @@ linux_clean() {
 
 bbr_on() {
 
-# Unified writing to sysctl.d to prevent conflicts with the kernel tuning module
+# 统一写入到 sysctl.d 以防与内核调优模块打架
 local CONF="/etc/sysctl.d/99-kejilion-bbr.conf"
 mkdir -p /etc/sysctl.d
 echo "net.core.default_qdisc=fq" > "$CONF"
 echo "net.ipv4.tcp_congestion_control=bbr" >> "$CONF"
 
-# Clean up remnants of old sysctl.conf that may cause conflicts
+# 清理可能导致冲突的旧版 sysctl.conf 残留
 sed -i '/net.ipv4.tcp_congestion_control/d' /etc/sysctl.conf 2>/dev/null
 sed -i '/net.core.default_qdisc/d' /etc/sysctl.conf 2>/dev/null
 
@@ -4823,26 +4823,26 @@ chattr +i /etc/resolv.conf
 
 set_dns_ui() {
 root_use
-send_stats "Optimize DNS"
+send_stats "优化DNS"
 while true; do
 	clear
-	echo "Optimize DNS address"
+	echo "优化DNS地址"
 	echo "------------------------"
-	echo "Current DNS address"
+	echo "当前DNS地址"
 	cat /etc/resolv.conf
 	echo "------------------------"
 	echo ""
-	echo "1. Foreign DNS optimization:"
+	echo "1. 国外DNS优化: "
 	echo " v4: 1.1.1.1 8.8.8.8"
 	echo " v6: 2606:4700:4700::1111 2001:4860:4860::8888"
-	echo "2. Domestic DNS optimization:"
+	echo "2. 国内DNS优化: "
 	echo " v4: 223.5.5.5 183.60.83.19"
 	echo " v6: 2400:3200::1 2400:da00::6666"
-	echo "3. Manually edit DNS configuration"
+	echo "3. 手动编辑DNS配置"
 	echo "------------------------"
-	echo "0. Return to the previous menu"
+	echo "0. 返回上一级选单"
 	echo "------------------------"
-	read -e -p "Please enter your choice:" Limiting
+	read -e -p "请输入你的选择: " Limiting
 	case "$Limiting" in
 	  1)
 		local dns1_ipv4="1.1.1.1"
@@ -4850,7 +4850,7 @@ while true; do
 		local dns1_ipv6="2606:4700:4700::1111"
 		local dns2_ipv6="2001:4860:4860::8888"
 		set_dns
-		send_stats "Foreign DNS optimization"
+		send_stats "国外DNS优化"
 		;;
 	  2)
 		local dns1_ipv4="223.5.5.5"
@@ -4858,14 +4858,14 @@ while true; do
 		local dns1_ipv6="2400:3200::1"
 		local dns2_ipv6="2400:da00::6666"
 		set_dns
-		send_stats "Domestic DNS optimization"
+		send_stats "国内DNS优化"
 		;;
 	  3)
 		install nano
 		chattr -i /etc/resolv.conf
 		nano /etc/resolv.conf
 		chattr +i /etc/resolv.conf
-		send_stats "Manually edit DNS configuration"
+		send_stats "手动编辑DNS配置"
 		;;
 	  *)
 		break
@@ -4919,7 +4919,7 @@ new_ssh_port() {
   open_port $new_port
   remove iptables-persistent ufw firewalld iptables-services > /dev/null 2>&1
 
-  echo "The SSH port has been modified to:$new_port"
+  echo "SSH 端口已修改为: $new_port"
 
   sleep 1
 
@@ -4935,7 +4935,7 @@ sshkey_on() {
 		   -e 's/^\s*#\?\s*ChallengeResponseAuthentication .*/ChallengeResponseAuthentication no/' /etc/ssh/sshd_config
 	rm -rf /etc/ssh/sshd_config.d/* /etc/ssh/ssh_config.d/*
 	restart_ssh
-	echo -e "${gl_lv}The user key login mode is turned on and the password login mode is turned off. Reconnection will take effect.${gl_bai}"
+	echo -e "${gl_lv}用户密钥登录模式已开启，已关闭密码登录模式，重连将会生效${gl_bai}"
 
 }
 
@@ -4953,7 +4953,7 @@ add_sshkey() {
 	chmod 600 "${HOME}/.ssh/authorized_keys"
 
 	ip_address
-	echo -e "The private key information has been generated. Be sure to copy and save it. It can be saved as${gl_huang}${ipv4_address}_ssh.key${gl_bai}file for future SSH logins"
+	echo -e "私钥信息已生成，务必复制保存，可保存成 ${gl_huang}${ipv4_address}_ssh.key${gl_bai} 文件，用于以后的SSH登录"
 
 	echo "--------------------------------"
 	cat "${HOME}/.ssh/sshkey"
@@ -4974,21 +4974,21 @@ import_sshkey() {
 	local auth_keys="${ssh_dir}/authorized_keys"
 
 	if [[ -z "$public_key" ]]; then
-		read -e -p "Please enter the contents of your SSH public key (usually starts with 'ssh-rsa' or 'ssh-ed25519'):" public_key
+		read -e -p "请输入您的SSH公钥内容（通常以 'ssh-rsa' 或 'ssh-ed25519' 开头）: " public_key
 	fi
 
 	if [[ -z "$public_key" ]]; then
-		echo -e "${gl_hong}Error: Public key content not entered.${gl_bai}"
+		echo -e "${gl_hong}错误：未输入公钥内容。${gl_bai}"
 		return 1
 	fi
 
 	if [[ ! "$public_key" =~ ^ssh-(rsa|ed25519|ecdsa) ]]; then
-		echo -e "${gl_hong}Error: Does not look like a legitimate SSH public key.${gl_bai}"
+		echo -e "${gl_hong}错误：看起来不像合法的 SSH 公钥。${gl_bai}"
 		return 1
 	fi
 
 	if grep -Fxq "$public_key" "$auth_keys" 2>/dev/null; then
-		echo "The public key already exists, no need to add it again"
+		echo "该公钥已存在，无需重复添加"
 		return 0
 	fi
 
@@ -5012,12 +5012,12 @@ fetch_remote_ssh_keys() {
 	local temp_file
 
 	if [[ -z "${keys_url}" ]]; then
-		read -e -p "Please enter your remote public key URL:" keys_url
+		read -e -p "请输入您的远端公钥URL： " keys_url
 	fi
 
-	echo "This script will pull the SSH public key from the remote URL and add it to${authorized_keys}"
+	echo "此脚本将从远程 URL 拉取 SSH 公钥，并添加到 ${authorized_keys}"
 	echo ""
-	echo "Remote public key address:"
+	echo "远程公钥地址："
 	echo "  ${keys_url}"
 	echo ""
 
@@ -5094,11 +5094,11 @@ fetch_github_ssh_keys() {
 	local base_dir="${2:-$HOME}"
 
 	echo "操作前，请确保您已在 GitHub 账户中添加了 SSH 公钥："
-	echo "1. Log in${gh_https_url}github.com/settings/keys"
+	echo "  1. 登录 ${gh_https_url}github.com/settings/keys"
 	echo "  2. 点击 New SSH key 或 Add SSH key"
 	echo "  3. Title 可随意填写（例如：Home Laptop 2026）"
 	echo "  4. 将本地公钥内容（通常是 ~/.ssh/id_ed25519.pub 或 id_rsa.pub 的全部内容）粘贴到 Key 字段"
-	echo "5. Click Add SSH key to complete the addition."
+	echo "  5. 点击 Add SSH key 完成添加"
 	echo ""
 	echo "添加完成后，GitHub 会公开提供您的所有公钥，地址为："
 	echo "  ${gh_https_url}github.com/您的用户名.keys"
@@ -5128,7 +5128,7 @@ sshkey_panel() {
 	  clear
 	  local REAL_STATUS=$(grep -i "^PubkeyAuthentication" /etc/ssh/sshd_config | tr '[:upper:]' '[:lower:]')
 	  if [[ "$REAL_STATUS" =~ "yes" ]]; then
-		  IS_KEY_ENABLED="${gl_lv}Enabled${gl_bai}"
+		  IS_KEY_ENABLED="${gl_lv}已启用${gl_bai}"
 	  else
 	  	  IS_KEY_ENABLED="${gl_hui}未启用${gl_bai}"
 	  fi
@@ -5594,7 +5594,7 @@ dd_xitong() {
 
 bbrv3() {
 		  root_use
-		  send_stats "bbrv3 management"
+		  send_stats "bbrv3管理"
 
 		  xanmod_add_repo() {
 				local keyring="/usr/share/keyrings/xanmod-archive-keyring.gpg"
@@ -5614,21 +5614,21 @@ bbrv3() {
 					os_codename="releases"
 				fi
 				
-				# Officially, apt support for jammy, focal, bullseye and other old systems has been completely removed.
+				# 官方已彻底移除对 jammy, focal, bullseye 等老系统的 apt 支持
 				if echo "jammy focal bullseye buster" | grep -qw "$os_codename" || [ "$os_codename" = "releases" ]; then
 					echo -e "${gl_hong}XanMod 官方已停止对当前系统($os_codename)的 APT 源支持，请升级至 Debian12 / Ubuntu24 或更高版本。${gl_bai}"
 					return 1
 				fi
 
 				if [ -z "$os_codename" ]; then
-					echo "Unable to obtain system codename, unable to configure XanMod source"
+					echo "无法获取系统代号，无法配置XanMod源"
 					return 1
 				fi
 
 				install wget gnupg ca-certificates
 				mkdir -p /usr/share/keyrings /etc/apt/sources.list.d
 				if ! wget -qO - "$key_url" | gpg --dearmor -o "$keyring" --yes; then
-					echo "Official key download failed, try alternate download source..."
+					echo "官方密钥下载失败，尝试备用下载源..."
 					wget -qO - "$fallback_key_url" | gpg --dearmor -o "$keyring" --yes || return 1
 				fi
 				chmod 644 "$keyring"
@@ -5672,7 +5672,7 @@ bbrv3() {
 						package="${prefix}-x64v${level}"
 						if xanmod_package_available "$package"; then
 							if [ "$level" != "$psabi_level" ] || [ "$prefix" = "linux-xanmod-lts" ]; then
-								echo "The appropriate installation package has been automatically matched:$package" >&2
+								echo "已自动匹配合适安装包: $package" >&2
 							fi
 							printf '%s\n' "$package"
 							return 0
@@ -5681,7 +5681,7 @@ bbrv3() {
 					done
 				done
 
-				echo "The XanMod kernel package adapted to this CPU was not found in the software source." >&2
+				echo "软件源中未找到适配此CPU的XanMod内核包" >&2
 				return 1
 		  }
 
@@ -5696,7 +5696,7 @@ bbrv3() {
 				check_disk_space 3
 				check_swap
 				xanmod_add_repo || {
-					echo "XanMod official warehouse configuration failed, please try again later."
+					echo "XanMod官方仓库配置失败，请稍后重试"
 					return 1
 				}
 
@@ -5708,12 +5708,12 @@ bbrv3() {
 				apt update -y
 				if [ "$action" = "update" ]; then
 					apt install -y --only-upgrade "$package" || apt install -y "$package" || {
-						echo "XanMod kernel update failed, please check the software source or try again later"
+						echo "XanMod内核更新失败，请检查软件源或稍后重试"
 						return 1
 					}
 				else
 					apt install -y "$package" || {
-						echo "XanMod kernel installation failed, please check the software source or try again later"
+						echo "XanMod内核安装失败，请检查软件源或稍后重试"
 						return 1
 					}
 				fi
@@ -5722,7 +5722,7 @@ bbrv3() {
 					echo "BBR3参数写入失败，请检查系统配置"
 					return 1
 				}
-				echo "XanMod BBRv3 kernel processing completed. Take effect after restart"
+				echo "XanMod BBRv3内核处理完成。重启后生效"
 				server_reboot
 		  }
 
@@ -5732,7 +5732,7 @@ bbrv3() {
 				update-grub 2>/dev/null || true
 				rm -f /etc/apt/sources.list.d/xanmod-release.list
 				rm -f /usr/share/keyrings/xanmod-archive-keyring.gpg
-				echo "The XanMod kernel has been uninstalled. Take effect after restart"
+				echo "XanMod内核已卸载。重启后生效"
 				server_reboot
 		  }
 
@@ -5746,12 +5746,12 @@ bbrv3() {
 		  if [ -r /etc/os-release ]; then
 			. /etc/os-release
 			if [ "$ID" != "debian" ] && [ "$ID" != "ubuntu" ]; then
-				echo "The current environment does not support it. Only Debian and Ubuntu systems are supported."
+				echo "当前环境不支持，仅支持Debian和Ubuntu系统"
 				break_end
 				linux_Settings
 			fi
 		  else
-			echo "Unable to determine operating system type"
+			echo "无法确定操作系统类型"
 			break_end
 			linux_Settings
 		  fi
@@ -5760,17 +5760,17 @@ bbrv3() {
 			while true; do
 				  clear
 				  local kernel_version=$(uname -r)
-				  echo "You have xanmod's BBRv3 kernel installed"
-				  echo "Current kernel version:$kernel_version"
+				  echo "您已安装xanmod的BBRv3内核"
+				  echo "当前内核版本: $kernel_version"
 
 				  echo ""
-				  echo "Kernel management"
+				  echo "内核管理"
 				  echo "------------------------"
-				  echo "1. Update BBRv3 kernel 2. Uninstall BBRv3 kernel"
+				  echo "1. 更新BBRv3内核              2. 卸载BBRv3内核"
 				  echo "------------------------"
-				  echo "0. Return to the previous menu"
+				  echo "0. 返回上一级选单"
 				  echo "------------------------"
-				  read -e -p "Please enter your choice:" sub_choice
+				  read -e -p "请输入你的选择: " sub_choice
 
 				  case $sub_choice in
 					  1)
@@ -5788,23 +5788,23 @@ bbrv3() {
 		else
 
 		  clear
-		  echo "Set up BBR3 acceleration"
-		  echo "Video introduction: https://www.bilibili.com/video/BV14K421x7BS?t=0.1"
+		  echo "设置BBR3加速"
+		  echo "视频介绍: https://www.bilibili.com/video/BV14K421x7BS?t=0.1"
 		  echo "------------------------------------------------"
-		  echo "Only supports Debian/Ubuntu"
-		  echo "Please back up your data and we will upgrade your Linux kernel and enable BBR3."
+		  echo "仅支持Debian/Ubuntu"
+		  echo "请备份数据，将为你升级Linux内核开启BBR3"
 		  echo "------------------------------------------------"
-		  read -e -p "Are you sure you want to continue? (Y/N):" choice
+		  read -e -p "确定继续吗？(Y/N): " choice
 
 		  case "$choice" in
 			[Yy])
 			xanmod_install_or_update install
 			  ;;
 			[Nn])
-			  echo "Canceled"
+			  echo "已取消"
 			  ;;
 			*)
-			  echo "Invalid selection, please enter Y or N."
+			  echo "无效的选择，请输入 Y 或 N。"
 			  ;;
 		  esac
 		fi
@@ -5812,40 +5812,40 @@ bbrv3() {
 }
 
 elrepo_install() {
-	# Import the ELRepo GPG public key
-	echo "Import the ELRepo GPG public key..."
+	# 导入 ELRepo GPG 公钥
+	echo "导入 ELRepo GPG 公钥..."
 	rpm --import https://www.elrepo.org/RPM-GPG-KEY-elrepo.org
-	# Check system version
+	# 检测系统版本
 	local os_version=$(rpm -q --qf "%{VERSION}" $(rpm -qf /etc/os-release) 2>/dev/null | awk -F '.' '{print $1}')
 	local os_name=$(awk -F= '/^NAME/{print $2}' /etc/os-release)
-	# Make sure we're running on a supported operating system
+	# 确保我们在一个支持的操作系统上运行
 	if [[ "$os_name" != *"Red Hat"* && "$os_name" != *"AlmaLinux"* && "$os_name" != *"Rocky"* && "$os_name" != *"Oracle"* && "$os_name" != *"CentOS"* ]]; then
-		echo "Unsupported operating systems:$os_name"
+		echo "不支持的操作系统：$os_name"
 		break_end
 		linux_Settings
 	fi
-	# Print detected operating system information
-	echo "Detected operating systems:$os_name $os_version"
-	# Install the corresponding ELRepo warehouse configuration according to the system version
+	# 打印检测到的操作系统信息
+	echo "检测到的操作系统: $os_name $os_version"
+	# 根据系统版本安装对应的 ELRepo 仓库配置
 	if [[ "$os_version" == 8 ]]; then
-		echo "Installing the ELRepo repository configuration (version 8)..."
+		echo "安装 ELRepo 仓库配置 (版本 8)..."
 		yum -y install https://www.elrepo.org/elrepo-release-8.el8.elrepo.noarch.rpm
 	elif [[ "$os_version" == 9 ]]; then
-		echo "Installing the ELRepo repository configuration (version 9)..."
+		echo "安装 ELRepo 仓库配置 (版本 9)..."
 		yum -y install https://www.elrepo.org/elrepo-release-9.el9.elrepo.noarch.rpm
 	elif [[ "$os_version" == 10 ]]; then
-		echo "Installing the ELRepo repository configuration (version 10)..."
+		echo "安装 ELRepo 仓库配置 (版本 10)..."
 		yum -y install https://www.elrepo.org/elrepo-release-10.el10.elrepo.noarch.rpm
 	else
-		echo "Unsupported system versions:$os_version"
+		echo "不支持的系统版本：$os_version"
 		break_end
 		linux_Settings
 	fi
-	# Enable the ELRepo kernel repository and install the latest mainline kernel
-	echo "Enable the ELRepo kernel repository and install the latest mainline kernel..."
+	# 启用 ELRepo 内核仓库并安装最新的主线内核
+	echo "启用 ELRepo 内核仓库并安装最新的主线内核..."
 	# yum -y --enablerepo=elrepo-kernel install kernel-ml
 	yum --nogpgcheck -y --enablerepo=elrepo-kernel install kernel-ml
-	echo "Installed ELRepo repository configuration and updated to latest mainline kernel."
+	echo "已安装 ELRepo 仓库配置并更新到最新主线内核。"
 	server_reboot
 
 }
@@ -5853,37 +5853,37 @@ elrepo_install() {
 
 elrepo() {
 		  root_use
-		  send_stats "Red Hat Kernel Management"
+		  send_stats "红帽内核管理"
 		  if uname -r | grep -q 'elrepo'; then
 			while true; do
 				  clear
 				  kernel_version=$(uname -r)
-				  echo "You have installed elrepo kernel"
-				  echo "Current kernel version:$kernel_version"
+				  echo "您已安装elrepo内核"
+				  echo "当前内核版本: $kernel_version"
 
 				  echo ""
-				  echo "Kernel management"
+				  echo "内核管理"
 				  echo "------------------------"
-				  echo "1. Update elrepo kernel 2. Uninstall elrepo kernel"
+				  echo "1. 更新elrepo内核              2. 卸载elrepo内核"
 				  echo "------------------------"
-				  echo "0. Return to the previous menu"
+				  echo "0. 返回上一级选单"
 				  echo "------------------------"
-				  read -e -p "Please enter your choice:" sub_choice
+				  read -e -p "请输入你的选择: " sub_choice
 
 				  case $sub_choice in
 					  1)
 						dnf remove -y elrepo-release
 						rpm -qa | grep elrepo | grep kernel | xargs rpm -e --nodeps
 						elrepo_install
-						send_stats "Update Red Hat Kernel"
+						send_stats "更新红帽内核"
 						server_reboot
 
 						  ;;
 					  2)
 						dnf remove -y elrepo-release
 						rpm -qa | grep elrepo | grep kernel | xargs rpm -e --nodeps
-						echo "The elrepo kernel has been uninstalled. Take effect after restart"
-						send_stats "Uninstall Red Hat Kernel"
+						echo "elrepo内核已卸载。重启后生效"
+						send_stats "卸载红帽内核"
 						server_reboot
 
 						  ;;
@@ -5896,26 +5896,26 @@ elrepo() {
 		else
 
 		  clear
-		  echo "Please back up your data and we will upgrade the Linux kernel for you."
-		  echo "Video introduction: https://www.bilibili.com/video/BV1mH4y1w7qA?t=529.2"
+		  echo "请备份数据，将为你升级Linux内核"
+		  echo "视频介绍: https://www.bilibili.com/video/BV1mH4y1w7qA?t=529.2"
 		  echo "------------------------------------------------"
-		  echo "Only supports Red Hat series distributions CentOS/RedHat/Alma/Rocky/oracle"
-		  echo "Upgrading the Linux kernel can improve system performance and security. It is recommended to try it if possible, and upgrade the production environment with caution!"
+		  echo "仅支持红帽系列发行版 CentOS/RedHat/Alma/Rocky/oracle "
+		  echo "升级Linux内核可提升系统性能和安全，建议有条件的尝试，生产环境谨慎升级！"
 		  echo "------------------------------------------------"
-		  read -e -p "Are you sure you want to continue? (Y/N):" choice
+		  read -e -p "确定继续吗？(Y/N): " choice
 
 		  case "$choice" in
 			[Yy])
 			  check_swap
 			  elrepo_install
-			  send_stats "Upgrade Red Hat kernel"
+			  send_stats "升级红帽内核"
 			  server_reboot
 			  ;;
 			[Nn])
-			  echo "Canceled"
+			  echo "已取消"
 			  ;;
 			*)
-			  echo "Invalid selection, please enter Y or N."
+			  echo "无效的选择，请输入 Y 或 N。"
 			  ;;
 		  esac
 		fi
@@ -5926,7 +5926,7 @@ elrepo() {
 
 
 clamav_freshclam() {
-	echo -e "${gl_kjlan}Updating virus database...${gl_bai}"
+	echo -e "${gl_kjlan}正在更新病毒库...${gl_bai}"
 	docker run --rm \
 		--name clamav \
 		--mount source=clam_db,target=/var/lib/clamav \
@@ -5936,19 +5936,19 @@ clamav_freshclam() {
 
 clamav_scan() {
 	if [ $# -eq 0 ]; then
-		echo "Please specify the directories to scan."
+		echo "请指定要扫描的目录。"
 		return
 	fi
 
-	echo -e "${gl_kjlan}Scanning directory $@...${gl_bai}"
+	echo -e "${gl_kjlan}正在扫描目录$@... ${gl_bai}"
 
-	# Build mount parameters
+	# 构建 mount 参数
 	local MOUNT_PARAMS=""
 	for dir in "$@"; do
 		MOUNT_PARAMS+="--mount type=bind,source=${dir},target=/mnt/host${dir} "
 	done
 
-	# Build clamscan command parameters
+	# 构建 clamscan 命令参数
 	local SCAN_PARAMS=""
 	for dir in "$@"; do
 		SCAN_PARAMS+="/mnt/host${dir} "
@@ -5957,7 +5957,7 @@ clamav_scan() {
 	mkdir -p /home/docker/clamav/log/ > /dev/null 2>&1
 	> /home/docker/clamav/log/scan.log > /dev/null 2>&1
 
-	# Execute Docker command
+	# 执行 Docker 命令
 	docker run --rm \
 		--name clamav \
 		--mount source=clam_db,target=/var/lib/clamav \
@@ -5967,7 +5967,7 @@ clamav_scan() {
 		clamscan -r --log=/var/log/clamav/scan.log $SCAN_PARAMS
 
 	echo -e "${gl_lv}$@ 扫描完成，病毒报告存放在${gl_huang}/home/docker/clamav/log/scan.log${gl_bai}"
-	echo -e "${gl_lv}If there is a virus please${gl_huang}scan.log${gl_lv}Search the file for the FOUND keyword to confirm the location of the virus${gl_bai}"
+	echo -e "${gl_lv}如果有病毒请在${gl_huang}scan.log${gl_lv}文件中搜索FOUND关键字确认病毒位置 ${gl_bai}"
 
 }
 
@@ -5979,23 +5979,23 @@ clamav_scan() {
 
 clamav() {
 		  root_use
-		  send_stats "Virus scan management"
+		  send_stats "病毒扫描管理"
 		  while true; do
 				clear
-				echo "clamav virus scanning tool"
-				echo "Video introduction: https://www.bilibili.com/video/BV1TqvZe4EQm?t=0.1"
+				echo "clamav病毒扫描工具"
+				echo "视频介绍: https://www.bilibili.com/video/BV1TqvZe4EQm?t=0.1"
 				echo "------------------------"
-				echo "It is an open source antivirus software tool mainly used to detect and remove various types of malware."
-				echo "Includes viruses, Trojan horses, spyware, malicious scripts and other harmful software."
+				echo "是一个开源的防病毒软件工具，主要用于检测和删除各种类型的恶意软件。"
+				echo "包括病毒、特洛伊木马、间谍软件、恶意脚本和其他有害软件。"
 				echo "------------------------"
-				echo -e "${gl_lv}1. Full scan${gl_bai}             ${gl_huang}2. Scan important directories${gl_bai}            ${gl_kjlan}3. Custom directory scanning${gl_bai}"
+				echo -e "${gl_lv}1. 全盘扫描 ${gl_bai}             ${gl_huang}2. 重要目录扫描 ${gl_bai}            ${gl_kjlan} 3. 自定义目录扫描 ${gl_bai}"
 				echo "------------------------"
-				echo "0. Return to the previous menu"
+				echo "0. 返回上一级选单"
 				echo "------------------------"
-				read -e -p "Please enter your choice:" sub_choice
+				read -e -p "请输入你的选择: " sub_choice
 				case $sub_choice in
 					1)
-					  send_stats "Full scan"
+					  send_stats "全盘扫描"
 					  install_docker
 					  docker volume create clam_db > /dev/null 2>&1
 					  clamav_freshclam
@@ -6004,7 +6004,7 @@ clamav() {
 
 						;;
 					2)
-					  send_stats "Important directory scan"
+					  send_stats "重要目录扫描"
 					  install_docker
 					  docker volume create clam_db > /dev/null 2>&1
 					  clamav_freshclam
@@ -6012,8 +6012,8 @@ clamav() {
 					  break_end
 						;;
 					3)
-					  send_stats "Custom directory scan"
-					  read -e -p "Please enter the directories to scan, separated by spaces (for example: /etc /var /usr /home /root):" directories
+					  send_stats "自定义目录扫描"
+					  read -e -p "请输入要扫描的目录，用空格分隔（例如：/etc /var /usr /home /root）: " directories
 					  install_docker
 					  clamav_freshclam
 					  clamav_scan $directories
@@ -6029,18 +6029,18 @@ clamav() {
 
 
 # ============================================================================
-# Linux kernel tuning module (refactored version)
-# Unified core functions + scene differentiation parameters + persistence to configuration files + hardware adaptation
-# Replace the original optimize_high_performance / optimize_balanced / optimize_web_server / restore_defaults
+# Linux 内核调优模块（重构版）
+# 统一核心函数 + 场景差异化参数 + 持久化到配置文件 + 硬件自适应
+# 替换原 optimize_high_performance / optimize_balanced / optimize_web_server / restore_defaults
 # ============================================================================
 
-# Get memory size (MB)
+# 获取内存大小（MB）
 _get_mem_mb() {
 	awk '/MemTotal/{printf "%d", $2/1024}' /proc/meminfo
 }
 
-# Unified kernel tuning core functions
-# Parameters: $1 = mode name, $2 = scene (high/balanced/web/stream/game)
+# 统一内核调优核心函数
+# 参数: $1 = 模式名称, $2 = 场景 (high/balanced/web/stream/game)
 _kernel_optimize_core() {
 	local mode_name="$1"
 	local scene="${2:-high}"
@@ -6201,8 +6201,8 @@ net.ipv4.tcp_slow_start_after_idle = 0"
 	echo -e "${gl_lv}写入优化配置...${gl_bai}"
 	cat > "$CONF" << SYSCTL
 # kejilion 内核调优配置
-# 模式: $mode_name | 场景: $scene
-# 内存: ${MEM_MB}MB | 生成时间: $(date '+%Y-%m-%d %H:%M:%S')
+# Mode: $mode_name | Scene: $scene
+# Memory: ${MEM_MB}MB | Generation time: $(date '+%Y-%m-%d %H:%M:%S')
 
 # ── TCP 拥塞控制 ──
 net.core.default_qdisc = $QDISC
@@ -6343,7 +6343,7 @@ optimize_web_server() {
 
 # ── 还原默认设置（完全清理） ──
 restore_defaults() {
-	echo -e "${gl_lv}还原到默认设置...${gl_bai}"
+	echo -e "${gl_lv}Revert to default settings...${gl_bai}"
 
 	local CONF="/etc/sysctl.d/99-kejilion-optimize.conf"
 
@@ -6378,9 +6378,9 @@ Kernel_optimize() {
 	while true; do
 	  clear
 	  send_stats "Linux内核调优管理"
-	  local current_mode=$(grep "^# 模式:" /etc/sysctl.d/99-kejilion-optimize.conf 2>/dev/null | sed 's/# 模式: //' | awk -F'|' '{print $1}' | xargs)
+	  local current_mode=$(grep "^# Mode:" /etc/sysctl.d/99-kejilion-optimize.conf 2>/dev/null | sed 's/# 模式: //' | awk -F'|' '{print $1}' | xargs)
 	  [ -z "$current_mode" ] && [ -f /etc/sysctl.d/99-network-optimize.conf ] && current_mode="自动调优模式"
-	  echo "Linux system kernel parameter optimization"
+	  echo "Linux系统内核参数优化"
 	  if [ -n "$current_mode" ]; then
 		  echo -e "当前模式: ${gl_lv}${current_mode}${gl_bai}"
 	  else
@@ -7007,32 +7007,32 @@ list_connections() {
 add_connection() {
 	send_stats "添加新连接"
 	echo "创建新连接示例："
-	echo "- Connection name: my_server"
+	echo "  - 连接名称: my_server"
 	echo "  - IP地址: 192.168.1.100"
 	echo "  - 用户名: root"
 	echo "  - 端口: 22"
 	echo "------------------------"
 	read -e -p "请输入连接名称: " name
 
-	kj_ssh_read_host_user_port "请输入IP地址: " "Please enter username (default: root):" "Please enter the port number (default: 22):" "root" "22"
+	kj_ssh_read_host_user_port "请输入IP地址: " "请输入用户名 (默认: root): " "请输入端口号 (默认: 22): " "root" "22"
 	if ! kj_ssh_read_auth "$KEY_DIR/$name.key"; then
 		return
 	fi
 
 	echo "$name|$KJ_SSH_HOST|$KJ_SSH_USER|$KJ_SSH_PORT|$KJ_SSH_AUTH_SECRET" >> "$CONFIG_FILE"
-	echo "Connection saved!"
+	echo "连接已保存!"
 }
 
 
 
-# Delete connection
+# 删除连接
 delete_connection() {
-	send_stats "Delete connection"
-	read -e -p "Please enter the connection number to be deleted:" num
+	send_stats "删除连接"
+	read -e -p "请输入要删除的连接编号: " num
 
 	local connection=$(sed -n "${num}p" "$CONFIG_FILE")
 	if [[ -z "$connection" ]]; then
-		echo "Error: Corresponding connection not found."
+		echo "错误：未找到对应的连接。"
 		return
 	fi
 
@@ -7049,8 +7049,8 @@ delete_connection() {
 
 # 使用连接
 use_connection() {
-	send_stats "Use connection"
-	read -e -p "Please enter the connection number to use:" num
+	send_stats "使用连接"
+	read -e -p "请输入要使用的连接编号: " num
 
 	local connection=$(sed -n "${num}p" "$CONFIG_FILE")
 	if [[ -z "$connection" ]]; then
@@ -7062,41 +7062,41 @@ use_connection() {
 
 	echo "正在连接到 $name ($ip)..."
 	if [[ -f "$password_or_key" ]]; then
-		# Connect using a key
+		# 使用密钥连接
 		ssh -o StrictHostKeyChecking=no -i "$password_or_key" -p "$port" "$user@$ip"
 		if [[ $? -ne 0 ]]; then
 			echo "连接失败！请检查以下内容："
 			echo "1. 密钥文件路径是否正确：$password_or_key"
-			echo "2. Are the key file permissions correct (should be 600)."
+			echo "2. 密钥文件权限是否正确（应为 600）。"
 			echo "3. 目标服务器是否允许使用密钥登录。"
 		fi
 	else
 		# 使用密码连接
 		if ! command -v sshpass &> /dev/null; then
 			echo "错误：未安装 sshpass，请先安装 sshpass。"
-			echo "Installation method:"
+			echo "安装方法："
 			echo "  - Ubuntu/Debian: apt install sshpass"
 			echo "  - CentOS/RHEL: yum install sshpass"
 			return
 		fi
 		sshpass -p "$password_or_key" ssh -o StrictHostKeyChecking=no -p "$port" "$user@$ip"
 		if [[ $? -ne 0 ]]; then
-			echo "Connection failed! Please check the following:"
-			echo "1. Are the username and password correct?"
-			echo "2. Whether the target server allows password login."
-			echo "3. Whether the SSH service of the target server is running normally."
+			echo "连接失败！请检查以下内容："
+			echo "1. 用户名和密码是否正确。"
+			echo "2. 目标服务器是否允许密码登录。"
+			echo "3. 目标服务器的 SSH 服务是否正常运行。"
 		fi
 	fi
 }
 
 
 ssh_manager() {
-	send_stats "ssh remote connection tool"
+	send_stats "ssh远程连接工具"
 
 	CONFIG_FILE="$HOME/.ssh_connections"
 	KEY_DIR="$HOME/.ssh/ssh_manager_keys"
 
-	# Check if the configuration file and key directory exist, create them if they do not exist
+	# 检查配置文件和密钥目录是否存在，如果不存在则创建
 	if [[ ! -f "$CONFIG_FILE" ]]; then
 		touch "$CONFIG_FILE"
 	fi
@@ -7108,21 +7108,21 @@ ssh_manager() {
 
 	while true; do
 		clear
-		echo "SSH remote connection tool"
-		echo "Can connect to other Linux systems via SSH"
+		echo "SSH 远程连接工具"
+		echo "可以通过SSH连接到其他Linux系统上"
 		echo "------------------------"
 		list_connections
-		echo "1. Create a new connection 2. Use the connection 3. Delete the connection"
+		echo "1. 创建新连接        2. 使用连接        3. 删除连接"
 		echo "------------------------"
-		echo "0. Return to the previous menu"
+		echo "0. 返回上一级选单"
 		echo "------------------------"
-		read -e -p "Please enter your choice:" choice
+		read -e -p "请输入你的选择: " choice
 		case $choice in
 			1) add_connection ;;
 			2) use_connection ;;
 			3) delete_connection ;;
 			0) break ;;
-			*) echo "Invalid selection, please try again." ;;
+			*) echo "无效的选择，请重试。" ;;
 		esac
 	done
 }
@@ -7138,184 +7138,184 @@ ssh_manager() {
 
 
 
-# List available hard disk partitions
+# 列出可用的硬盘分区
 list_partitions() {
-	echo "Available hard drive partitions:"
+	echo "可用的硬盘分区："
 	lsblk -o NAME,SIZE,FSTYPE,MOUNTPOINT | grep -v "sr\|loop"
 }
 
 
-# Persistently mounted partition
+# 持久化挂载分区
 mount_partition() {
-	send_stats "Mount partition"
-	read -e -p "Please enter the name of the partition to be mounted (e.g. sda1):" PARTITION
+	send_stats "挂载分区"
+	read -e -p "请输入要挂载的分区名称（例如 sda1）: " PARTITION
 
 	DEVICE="/dev/$PARTITION"
 	MOUNT_POINT="/mnt/$PARTITION"
 
-	# Check if the partition exists
+	# 检查分区是否存在
 	if ! lsblk -no NAME | grep -qw "$PARTITION"; then
-		echo "The partition does not exist!"
+		echo "分区不存在！"
 		return 1
 	fi
 
-	# Check if it is mounted
+	# 检查是否已挂载
 	if mount | grep -qw "$DEVICE"; then
-		echo "The partition has been mounted!"
+		echo "分区已经挂载！"
 		return 1
 	fi
 
-	# Get UUID
+	# 获取 UUID
 	UUID=$(blkid -s UUID -o value "$DEVICE")
 	if [ -z "$UUID" ]; then
-		echo "Unable to get UUID!"
+		echo "无法获取 UUID！"
 		return 1
 	fi
 
-	# Get file system type
+	# 获取文件系统类型
 	FSTYPE=$(blkid -s TYPE -o value "$DEVICE")
 	if [ -z "$FSTYPE" ]; then
-		echo "Unable to get file system type!"
+		echo "无法获取文件系统类型！"
 		return 1
 	fi
 
-	# Create mount point
+	# 创建挂载点
 	mkdir -p "$MOUNT_POINT"
 
-	# mount
+	# 挂载
 	if ! mount "$DEVICE" "$MOUNT_POINT"; then
-		echo "Partition mount failed!"
+		echo "分区挂载失败！"
 		rmdir "$MOUNT_POINT"
 		return 1
 	fi
 
-	echo "Partition successfully mounted to$MOUNT_POINT"
+	echo "分区已成功挂载到 $MOUNT_POINT"
 
-	# Check /etc/fstab to see if the UUID or mount point already exists
+	# 检查 /etc/fstab 是否已经存在 UUID 或挂载点
 	if grep -qE "UUID=$UUID|[[:space:]]$MOUNT_POINT[[:space:]]" /etc/fstab; then
-		echo "The partition record already exists in /etc/fstab, skip writing"
+		echo "/etc/fstab 中已存在该分区记录，跳过写入"
 		return 0
 	fi
 
-	# Write to /etc/fstab
+	# 写入 /etc/fstab
 	echo "UUID=$UUID $MOUNT_POINT $FSTYPE defaults,nofail 0 2" >> /etc/fstab
 
-	echo "Written to /etc/fstab to achieve persistent mounting"
+	echo "已写入 /etc/fstab，实现持久化挂载"
 }
 
 
-# Unmount partition
+# 卸载分区
 unmount_partition() {
-	send_stats "Unmount partition"
-	read -e -p "Please enter the name of the partition to be unmounted (e.g. sda1):" PARTITION
+	send_stats "卸载分区"
+	read -e -p "请输入要卸载的分区名称（例如 sda1）: " PARTITION
 
-	# Check whether the partition is mounted
+	# 检查分区是否已经挂载
 	MOUNT_POINT=$(lsblk -o MOUNTPOINT | grep -w "$PARTITION")
 	if [ -z "$MOUNT_POINT" ]; then
-		echo "The partition is not mounted!"
+		echo "分区未挂载！"
 		return
 	fi
 
-	# Unmount partition
+	# 卸载分区
 	umount "/dev/$PARTITION"
 
 	if [ $? -eq 0 ]; then
-		echo "Partition uninstalled successfully:$MOUNT_POINT"
+		echo "分区卸载成功: $MOUNT_POINT"
 		rmdir "$MOUNT_POINT"
 	else
-		echo "Partition uninstall failed!"
+		echo "分区卸载失败！"
 	fi
 }
 
-# List mounted partitions
+# 列出已挂载的分区
 list_mounted_partitions() {
-	echo "Mounted partition:"
+	echo "已挂载的分区："
 	df -h | grep -v "tmpfs\|udev\|overlay"
 }
 
-# Format partition
+# 格式化分区
 format_partition() {
-	send_stats "Format partition"
-	read -e -p "Please enter the name of the partition to be formatted (e.g. sda1):" PARTITION
+	send_stats "格式化分区"
+	read -e -p "请输入要格式化的分区名称（例如 sda1）: " PARTITION
 
-	# Check if the partition exists
+	# 检查分区是否存在
 	if ! lsblk -o NAME | grep -w "$PARTITION" > /dev/null; then
-		echo "The partition does not exist!"
+		echo "分区不存在！"
 		return
 	fi
 
-	# Check whether the partition is mounted
+	# 检查分区是否已经挂载
 	if lsblk -o MOUNTPOINT | grep -w "$PARTITION" > /dev/null; then
-		echo "The partition has been mounted, please unmount it first!"
+		echo "分区已经挂载，请先卸载！"
 		return
 	fi
 
-	# Select file system type
-	echo "Please select a file system type:"
+	# 选择文件系统类型
+	echo "请选择文件系统类型："
 	echo "1. ext4"
 	echo "2. xfs"
 	echo "3. ntfs"
 	echo "4. vfat"
-	read -e -p "Please enter your choice:" FS_CHOICE
+	read -e -p "请输入你的选择: " FS_CHOICE
 
 	case $FS_CHOICE in
 		1) FS_TYPE="ext4" ;;
 		2) FS_TYPE="xfs" ;;
 		3) FS_TYPE="ntfs" ;;
 		4) FS_TYPE="vfat" ;;
-		*) echo "Invalid choice!"; return ;;
+		*) echo "无效的选择！"; return ;;
 	esac
 
-	# Confirm formatting
-	read -e -p "Confirm formatted partition /dev/$PARTITIONfor$FS_TYPE? (y/n):" CONFIRM
+	# 确认格式化
+	read -e -p "确认格式化分区 /dev/$PARTITION 为 $FS_TYPE 吗？(y/n): " CONFIRM
 	if [ "$CONFIRM" != "y" ]; then
-		echo "The operation has been cancelled."
+		echo "操作已取消。"
 		return
 	fi
 
-	# Format partition
-	echo "Formatting partition /dev/$PARTITIONfor$FS_TYPE ..."
+	# 格式化分区
+	echo "正在格式化分区 /dev/$PARTITION 为 $FS_TYPE ..."
 	mkfs.$FS_TYPE "/dev/$PARTITION"
 
 	if [ $? -eq 0 ]; then
-		echo "Partition formatted successfully!"
+		echo "分区格式化成功！"
 	else
-		echo "Partition formatting failed!"
+		echo "分区格式化失败！"
 	fi
 }
 
-# Check partition status
+# 检查分区状态
 check_partition() {
-	send_stats "Check partition status"
-	read -e -p "Please enter the partition name to check (for example sda1):" PARTITION
+	send_stats "检查分区状态"
+	read -e -p "请输入要检查的分区名称（例如 sda1）: " PARTITION
 
-	# Check if the partition exists
+	# 检查分区是否存在
 	if ! lsblk -o NAME | grep -w "$PARTITION" > /dev/null; then
-		echo "The partition does not exist!"
+		echo "分区不存在！"
 		return
 	fi
 
-	# Check partition status
-	echo "Check partition /dev/$PARTITIONstatus:"
+	# 检查分区状态
+	echo "检查分区 /dev/$PARTITION 的状态："
 	fsck "/dev/$PARTITION"
 }
 
-# Main menu
+# 主菜单
 disk_manager() {
-	send_stats "Hard disk management function"
+	send_stats "硬盘管理功能"
 	while true; do
 		clear
-		echo "Hard drive partition management"
-		echo -e "${gl_huang}This feature is under internal testing and should not be used in a production environment.${gl_bai}"
+		echo "硬盘分区管理"
+		echo -e "${gl_huang}该功能内部测试阶段，请勿在生产环境使用。${gl_bai}"
 		echo "------------------------"
 		list_partitions
 		echo "------------------------"
-		echo "1. Mount the partition 2. Unmount the partition 3. View the mounted partition"
-		echo "4. Format partition 5. Check partition status"
+		echo "1. 挂载分区        2. 卸载分区        3. 查看已挂载分区"
+		echo "4. 格式化分区      5. 检查分区状态"
 		echo "------------------------"
-		echo "0. Return to the previous menu"
+		echo "0. 返回上一级选单"
 		echo "------------------------"
-		read -e -p "Please enter your choice:" choice
+		read -e -p "请输入你的选择: " choice
 		case $choice in
 			1) mount_partition ;;
 			2) unmount_partition ;;
@@ -7324,33 +7324,33 @@ disk_manager() {
 			5) check_partition ;;
 			*) break ;;
 		esac
-		read -e -p "Press Enter to continue..."
+		read -e -p "按回车键继续..."
 	done
 }
 
 
 
 
-# Show task list
+# 显示任务列表
 list_tasks() {
-	echo "Saved sync tasks:"
+	echo "已保存的同步任务:"
 	echo "---------------------------------"
 	awk -F'|' '{print NR " - " $1 " ( " $2 " -> " $3":"$4 " )"}' "$CONFIG_FILE"
 	echo "---------------------------------"
 }
 
-# Add new task
+# 添加新任务
 add_task() {
-	send_stats "Add new sync task"
+	send_stats "添加新同步任务"
 	echo "创建新同步任务示例："
 	echo "  - 任务名称: backup_www"
 	echo "  - 本地目录: /var/www"
 	echo "  - 远程地址: user@192.168.1.100"
-	echo "- Remote directory: /backup/www"
+	echo "  - 远程目录: /backup/www"
 	echo "  - 端口号 (默认 22)"
 	echo "---------------------------------"
 	read -e -p "请输入任务名称: " name
-	read -e -p "Please enter the local directory:" local_path
+	read -e -p "请输入本地目录: " local_path
 	read -e -p "请输入远程目录: " remote_path
 
 	while true; do
@@ -7370,14 +7370,14 @@ add_task() {
 	auth_method="$KJ_SSH_AUTH_METHOD"
 	password_or_key="$KJ_SSH_AUTH_SECRET"
 
-	echo "Please select synchronization mode:"
+	echo "请选择同步模式:"
 	echo "1. 标准模式 (-avz)"
 	echo "2. 删除目标文件 (-avz --delete)"
 	read -e -p "请选择 (1/2): " mode
 	case $mode in
 		1) options="-avz" ;;
 		2) options="-avz --delete" ;;
-		*) echo "Invalid selection, use default -avz"; options="-avz" ;;
+		*) echo "无效选择，使用默认 -avz"; options="-avz" ;;
 	esac
 
 	echo "$name|$local_path|$remote|$remote_path|$port|$options|$auth_method|$password_or_key" >> "$CONFIG_FILE"
@@ -7428,7 +7428,7 @@ run_task() {
 		num="$1"
 	fi
 
-	# If no task number is passed in, the user is prompted to enter
+	# 如果没有传入任务编号，提示用户输入
 	if [[ -z "$num" ]]; then
 		read -e -p "请输入要执行的任务编号: " num
 	fi
@@ -7465,7 +7465,7 @@ run_task() {
 		fi
 		sshpass -p "$password_or_key" rsync $options -e "ssh $ssh_options" "$source" "$destination"
 	else
-		# Check whether the key file exists and whether the permissions are correct
+		# 检查密钥文件是否存在和权限是否正确
 		if [[ ! -f "$password_or_key" ]]; then
 			echo "错误：密钥文件不存在：$password_or_key"
 			return
@@ -7493,7 +7493,7 @@ run_task() {
 
 # 创建定时任务
 schedule_task() {
-	send_stats "Add synchronization scheduled tasks"
+	send_stats "添加同步定时任务"
 
 	read -e -p "请输入要定时同步的任务编号: " num
 	if ! [[ "$num" =~ ^[0-9]+$ ]]; then
@@ -7502,10 +7502,10 @@ schedule_task() {
 	fi
 
 	echo "请选择定时执行间隔："
-	echo "1) Execute once every hour"
-	echo "2) Execute once a day"
+	echo "1) 每小时执行一次"
+	echo "2) 每天执行一次"
 	echo "3) 每周执行一次"
-	read -e -p "Please enter options (1/2/3):" interval
+	read -e -p "请输入选项 (1/2/3): " interval
 
 	local random_minute=$(shuf -i 0-59 -n 1)  # 生成 0-59 之间的随机分钟数
 	local cron_time=""
@@ -7519,18 +7519,18 @@ schedule_task() {
 	local cron_job="$cron_time k rsync_run $num"
 	local cron_job="$cron_time k rsync_run $num"
 
-	# Check if the same task already exists
+	# 检查是否已存在相同任务
 	if crontab -l | grep -q "k rsync_run $num"; then
 		echo "错误: 该任务的定时同步已存在！"
 		return
 	fi
 
-	# Create to user's crontab
+	# 创建到用户的 crontab
 	(crontab -l 2>/dev/null; echo "$cron_job") | crontab -
-	echo "Scheduled task has been created:$cron_job"
+	echo "定时任务已创建: $cron_job"
 }
 
-# View scheduled tasks
+# 查看定时任务
 view_tasks() {
 	echo "当前的定时任务:"
 	echo "---------------------------------"
@@ -7538,9 +7538,9 @@ view_tasks() {
 	echo "---------------------------------"
 }
 
-# Delete scheduled tasks
+# 删除定时任务
 delete_task_schedule() {
-	send_stats "Delete synchronization scheduled tasks"
+	send_stats "删除同步定时任务"
 	read -e -p "请输入要删除的任务编号: " num
 	if ! [[ "$num" =~ ^[0-9]+$ ]]; then
 		echo "错误: 请输入有效的任务编号！"
@@ -7548,7 +7548,7 @@ delete_task_schedule() {
 	fi
 
 	crontab -l | grep -v "k rsync_run $num" | crontab -
-	echo "已删除任务编号 $numscheduled tasks"
+	echo "已删除任务编号 $num 的定时任务"
 }
 
 
@@ -7567,12 +7567,12 @@ rsync_manager() {
 		view_tasks
 		echo
 		echo "1. 创建新任务                 2. 删除任务"
-		echo "3. Perform local synchronization to the remote site 4. Perform remote synchronization to the local site"
+		echo "3. 执行本地同步到远端         4. 执行远端同步到本地"
 		echo "5. 创建定时任务               6. 删除定时任务"
 		echo "---------------------------------"
-		echo "0. Return to the previous menu"
+		echo "0. 返回上一级选单"
 		echo "---------------------------------"
-		read -e -p "Please enter your choice:" choice
+		read -e -p "请输入你的选择: " choice
 		case $choice in
 			1) add_task ;;
 			2) delete_task ;;
@@ -7653,7 +7653,7 @@ linux_info() {
 	local udp_count=$(ss -u | wc -l)
 
 	clear
-	echo -e "System information query"
+	echo -e "系统信息查询"
 	echo -e "${gl_kjlan}-------------"
 	echo -e "${gl_kjlan}主机名:         ${gl_bai}$hostname"
 	echo -e "${gl_kjlan}系统版本:       ${gl_bai}$os_info"
@@ -7661,15 +7661,15 @@ linux_info() {
 	echo -e "${gl_kjlan}-------------"
 	echo -e "${gl_kjlan}CPU架构:        ${gl_bai}$cpu_arch"
 	echo -e "${gl_kjlan}CPU型号:        ${gl_bai}$cpu_info"
-	echo -e "${gl_kjlan}Number of CPU cores:${gl_bai}$cpu_cores"
+	echo -e "${gl_kjlan}CPU核心数:      ${gl_bai}$cpu_cores"
 	echo -e "${gl_kjlan}CPU频率:        ${gl_bai}$cpu_freq"
 	echo -e "${gl_kjlan}-------------"
 	echo -e "${gl_kjlan}CPU占用:        ${gl_bai}$cpu_usage_percent%"
 	echo -e "${gl_kjlan}系统负载:       ${gl_bai}$load"
 	echo -e "${gl_kjlan}TCP|UDP连接数:  ${gl_bai}$tcp_count|$udp_count"
-	echo -e "${gl_kjlan}Physical memory:${gl_bai}$mem_info"
+	echo -e "${gl_kjlan}物理内存:       ${gl_bai}$mem_info"
 	echo -e "${gl_kjlan}虚拟内存:       ${gl_bai}$swap_info"
-	echo -e "${gl_kjlan}Hard drive usage:${gl_bai}$disk_info"
+	echo -e "${gl_kjlan}硬盘占用:       ${gl_bai}$disk_info"
 	echo -e "${gl_kjlan}-------------"
 	echo -e "${gl_kjlan}总接收:         ${gl_bai}$rx"
 	echo -e "${gl_kjlan}总发送:         ${gl_bai}$tx"
@@ -7682,7 +7682,7 @@ linux_info() {
 	fi
 
 	if [ -n "$ipv6_address" ]; then
-		echo -e "${gl_kjlan}IPv6 address:${gl_bai}$ipv6_address"
+		echo -e "${gl_kjlan}IPv6地址:       ${gl_bai}$ipv6_address"
 	fi
 	echo -e "${gl_kjlan}DNS地址:        ${gl_bai}$dns_addresses"
 	echo -e "${gl_kjlan}地理位置:       ${gl_bai}$country $city"
@@ -7701,7 +7701,7 @@ linux_tools() {
 
   while true; do
 	  clear
-	  # send_stats "Basic tools"
+	  # send_stats "基础工具"
 	  echo -e "基础工具"
 
 	  tools=(
@@ -7731,23 +7731,23 @@ linux_tools() {
 		exit 1
 	  fi
 
-	  echo "📦 Use a package manager:$PM"
+	  echo "📦 使用包管理器: $PM"
 	  echo -e "${gl_kjlan}------------------------${gl_bai}"
 
 	  for ((i=0; i<${#tools[@]}; i+=2)); do
 		# 左列
 		if command -v "${tools[i]}" >/dev/null 2>&1; then
-		  left=$(printf "✅ %-12s installed" "${tools[i]}")
+		  left=$(printf "✅ %-12s 已安装" "${tools[i]}")
 		else
-		  left=$(printf "❌ %-12s not installed" "${tools[i]}")
+		  left=$(printf "❌ %-12s 未安装" "${tools[i]}")
 		fi
 
-		# Right column (to prevent the array from going out of bounds)
+		# 右列（防止数组越界）
 		if [[ -n "${tools[i+1]}" ]]; then
 		  if command -v "${tools[i+1]}" >/dev/null 2>&1; then
-			right=$(printf "✅ %-12s installed" "${tools[i+1]}")
+			right=$(printf "✅ %-12s 已安装" "${tools[i+1]}")
 		  else
-			right=$(printf "❌ %-12s not installed" "${tools[i+1]}")
+			right=$(printf "❌ %-12s 未安装" "${tools[i+1]}")
 		  fi
 		  printf "%-42s %s\n" "$left" "$right"
 		else
@@ -7756,108 +7756,108 @@ linux_tools() {
 	  done
 
 	  echo -e "${gl_kjlan}------------------------"
-	  echo -e "${gl_kjlan}1.   ${gl_bai}curl download tool${gl_huang}★${gl_bai}                   ${gl_kjlan}2.   ${gl_bai}wget download tool${gl_huang}★${gl_bai}"
-	  echo -e "${gl_kjlan}3.   ${gl_bai}sudo super administrative privilege tool${gl_kjlan}4.   ${gl_bai}socat communication connection tool"
-	  echo -e "${gl_kjlan}5.   ${gl_bai}htop system monitoring tool${gl_kjlan}6.   ${gl_bai}iftop network traffic monitoring tool"
-	  echo -e "${gl_kjlan}7.   ${gl_bai}unzip ZIP compression and decompression tool${gl_kjlan}8.   ${gl_bai}tar GZ compression and decompression tool"
-	  echo -e "${gl_kjlan}9.   ${gl_bai}tmux multi-channel background running tool${gl_kjlan}10.  ${gl_bai}ffmpeg video encoding live streaming tool"
+	  echo -e "${gl_kjlan}1.   ${gl_bai}curl 下载工具 ${gl_huang}★${gl_bai}                   ${gl_kjlan}2.   ${gl_bai}wget 下载工具 ${gl_huang}★${gl_bai}"
+	  echo -e "${gl_kjlan}3.   ${gl_bai}sudo 超级管理权限工具             ${gl_kjlan}4.   ${gl_bai}socat 通信连接工具"
+	  echo -e "${gl_kjlan}5.   ${gl_bai}htop 系统监控工具                 ${gl_kjlan}6.   ${gl_bai}iftop 网络流量监控工具"
+	  echo -e "${gl_kjlan}7.   ${gl_bai}unzip ZIP压缩解压工具             ${gl_kjlan}8.   ${gl_bai}tar GZ压缩解压工具"
+	  echo -e "${gl_kjlan}9.   ${gl_bai}tmux 多路后台运行工具             ${gl_kjlan}10.  ${gl_bai}ffmpeg 视频编码直播推流工具"
 	  echo -e "${gl_kjlan}------------------------"
-	  echo -e "${gl_kjlan}11.  ${gl_bai}btop modern monitoring tool${gl_huang}★${gl_bai}             ${gl_kjlan}12.  ${gl_bai}ranger file management tool"
-	  echo -e "${gl_kjlan}13.  ${gl_bai}ncdu disk usage viewing tool${gl_kjlan}14.  ${gl_bai}fzf global search tool"
-	  echo -e "${gl_kjlan}15.  ${gl_bai}vim text editor${gl_kjlan}16.  ${gl_bai}nano text editor${gl_huang}★${gl_bai}"
-	  echo -e "${gl_kjlan}17.  ${gl_bai}git version control system${gl_kjlan}18.  ${gl_bai}opencode AI programming assistant${gl_huang}★${gl_bai}"
+	  echo -e "${gl_kjlan}11.  ${gl_bai}btop 现代化监控工具 ${gl_huang}★${gl_bai}             ${gl_kjlan}12.  ${gl_bai}ranger 文件管理工具"
+	  echo -e "${gl_kjlan}13.  ${gl_bai}ncdu 磁盘占用查看工具             ${gl_kjlan}14.  ${gl_bai}fzf 全局搜索工具"
+	  echo -e "${gl_kjlan}15.  ${gl_bai}vim 文本编辑器                    ${gl_kjlan}16.  ${gl_bai}nano 文本编辑器 ${gl_huang}★${gl_bai}"
+	  echo -e "${gl_kjlan}17.  ${gl_bai}git 版本控制系统                  ${gl_kjlan}18.  ${gl_bai}opencode AI编程助手 ${gl_huang}★${gl_bai}"
 	  echo -e "${gl_kjlan}------------------------"
-	  echo -e "${gl_kjlan}21.  ${gl_bai}The Matrix Screensaver${gl_kjlan}22.  ${gl_bai}Running train screensaver"
-	  echo -e "${gl_kjlan}26.  ${gl_bai}Tetris mini game${gl_kjlan}27.  ${gl_bai}Snake mini game"
-	  echo -e "${gl_kjlan}28.  ${gl_bai}space invaders mini game"
+	  echo -e "${gl_kjlan}21.  ${gl_bai}黑客帝国屏保                      ${gl_kjlan}22.  ${gl_bai}跑火车屏保"
+	  echo -e "${gl_kjlan}26.  ${gl_bai}俄罗斯方块小游戏                  ${gl_kjlan}27.  ${gl_bai}贪吃蛇小游戏"
+	  echo -e "${gl_kjlan}28.  ${gl_bai}太空入侵者小游戏"
 	  echo -e "${gl_kjlan}------------------------"
-	  echo -e "${gl_kjlan}31.  ${gl_bai}Install all${gl_kjlan}32.  ${gl_bai}Install all (excluding screensavers and games)${gl_huang}★${gl_bai}"
-	  echo -e "${gl_kjlan}33.  ${gl_bai}Uninstall all"
+	  echo -e "${gl_kjlan}31.  ${gl_bai}全部安装                          ${gl_kjlan}32.  ${gl_bai}全部安装（不含屏保和游戏）${gl_huang}★${gl_bai}"
+	  echo -e "${gl_kjlan}33.  ${gl_bai}全部卸载"
 	  echo -e "${gl_kjlan}------------------------"
-	  echo -e "${gl_kjlan}41.  ${gl_bai}Install specified tools${gl_kjlan}42.  ${gl_bai}Uninstall the specified tool"
+	  echo -e "${gl_kjlan}41.  ${gl_bai}安装指定工具                      ${gl_kjlan}42.  ${gl_bai}卸载指定工具"
 	  echo -e "${gl_kjlan}------------------------"
-	  echo -e "${gl_kjlan}0.   ${gl_bai}Return to main menu"
+	  echo -e "${gl_kjlan}0.   ${gl_bai}返回主菜单"
 	  echo -e "${gl_kjlan}------------------------${gl_bai}"
-	  read -e -p "Please enter your choice:" sub_choice
+	  read -e -p "请输入你的选择: " sub_choice
 
 	  case $sub_choice in
 		  1)
 			  clear
 			  install curl
 			  clear
-			  echo "The tool has been installed and is used as follows:"
+			  echo "工具已安装，使用方法如下："
 			  curl --help
-			  send_stats "Install curl"
+			  send_stats "安装curl"
 			  ;;
 		  2)
 			  clear
 			  install wget
 			  clear
-			  echo "The tool has been installed and is used as follows:"
+			  echo "工具已安装，使用方法如下："
 			  wget --help
-			  send_stats "Install wget"
+			  send_stats "安装wget"
 			  ;;
 			3)
 			  clear
 			  install sudo
 			  clear
-			  echo "The tool has been installed and is used as follows:"
+			  echo "工具已安装，使用方法如下："
 			  sudo --help
-			  send_stats "install sudo"
+			  send_stats "安装sudo"
 			  ;;
 			4)
 			  clear
 			  install socat
 			  clear
-			  echo "The tool has been installed and is used as follows:"
+			  echo "工具已安装，使用方法如下："
 			  socat -h
-			  send_stats "Install socat"
+			  send_stats "安装socat"
 			  ;;
 			5)
 			  clear
 			  install htop
 			  clear
 			  htop
-			  send_stats "Install htop"
+			  send_stats "安装htop"
 			  ;;
 			6)
 			  clear
 			  install iftop
 			  clear
 			  iftop
-			  send_stats "Install iftop"
+			  send_stats "安装iftop"
 			  ;;
 			7)
 			  clear
 			  install unzip
 			  clear
-			  echo "The tool has been installed and is used as follows:"
+			  echo "工具已安装，使用方法如下："
 			  unzip
-			  send_stats "installunzip"
+			  send_stats "安装unzip"
 			  ;;
 			8)
 			  clear
 			  install tar
 			  clear
-			  echo "The tool has been installed and is used as follows:"
+			  echo "工具已安装，使用方法如下："
 			  tar --help
-			  send_stats "Install tar"
+			  send_stats "安装tar"
 			  ;;
 			9)
 			  clear
 			  install tmux
 			  clear
-			  echo "The tool has been installed and is used as follows:"
+			  echo "工具已安装，使用方法如下："
 			  tmux --help
-			  send_stats "Install tmux"
+			  send_stats "安装tmux"
 			  ;;
 			10)
 			  clear
 			  install ffmpeg
 			  clear
-			  echo "The tool has been installed and is used as follows:"
+			  echo "工具已安装，使用方法如下："
 			  ffmpeg --help
-			  send_stats "Install ffmpeg"
+			  send_stats "安装ffmpeg"
 			  ;;
 
 			11)
@@ -7865,7 +7865,7 @@ linux_tools() {
 			  install btop
 			  clear
 			  btop
-			  send_stats "Install btop"
+			  send_stats "安装btop"
 			  ;;
 			12)
 			  clear
@@ -7874,7 +7874,7 @@ linux_tools() {
 			  clear
 			  ranger
 			  cd ~
-			  send_stats "Install ranger"
+			  send_stats "安装ranger"
 			  ;;
 			13)
 			  clear
@@ -7883,7 +7883,7 @@ linux_tools() {
 			  clear
 			  ncdu
 			  cd ~
-			  send_stats "Install ncdu"
+			  send_stats "安装ncdu"
 			  ;;
 			14)
 			  clear
@@ -7892,7 +7892,7 @@ linux_tools() {
 			  clear
 			  fzf
 			  cd ~
-			  send_stats "Install fzf"
+			  send_stats "安装fzf"
 			  ;;
 			15)
 			  clear
@@ -7901,7 +7901,7 @@ linux_tools() {
 			  clear
 			  vim -h
 			  cd ~
-			  send_stats "Install vim"
+			  send_stats "安装vim"
 			  ;;
 			16)
 			  clear
@@ -7910,7 +7910,7 @@ linux_tools() {
 			  clear
 			  nano -h
 			  cd ~
-			  send_stats "Install nano"
+			  send_stats "安装nano"
 			  ;;
 
 
@@ -7921,7 +7921,7 @@ linux_tools() {
 			  clear
 			  git --help
 			  cd ~
-			  send_stats "Install git"
+			  send_stats "安装git"
 			  ;;
 
 			18)
@@ -7931,7 +7931,7 @@ linux_tools() {
 			  source ~/.bashrc
 			  source ~/.profile
 			  opencode
-			  send_stats "Install opencode"
+			  send_stats "安装opencode"
 			  ;;
 
 
@@ -7940,28 +7940,28 @@ linux_tools() {
 			  install cmatrix
 			  clear
 			  cmatrix
-			  send_stats "Install cmatrix"
+			  send_stats "安装cmatrix"
 			  ;;
 			22)
 			  clear
 			  install sl
 			  clear
 			  sl
-			  send_stats "Install sl"
+			  send_stats "安装sl"
 			  ;;
 			26)
 			  clear
 			  install bastet
 			  clear
 			  bastet
-			  send_stats "Install bastet"
+			  send_stats "安装bastet"
 			  ;;
 			27)
 			  clear
 			  install nsnake
 			  clear
 			  nsnake
-			  send_stats "Install nsnake"
+			  send_stats "安装nsnake"
 			  ;;
 
 			28)
@@ -7969,25 +7969,25 @@ linux_tools() {
 			  install ninvaders
 			  clear
 			  ninvaders
-			  send_stats "Install ninvaders"
+			  send_stats "安装ninvaders"
 			  ;;
 
 		  31)
 			  clear
-			  send_stats "Install all"
+			  send_stats "全部安装"
 			  install curl wget sudo socat htop iftop unzip tar tmux ffmpeg btop ranger ncdu fzf cmatrix sl bastet nsnake ninvaders vim nano git
 			  ;;
 
 		  32)
 			  clear
-			  send_stats "Install all (excluding games and screensavers)"
+			  send_stats "全部安装（不含游戏和屏保）"
 			  install curl wget sudo socat htop iftop unzip tar tmux ffmpeg btop ranger ncdu fzf vim nano git
 			  ;;
 
 
 		  33)
 			  clear
-			  send_stats "Uninstall all"
+			  send_stats "全部卸载"
 			  remove htop iftop tmux ffmpeg btop ranger ncdu fzf cmatrix sl bastet nsnake ninvaders vim nano git
 			  opencode uninstall
 			  rm -rf ~/.opencode
@@ -7995,15 +7995,15 @@ linux_tools() {
 
 		  41)
 			  clear
-			  read -e -p "Please enter the installed tool name (wget curl sudo htop):" installname
+			  read -e -p "请输入安装的工具名（wget curl sudo htop）: " installname
 			  install $installname
-			  send_stats "Install specified software"
+			  send_stats "安装指定软件"
 			  ;;
 		  42)
 			  clear
-			  read -e -p "Please enter the uninstalled tool name (htop ufw tmux cmatrix):" removename
+			  read -e -p "请输入卸载的工具名（htop ufw tmux cmatrix）: " removename
 			  remove $removename
-			  send_stats "Uninstall specified software"
+			  send_stats "卸载指定软件"
 			  ;;
 
 		  0)
@@ -8011,7 +8011,7 @@ linux_tools() {
 			  ;;
 
 		  *)
-			  echo "Invalid input!"
+			  echo "无效的输入!"
 			  ;;
 	  esac
 	  break_end
@@ -8025,27 +8025,27 @@ linux_tools() {
 
 linux_bbr() {
 	clear
-	send_stats "bbr management"
+	send_stats "bbr管理"
 	if [ -f "/etc/alpine-release" ]; then
 		while true; do
 			  clear
 			  local congestion_algorithm=$(sysctl -n net.ipv4.tcp_congestion_control)
 			  local queue_algorithm=$(sysctl -n net.core.default_qdisc)
-			  echo "Current TCP blocking algorithm:$congestion_algorithm $queue_algorithm"
+			  echo "当前TCP阻塞算法: $congestion_algorithm $queue_algorithm"
 
 			  echo ""
-			  echo "BBR management"
+			  echo "BBR管理"
 			  echo "------------------------"
-			  echo "1. Turn on BBRv3 2. Turn off BBRv3 (it will restart)"
+			  echo "1. 开启BBRv3              2. 关闭BBRv3（会重启）"
 			  echo "------------------------"
-			  echo "0. Return to the previous menu"
+			  echo "0. 返回上一级选单"
 			  echo "------------------------"
-			  read -e -p "Please enter your choice:" sub_choice
+			  read -e -p "请输入你的选择: " sub_choice
 
 			  case $sub_choice in
 				  1)
 					bbr_on
-					send_stats "alpine opens bbr3"
+					send_stats "alpine开启bbr3"
 					  ;;
 				  2)
 					sed -i '/net.ipv4.tcp_congestion_control=/d' /etc/sysctl.conf
@@ -8081,21 +8081,21 @@ docker_ssh_migration() {
 
 	list_backups() {
 		local BACKUP_ROOT="/tmp"
-		echo -e "${gl_kjlan}Current backup list:${gl_bai}"
-		ls -1dt ${BACKUP_ROOT}/docker_backup_* 2>/dev/null || echo "No backup"
+		echo -e "${gl_kjlan}当前备份列表:${gl_bai}"
+		ls -1dt ${BACKUP_ROOT}/docker_backup_* 2>/dev/null || echo "无备份"
 	}
 
 
 
 	# ----------------------------
-	# backup
+	# 备份
 	# ----------------------------
 	backup_docker() {
-		send_stats "Docker backup"
+		send_stats "Docker备份"
 
-		echo -e "${gl_kjlan}Backing up Docker containers...${gl_bai}"
+		echo -e "${gl_kjlan}正在备份 Docker 容器...${gl_bai}"
 		docker ps --format '{{.Names}}'
-		read -e -p  "Please enter the name of the container to be backed up (separate multiple spaces and press Enter to back up all running containers):" containers
+		read -e -p  "请输入要备份的容器名（多个空格分隔，回车备份全部运行中容器）: " containers
 
 		install tar jq gzip
 		install_docker
@@ -8108,7 +8108,7 @@ docker_ssh_migration() {
 		else
 			read -ra TARGET_CONTAINERS <<< "$containers"
 		fi
-		[[ ${#TARGET_CONTAINERS[@]} -eq 0 ]] && { echo -e "${gl_hong}Container not found${gl_bai}"; return; }
+		[[ ${#TARGET_CONTAINERS[@]} -eq 0 ]] && { echo -e "${gl_hong}没有找到容器${gl_bai}"; return; }
 
 		local BACKUP_DIR="${BACKUP_ROOT}/docker_backup_${DATE_STR}"
 		mkdir -p "$BACKUP_DIR"
@@ -8116,28 +8116,28 @@ docker_ssh_migration() {
 		local RESTORE_SCRIPT="${BACKUP_DIR}/docker_restore.sh"
 		echo "#!/bin/bash" > "$RESTORE_SCRIPT"
 		echo "set -e" >> "$RESTORE_SCRIPT"
-		echo "# Automatically generated restore script" >> "$RESTORE_SCRIPT"
+		echo "# 自动生成的还原脚本" >> "$RESTORE_SCRIPT"
 
-		# Record the packaged Compose project path to avoid repeated packaging
+		# 记录已打包过的 Compose 项目路径，避免重复打包
 		declare -A PACKED_COMPOSE_PATHS=()
 
 		for c in "${TARGET_CONTAINERS[@]}"; do
-			echo -e "${gl_lv}Backup container:$c${gl_bai}"
+			echo -e "${gl_lv}备份容器: $c${gl_bai}"
 			local inspect_file="${BACKUP_DIR}/${c}_inspect.json"
 			docker inspect "$c" > "$inspect_file"
 
 			if is_compose_container "$c"; then
-				echo -e "${gl_kjlan}detected$cis a docker-compose container${gl_bai}"
+				echo -e "${gl_kjlan}检测到 $c 是 docker-compose 容器${gl_bai}"
 				local project_dir=$(docker inspect "$c" | jq -r '.[0].Config.Labels["com.docker.compose.project.working_dir"] // empty')
 				local project_name=$(docker inspect "$c" | jq -r '.[0].Config.Labels["com.docker.compose.project"] // empty')
 
 				if [ -z "$project_dir" ]; then
-					read -e -p  "The compose directory is not detected, please enter the path manually:" project_dir
+					read -e -p  "未检测到 compose 目录，请手动输入路径: " project_dir
 				fi
 
-				# If the Compose project has already been packaged, skip
+				# 如果该 Compose 项目已经打包过，跳过
 				if [[ -n "${PACKED_COMPOSE_PATHS[$project_dir]}" ]]; then
-					echo -e "${gl_huang}Compose project [$project_name] Already backed up, skip repeated packaging...${gl_bai}"
+					echo -e "${gl_huang}Compose 项目 [$project_name] 已备份过，跳过重复打包...${gl_bai}"
 					continue
 				fi
 
@@ -8145,137 +8145,137 @@ docker_ssh_migration() {
 					echo "compose" > "${BACKUP_DIR}/backup_type_${project_name}"
 					echo "$project_dir" > "${BACKUP_DIR}/compose_path_${project_name}.txt"
 					tar -czf "${BACKUP_DIR}/compose_project_${project_name}.tar.gz" -C "$project_dir" .
-					echo "# docker-compose restore:$project_name" >> "$RESTORE_SCRIPT"
+					echo "# docker-compose 恢复: $project_name" >> "$RESTORE_SCRIPT"
 					echo "cd \"$project_dir\" && docker compose up -d" >> "$RESTORE_SCRIPT"
 					PACKED_COMPOSE_PATHS["$project_dir"]=1
-					echo -e "${gl_lv}Compose project [$project_name] Packaged:${project_dir}${gl_bai}"
+					echo -e "${gl_lv}Compose 项目 [$project_name] 已打包: ${project_dir}${gl_bai}"
 				else
-					echo -e "${gl_hong}docker-compose.yml not found, skipping this container...${gl_bai}"
+					echo -e "${gl_hong}未找到 docker-compose.yml，跳过此容器...${gl_bai}"
 				fi
 			else
-				# Ordinary container backup volume
+				# 普通容器备份卷
 				local VOL_PATHS
 				VOL_PATHS=$(docker inspect "$c" --format '{{range .Mounts}}{{.Source}} {{end}}')
 				for path in $VOL_PATHS; do
-					echo "Packing volume:$path"
+					echo "打包卷: $path"
 					tar -czpf "${BACKUP_DIR}/${c}_$(basename $path).tar.gz" -C / "$(echo $path | sed 's/^\///')"
 				done
 
-				# port
+				# 端口
 				local PORT_ARGS=""
 				mapfile -t PORTS < <(jq -r '.[0].HostConfig.PortBindings | to_entries[] | "\(.value[0].HostPort):\(.key | split("/")[0])"' "$inspect_file" 2>/dev/null)
 				for p in "${PORTS[@]}"; do PORT_ARGS+="-p $p "; done
 
-				# environment variables
+				# 环境变量
 				local ENV_VARS=""
 				mapfile -t ENVS < <(jq -r '.[0].Config.Env[] | @sh' "$inspect_file")
 				for e in "${ENVS[@]}"; do ENV_VARS+="-e $e "; done
 
-				# volume mapping
+				# 卷映射
 				local VOL_ARGS=""
 				for path in $VOL_PATHS; do VOL_ARGS+="-v $path:$path "; done
 
-				# Mirror
+				# 镜像
 				local IMAGE
 				IMAGE=$(jq -r '.[0].Config.Image' "$inspect_file")
 
-				echo -e "\n# Restore container:$c" >> "$RESTORE_SCRIPT"
+				echo -e "\n# 还原容器: $c" >> "$RESTORE_SCRIPT"
 				echo "docker run -d --name $c $PORT_ARGS $VOL_ARGS $ENV_VARS $IMAGE" >> "$RESTORE_SCRIPT"
 			fi
 		done
 
 
-		# Back up all files under /home/docker (excluding subdirectories)
+		# 备份 /home/docker 下的所有文件（不含子目录）
 		if [ -d "/home/docker" ]; then
-			echo -e "${gl_kjlan}Back up files under /home/docker...${gl_bai}"
+			echo -e "${gl_kjlan}备份 /home/docker 下的文件...${gl_bai}"
 			find /home/docker -maxdepth 1 -type f | tar -czf "${BACKUP_DIR}/home_docker_files.tar.gz" -T -
-			echo -e "${gl_lv}Files under /home/docker have been packaged to:${BACKUP_DIR}/home_docker_files.tar.gz${gl_bai}"
+			echo -e "${gl_lv}/home/docker 下的文件已打包到: ${BACKUP_DIR}/home_docker_files.tar.gz${gl_bai}"
 		fi
 
 		chmod +x "$RESTORE_SCRIPT"
-		echo -e "${gl_lv}Backup completed:${BACKUP_DIR}${gl_bai}"
-		echo -e "${gl_lv}Available restore scripts:${RESTORE_SCRIPT}${gl_bai}"
+		echo -e "${gl_lv}备份完成: ${BACKUP_DIR}${gl_bai}"
+		echo -e "${gl_lv}可用还原脚本: ${RESTORE_SCRIPT}${gl_bai}"
 
 
 	}
 
 	# ----------------------------
-	# reduction
+	# 还原
 	# ----------------------------
 	restore_docker() {
 
-		send_stats "Docker restore"
-		read -e -p  "Please enter the backup directory to be restored:" BACKUP_DIR
-		[[ ! -d "$BACKUP_DIR" ]] && { echo -e "${gl_hong}The backup directory does not exist${gl_bai}"; return; }
+		send_stats "Docker还原"
+		read -e -p  "请输入要还原的备份目录: " BACKUP_DIR
+		[[ ! -d "$BACKUP_DIR" ]] && { echo -e "${gl_hong}备份目录不存在${gl_bai}"; return; }
 
-		echo -e "${gl_kjlan}Starting the restore operation...${gl_bai}"
+		echo -e "${gl_kjlan}开始执行还原操作...${gl_bai}"
 
 		install tar jq gzip
 		install_docker
 
-		# --------- Prioritize restoring Compose projects ---------
+		# --------- 优先还原 Compose 项目 ---------
 		for f in "$BACKUP_DIR"/backup_type_*; do
 			[[ ! -f "$f" ]] && continue
 			if grep -q "compose" "$f"; then
 				project_name=$(basename "$f" | sed 's/backup_type_//')
 				path_file="$BACKUP_DIR/compose_path_${project_name}.txt"
 				[[ -f "$path_file" ]] && original_path=$(cat "$path_file") || original_path=""
-				[[ -z "$original_path" ]] && read -e -p  "Original path not found, please enter the restore directory path:" original_path
+				[[ -z "$original_path" ]] && read -e -p  "未找到原始路径，请输入还原目录路径: " original_path
 
-				# Check whether the container of the compose project is already running
+				# 检查该 compose 项目的容器是否已经在运行
 				running_count=$(docker ps --filter "label=com.docker.compose.project=$project_name" --format '{{.Names}}' | wc -l)
 				if [[ "$running_count" -gt 0 ]]; then
-					echo -e "${gl_huang}Compose project [$project_name] Containers are already running, skip restore...${gl_bai}"
+					echo -e "${gl_huang}Compose 项目 [$project_name] 已有容器在运行，跳过还原...${gl_bai}"
 					continue
 				fi
 
-				read -e -p  "Confirm to restore Compose project [$project_name] to path [$original_path] ? (y/n): " confirm
-				[[ "$confirm" != "y" ]] && read -e -p  "Please enter a new restore path:" original_path
+				read -e -p  "确认还原 Compose 项目 [$project_name] 到路径 [$original_path] ? (y/n): " confirm
+				[[ "$confirm" != "y" ]] && read -e -p  "请输入新的还原路径: " original_path
 
 				mkdir -p "$original_path"
 				tar -xzf "$BACKUP_DIR/compose_project_${project_name}.tar.gz" -C "$original_path"
-				echo -e "${gl_lv}Compose project [$project_name] has been extracted to:$original_path${gl_bai}"
+				echo -e "${gl_lv}Compose 项目 [$project_name] 已解压到: $original_path${gl_bai}"
 
 				cd "$original_path" || return
 				docker compose down || true
 				docker compose up -d
-				echo -e "${gl_lv}Compose project [$project_name] Restore completed!${gl_bai}"
+				echo -e "${gl_lv}Compose 项目 [$project_name] 还原完成！${gl_bai}"
 			fi
 		done
 
-		# --------- Continue to restore normal containers ---------
-		echo -e "${gl_kjlan}Check and restore normal Docker containers...${gl_bai}"
+		# --------- 继续还原普通容器 ---------
+		echo -e "${gl_kjlan}检查并还原普通 Docker 容器...${gl_bai}"
 		local has_container=false
 		for json in "$BACKUP_DIR"/*_inspect.json; do
 			[[ ! -f "$json" ]] && continue
 			has_container=true
 			container=$(basename "$json" | sed 's/_inspect.json//')
-			echo -e "${gl_lv}Processing container:$container${gl_bai}"
+			echo -e "${gl_lv}处理容器: $container${gl_bai}"
 
-			# Check if the container already exists and is running
+			# 检查容器是否已经存在且正在运行
 			if docker ps --format '{{.Names}}' | grep -q "^${container}$"; then
-				echo -e "${gl_huang}container [$container] already running, skipping restore...${gl_bai}"
+				echo -e "${gl_huang}容器 [$container] 已在运行，跳过还原...${gl_bai}"
 				continue
 			fi
 
 			IMAGE=$(jq -r '.[0].Config.Image' "$json")
-			[[ -z "$IMAGE" || "$IMAGE" == "null" ]] && { echo -e "${gl_hong}Mirror information not found, skip:$container${gl_bai}"; continue; }
+			[[ -z "$IMAGE" || "$IMAGE" == "null" ]] && { echo -e "${gl_hong}未找到镜像信息，跳过: $container${gl_bai}"; continue; }
 
-			# port mapping
+			# 端口映射
 			PORT_ARGS=""
 			mapfile -t PORTS < <(jq -r '.[0].HostConfig.PortBindings | to_entries[]? | "\(.value[0].HostPort):\(.key | split("/")[0])"' "$json")
 			for p in "${PORTS[@]}"; do
 				[[ -n "$p" ]] && PORT_ARGS="$PORT_ARGS -p $p"
 			done
 
-			# environment variables
+			# 环境变量
 			ENV_ARGS=""
 			mapfile -t ENVS < <(jq -r '.[0].Config.Env[]' "$json")
 			for e in "${ENVS[@]}"; do
 				ENV_ARGS="$ENV_ARGS -e \"$e\""
 			done
 
-			# Volume mapping + volume data recovery
+			# 卷映射 + 卷数据恢复
 			VOL_ARGS=""
 			mapfile -t VOLS < <(jq -r '.[0].Mounts[] | "\(.Source):\(.Destination)"' "$json")
 			for v in "${VOLS[@]}"; do
@@ -8286,32 +8286,32 @@ docker_ssh_migration() {
 
 				VOL_FILE="$BACKUP_DIR/${container}_$(basename $VOL_SRC).tar.gz"
 				if [[ -f "$VOL_FILE" ]]; then
-					echo "Recover volume data:$VOL_SRC"
+					echo "恢复卷数据: $VOL_SRC"
 					tar -xzf "$VOL_FILE" -C /
 				fi
 			done
 
-			# Delete existing but not running containers
+			# 删除已存在但未运行的容器
 			if docker ps -a --format '{{.Names}}' | grep -q "^${container}$"; then
-				echo -e "${gl_huang}container [$container] exists but is not running, delete the old container...${gl_bai}"
+				echo -e "${gl_huang}容器 [$container] 存在但未运行，删除旧容器...${gl_bai}"
 				docker rm -f "$container"
 			fi
 
-			# Start container
-			echo "Execute the restore command: docker run -d --name \"$container\" $PORT_ARGS $VOL_ARGS $ENV_ARGS \"$IMAGE\""
+			# 启动容器
+			echo "执行还原命令: docker run -d --name \"$container\" $PORT_ARGS $VOL_ARGS $ENV_ARGS \"$IMAGE\""
 			eval "docker run -d --name \"$container\" $PORT_ARGS $VOL_ARGS $ENV_ARGS \"$IMAGE\""
 		done
 
-		[[ "$has_container" == false ]] && echo -e "${gl_huang}No backup information for common containers found${gl_bai}"
+		[[ "$has_container" == false ]] && echo -e "${gl_huang}未找到普通容器的备份信息${gl_bai}"
 
 		# Restore files under /home/docker
 		if [ -f "$BACKUP_DIR/home_docker_files.tar.gz" ]; then
-			echo -e "${gl_kjlan}Restoring files under /home/docker...${gl_bai}"
+			echo -e "${gl_kjlan}正在还原 /home/docker 下的文件...${gl_bai}"
 			mkdir -p /home/docker
 			tar -xzf "$BACKUP_DIR/home_docker_files.tar.gz" -C /
-			echo -e "${gl_lv}Files under /home/docker have been restored${gl_bai}"
+			echo -e "${gl_lv}/home/docker 下的文件已还原完成${gl_bai}"
 		else
-			echo -e "${gl_huang}The backup of the file under /home/docker was not found, skipping...${gl_bai}"
+			echo -e "${gl_huang}未找到 /home/docker 下文件的备份，跳过...${gl_bai}"
 		fi
 
 
@@ -8319,15 +8319,15 @@ docker_ssh_migration() {
 
 
 	# ----------------------------
-	# migrate
+	# 迁移
 	# ----------------------------
 	migrate_docker() {
-		send_stats "Docker migration"
+		send_stats "Docker迁移"
 		install jq
-		read -e -p  "Please enter the backup directory to be migrated:" BACKUP_DIR
+		read -e -p  "请输入要迁移的备份目录: " BACKUP_DIR
 		[[ ! -d "$BACKUP_DIR" ]] && { echo -e "${gl_hong}The backup directory does not exist${gl_bai}"; return; }
 
-		kj_ssh_read_host_user_port "Target server IP:" "Target server SSH username [default root]:" "Target server SSH port [default 22]:" "root" "22"
+		kj_ssh_read_host_user_port "目标服务器IP: " "目标服务器SSH用户名 [默认root]: " "Target server SSH port [default 22]:" "root" "22"
 		local TARGET_IP="$KJ_SSH_HOST"
 		local TARGET_USER="$KJ_SSH_USER"
 		local TARGET_PORT="$KJ_SSH_PORT"
@@ -8336,51 +8336,51 @@ docker_ssh_migration() {
 
 		echo -e "${gl_huang}Transferring backup...${gl_bai}"
 		if [[ -z "$TARGET_PASS" ]]; then
-			# Log in using key
+			# 使用密钥登录
 			scp -P "$TARGET_PORT" -o StrictHostKeyChecking=no -r "$LATEST_TAR" "$TARGET_USER@$TARGET_IP:/tmp/"
 		fi
 
 	}
 
 	# ----------------------------
-	# Delete backup
+	# 删除备份
 	# ----------------------------
 	delete_backup() {
-		send_stats "Docker backup file deletion"
+		send_stats "Docker备份文件删除"
 		read -e -p  "Please enter the backup directory to be deleted:" BACKUP_DIR
-		[[ ! -d "$BACKUP_DIR" ]] && { echo -e "${gl_hong}The backup directory does not exist${gl_bai}"; return; }
+		[[ ! -d "$BACKUP_DIR" ]] && { echo -e "${gl_hong}备份目录不存在${gl_bai}"; return; }
 		rm -rf "$BACKUP_DIR"
-		echo -e "${gl_lv}Deleted backup:${BACKUP_DIR}${gl_bai}"
+		echo -e "${gl_lv}已删除备份: ${BACKUP_DIR}${gl_bai}"
 	}
 
 	# ----------------------------
-	# Main menu
+	# 主菜单
 	# ----------------------------
 	main_menu() {
-		send_stats "Docker backup migration restore"
+		send_stats "Docker备份迁移还原"
 		while true; do
 			clear
 			echo "------------------------"
-			echo -e "Docker backup/migration/restore tool"
+			echo -e "Docker备份/迁移/还原工具"
 			echo "------------------------"
 			list_backups
 			echo -e ""
 			echo "------------------------"
-			echo -e "1. Back up docker project"
-			echo -e "2. Migrate docker project"
-			echo -e "3. Restore docker project"
-			echo -e "4. Delete the backup file of the docker project"
+			echo -e "1. 备份docker项目"
+			echo -e "2. 迁移docker项目"
+			echo -e "3. 还原docker项目"
+			echo -e "4. 删除docker项目的备份文件"
 			echo "------------------------"
-			echo -e "0. Return to the previous menu"
+			echo -e "0. 返回上一级选单"
 			echo "------------------------"
-			read -e -p  "Please select:" choice
+			read -e -p  "请选择: " choice
 			case $choice in
 				1) backup_docker ;;
 				2) migrate_docker ;;
 				3) restore_docker ;;
 				4) delete_backup ;;
 				0) return ;;
-				*) echo -e "${gl_hong}Invalid option${gl_bai}" ;;
+				*) echo -e "${gl_hong}无效选项${gl_bai}" ;;
 			esac
 		break_end
 		done
@@ -8397,28 +8397,28 @@ linux_docker() {
 
 	while true; do
 	  clear
-	  # send_stats "docker management"
-	  echo -e "Docker management"
+	  # send_stats "docker管理"
+	  echo -e "Docker管理"
 	  docker_tato
 	  echo -e "${gl_kjlan}------------------------"
-	  echo -e "${gl_kjlan}1.   ${gl_bai}Install and update the Docker environment${gl_huang}★${gl_bai}"
+	  echo -e "${gl_kjlan}1.   ${gl_bai}安装更新Docker环境 ${gl_huang}★${gl_bai}"
 	  echo -e "${gl_kjlan}------------------------"
-	  echo -e "${gl_kjlan}2.   ${gl_bai}View Docker global status${gl_huang}★${gl_bai}"
+	  echo -e "${gl_kjlan}2.   ${gl_bai}查看Docker全局状态 ${gl_huang}★${gl_bai}"
 	  echo -e "${gl_kjlan}------------------------"
-	  echo -e "${gl_kjlan}3.   ${gl_bai}Docker container management${gl_huang}★${gl_bai}"
-	  echo -e "${gl_kjlan}4.   ${gl_bai}Docker image management"
-	  echo -e "${gl_kjlan}5.   ${gl_bai}Docker network management"
-	  echo -e "${gl_kjlan}6.   ${gl_bai}Docker volume management"
+	  echo -e "${gl_kjlan}3.   ${gl_bai}Docker容器管理 ${gl_huang}★${gl_bai}"
+	  echo -e "${gl_kjlan}4.   ${gl_bai}Docker镜像管理"
+	  echo -e "${gl_kjlan}5.   ${gl_bai}Docker网络管理"
+	  echo -e "${gl_kjlan}6.   ${gl_bai}Docker卷管理"
 	  echo -e "${gl_kjlan}------------------------"
-	  echo -e "${gl_kjlan}7.   ${gl_bai}Clean up useless docker containers and mirror network data volumes"
+	  echo -e "${gl_kjlan}7.   ${gl_bai}清理无用的docker容器和镜像网络数据卷"
 	  echo -e "${gl_kjlan}------------------------"
-	  echo -e "${gl_kjlan}8.   ${gl_bai}Change Docker source"
+	  echo -e "${gl_kjlan}8.   ${gl_bai}更换Docker源"
 	  echo -e "${gl_kjlan}9.   ${gl_bai}Edit daemon.json file"
 	  echo -e "${gl_kjlan}------------------------"
-	  echo -e "${gl_kjlan}11.  ${gl_bai}Enable Docker-ipv6 access"
-	  echo -e "${gl_kjlan}12.  ${gl_bai}Turn off Docker-ipv6 access"
+	  echo -e "${gl_kjlan}11.  ${gl_bai}开启Docker-ipv6访问"
+	  echo -e "${gl_kjlan}12.  ${gl_bai}关闭Docker-ipv6访问"
 	  echo -e "${gl_kjlan}------------------------"
-	  echo -e "${gl_kjlan}19.  ${gl_bai}Backup/migrate/restore Docker environment"
+	  echo -e "${gl_kjlan}19.  ${gl_bai}备份/迁移/还原Docker环境"
 	  echo -e "${gl_kjlan}20.  ${gl_bai}卸载Docker环境"
 	  echo -e "${gl_kjlan}------------------------"
 	  echo -e "${gl_kjlan}0.   ${gl_bai}返回主菜单"
@@ -8451,7 +8451,7 @@ linux_docker() {
 			  echo -e "Docker容器: ${gl_lv}$container_count${gl_bai}"
 			  docker ps -a
 			  echo ""
-			  echo -e "Docker volumes:${gl_lv}$volume_count${gl_bai}"
+			  echo -e "Docker卷: ${gl_lv}$volume_count${gl_bai}"
 			  docker volume ls
 			  echo ""
 			  echo -e "Docker网络: ${gl_lv}$network_count${gl_bai}"
@@ -8701,10 +8701,10 @@ linux_test() {
 	  echo -e "${gl_kjlan}12.  ${gl_bai}mtr_trace 三网回程线路测试"
 	  echo -e "${gl_kjlan}13.  ${gl_bai}Superspeed 三网测速"
 	  echo -e "${gl_kjlan}14.  ${gl_bai}nxtrace 快速回程测试脚本"
-	  echo -e "${gl_kjlan}15.  ${gl_bai}nxtrace specifies IP backhaul test script"
+	  echo -e "${gl_kjlan}15.  ${gl_bai}nxtrace 指定IP回程测试脚本"
 	  echo -e "${gl_kjlan}16.  ${gl_bai}ludashi2020 三网线路测试"
 	  echo -e "${gl_kjlan}17.  ${gl_bai}i-abc 多功能测速脚本"
-	  echo -e "${gl_kjlan}18.  ${gl_bai}NetQuality network quality check script${gl_huang}★${gl_bai}"
+	  echo -e "${gl_kjlan}18.  ${gl_bai}NetQuality 网络质量体检脚本 ${gl_huang}★${gl_bai}"
 
 	  echo -e "${gl_kjlan}------------------------"
 	  echo -e "${gl_kjlan}硬件性能测试"
@@ -8713,9 +8713,9 @@ linux_test() {
 
 	  echo -e "${gl_kjlan}------------------------"
 	  echo -e "${gl_kjlan}综合性测试"
-	  echo -e "${gl_kjlan}31.  ${gl_bai}bench performance test"
-	  echo -e "${gl_kjlan}32.  ${gl_bai}spiritysdx fusion monster evaluation${gl_huang}★${gl_bai}"
-	  echo -e "${gl_kjlan}33.  ${gl_bai}nodequality fusion monster evaluation${gl_huang}★${gl_bai}"
+	  echo -e "${gl_kjlan}31.  ${gl_bai}bench 性能测试"
+	  echo -e "${gl_kjlan}32.  ${gl_bai}spiritysdx 融合怪测评 ${gl_huang}★${gl_bai}"
+	  echo -e "${gl_kjlan}33.  ${gl_bai}nodequality 融合怪测评 ${gl_huang}★${gl_bai}"
 	  echo -e "${gl_kjlan}------------------------"
 	  echo -e "${gl_kjlan}0.   ${gl_bai}返回主菜单"
 	  echo -e "${gl_kjlan}------------------------${gl_bai}"
@@ -8740,7 +8740,7 @@ linux_test() {
 			  ;;
 		  4)
 			  clear
-			  send_stats "xykt_IP quality check script"
+			  send_stats "xykt_IP质量体检脚本"
 			  bash <(curl -Ls IP.Check.Place)
 			  ;;
 
@@ -8753,7 +8753,7 @@ linux_test() {
 			  ;;
 		  12)
 			  clear
-			  send_stats "mtr_trace triple network backhaul line test"
+			  send_stats "mtr_trace三网回程线路测试"
 			  curl ${gh_proxy}raw.githubusercontent.com/KUAILESHANGWEI/kejidalao/main/vendor/github/zhucaidan/mtr_trace/mtr_trace.sh | bash
 			  ;;
 		  13)
@@ -8773,71 +8773,71 @@ linux_test() {
 			  echo "可参考的IP列表"
 			  echo "------------------------"
 			  echo "北京电信: 219.141.136.12"
-			  echo "Beijing Unicom: 202.106.50.1"
-			  echo "Beijing Mobile: 221.179.155.161"
-			  echo "Shanghai Telecom: 202.96.209.133"
-			  echo "Shanghai Unicom: 210.22.97.1"
-			  echo "Shanghai Mobile: 211.136.112.200"
-			  echo "Guangzhou Telecom: 58.60.188.222"
-			  echo "Guangzhou China Unicom: 210.21.196.6"
-			  echo "Guangzhou Mobile: 120.196.165.24"
-			  echo "Chengdu Telecom: 61.139.2.69"
-			  echo "Chengdu China Unicom: 119.6.6.6"
-			  echo "Chengdu Mobile: 211.137.96.205"
-			  echo "Hunan Telecom: 36.111.200.100"
-			  echo "Hunan Unicom: 42.48.16.100"
-			  echo "Hunan Mobile: 39.134.254.6"
+			  echo "北京联通: 202.106.50.1"
+			  echo "北京移动: 221.179.155.161"
+			  echo "上海电信: 202.96.209.133"
+			  echo "上海联通: 210.22.97.1"
+			  echo "上海移动: 211.136.112.200"
+			  echo "广州电信: 58.60.188.222"
+			  echo "广州联通: 210.21.196.6"
+			  echo "广州移动: 120.196.165.24"
+			  echo "成都电信: 61.139.2.69"
+			  echo "成都联通: 119.6.6.6"
+			  echo "成都移动: 211.137.96.205"
+			  echo "湖南电信: 36.111.200.100"
+			  echo "湖南联通: 42.48.16.100"
+			  echo "湖南移动: 39.134.254.6"
 			  echo "------------------------"
 
-			  read -e -p "Enter a specific IP:" testip
+			  read -e -p "输入一个指定IP: " testip
 			  curl nxtrace.org/nt |bash
 			  nexttrace $testip
 			  ;;
 
 		  16)
 			  clear
-			  send_stats "ludashi2020 three network line test"
+			  send_stats "ludashi2020三网线路测试"
 			  curl ${gh_proxy}raw.githubusercontent.com/KUAILESHANGWEI/kejidalao/main/vendor/github/ludashi2020/backtrace/install.sh -sSf | sh
 			  ;;
 
 		  17)
 			  clear
-			  send_stats "i-abc multifunctional speed test script"
+			  send_stats "i-abc多功能测速脚本"
 			  bash <(curl -sL ${gh_proxy}raw.githubusercontent.com/KUAILESHANGWEI/kejidalao/main/vendor/github/i-abc/Speedtest/speedtest.sh)
 			  ;;
 
 		  18)
 			  clear
-			  send_stats "Network quality test script"
+			  send_stats "网络质量测试脚本"
 			  bash <(curl -sL Net.Check.Place)
 			  ;;
 
 		  21)
 			  clear
-			  send_stats "yabs performance test"
+			  send_stats "yabs性能测试"
 			  check_swap
 			  curl -sL yabs.sh | bash -s -- -i -5
 			  ;;
 		  22)
 			  clear
-			  send_stats "icu/gb5 CPU performance test script"
+			  send_stats "icu/gb5 CPU性能测试脚本"
 			  check_swap
 			  bash <(curl -sL bash.icu/gb5)
 			  ;;
 
 		  31)
 			  clear
-			  send_stats "bench performance test"
+			  send_stats "bench性能测试"
 			  curl -Lso- bench.sh | bash
 			  ;;
 		  32)
-			  send_stats "spiritysdx fusion monster review"
+			  send_stats "spiritysdx融合怪测评"
 			  clear
 			  curl -L ${gh_proxy}raw.githubusercontent.com/KUAILESHANGWEI/kejidalao/main/vendor/github/spiritLHLS/ecs/ecs.sh -o ecs.sh && chmod +x ecs.sh && bash ecs.sh
 			  ;;
 
 		  33)
-			  send_stats "nodequality fusion monster evaluation"
+			  send_stats "nodequality融合怪测评"
 			  clear
 			  bash <(curl -sL https://run.NodeQuality.com)
 			  ;;
@@ -8849,7 +8849,7 @@ linux_test() {
 
 			  ;;
 		  *)
-			  echo "Invalid input!"
+			  echo "无效的输入!"
 			  ;;
 	  esac
 	  break_end
@@ -8865,51 +8865,51 @@ linux_Oracle() {
 
 	 while true; do
 	  clear
-	  send_stats "Oracle Cloud Script Collection"
-	  echo -e "Oracle Cloud Script Collection"
+	  send_stats "甲骨文云脚本合集"
+	  echo -e "甲骨文云脚本合集"
 	  echo -e "${gl_kjlan}------------------------"
-	  echo -e "${gl_kjlan}1.   ${gl_bai}Install idle machine active script"
-	  echo -e "${gl_kjlan}2.   ${gl_bai}Uninstall active scripts from idle machines"
+	  echo -e "${gl_kjlan}1.   ${gl_bai}安装闲置机器活跃脚本"
+	  echo -e "${gl_kjlan}2.   ${gl_bai}卸载闲置机器活跃脚本"
 	  echo -e "${gl_kjlan}------------------------"
-	  echo -e "${gl_kjlan}3.   ${gl_bai}DD reinstall system script"
-	  echo -e "${gl_kjlan}4.   ${gl_bai}Detective R startup script"
-	  echo -e "${gl_kjlan}5.   ${gl_bai}Enable ROOT password login mode"
-	  echo -e "${gl_kjlan}6.   ${gl_bai}IPV6 recovery tool"
+	  echo -e "${gl_kjlan}3.   ${gl_bai}DD重装系统脚本"
+	  echo -e "${gl_kjlan}4.   ${gl_bai}R探长开机脚本"
+	  echo -e "${gl_kjlan}5.   ${gl_bai}开启ROOT密码登录模式"
+	  echo -e "${gl_kjlan}6.   ${gl_bai}IPV6恢复工具"
 	  echo -e "${gl_kjlan}------------------------"
-	  echo -e "${gl_kjlan}0.   ${gl_bai}Return to main menu"
+	  echo -e "${gl_kjlan}0.   ${gl_bai}返回主菜单"
 	  echo -e "${gl_kjlan}------------------------${gl_bai}"
-	  read -e -p "Please enter your choice:" sub_choice
+	  read -e -p "请输入你的选择: " sub_choice
 
 	  case $sub_choice in
 		  1)
 			  clear
-			  echo "Active script: CPU usage 10-20% Memory usage 20%"
-			  read -e -p "Are you sure you want to install it? (Y/N):" choice
+			  echo "活跃脚本: CPU占用10-20% 内存占用20% "
+			  read -e -p "确定安装吗？(Y/N): " choice
 			  case "$choice" in
 				[Yy])
 
 				  install_docker
 
-				  # Set default value
+				  # 设置默认值
 				  local DEFAULT_CPU_CORE=1
 				  local DEFAULT_CPU_UTIL="10-20"
 				  local DEFAULT_MEM_UTIL=20
 				  local DEFAULT_SPEEDTEST_INTERVAL=120
 
-				  # Prompts the user to enter the number of CPU cores and occupancy percentage. If the user presses Enter, the default value will be used.
-				  read -e -p "Please enter the number of CPU cores [Default:$DEFAULT_CPU_CORE]: " cpu_core
+				  # 提示用户输入CPU核心数和占用百分比，如果回车则使用默认值
+				  read -e -p "请输入CPU核心数 [默认: $DEFAULT_CPU_CORE]: " cpu_core
 				  local cpu_core=${cpu_core:-$DEFAULT_CPU_CORE}
 
-				  read -e -p "Please enter the CPU usage percentage range (e.g. 10-20) [Default:$DEFAULT_CPU_UTIL]: " cpu_util
+				  read -e -p "请输入CPU占用百分比范围（例如10-20） [默认: $DEFAULT_CPU_UTIL]: " cpu_util
 				  local cpu_util=${cpu_util:-$DEFAULT_CPU_UTIL}
 
-				  read -e -p "Please enter the memory usage percentage [Default:$DEFAULT_MEM_UTIL]: " mem_util
+				  read -e -p "请输入内存占用百分比 [默认: $DEFAULT_MEM_UTIL]: " mem_util
 				  local mem_util=${mem_util:-$DEFAULT_MEM_UTIL}
 
-				  read -e -p "Please enter Speedtest interval time (seconds) [Default:$DEFAULT_SPEEDTEST_INTERVAL]: " speedtest_interval
+				  read -e -p "请输入Speedtest间隔时间（秒） [默认: $DEFAULT_SPEEDTEST_INTERVAL]: " speedtest_interval
 				  local speedtest_interval=${speedtest_interval:-$DEFAULT_SPEEDTEST_INTERVAL}
 
-				  # Run Docker container
+				  # 运行Docker容器
 				  docker run -d --name=lookbusy --restart=always \
 					  -e TZ=Asia/Shanghai \
 					  -e CPU_UTIL="$cpu_util" \
@@ -8917,14 +8917,14 @@ linux_Oracle() {
 					  -e MEM_UTIL="$mem_util" \
 					  -e SPEEDTEST_INTERVAL="$speedtest_interval" \
 					  fogforest/lookbusy
-				  send_stats "Oracle Cloud Installation Active Script"
+				  send_stats "甲骨文云安装活跃脚本"
 
 				  ;;
 				[Nn])
 
 				  ;;
 				*)
-				  echo "Invalid selection, please enter Y or N."
+				  echo "无效的选择，请输入 Y 或 N。"
 				  ;;
 			  esac
 			  ;;
@@ -8932,12 +8932,12 @@ linux_Oracle() {
 			  clear
 			  docker rm -f lookbusy
 			  docker rmi fogforest/lookbusy
-			  send_stats "Oracle Cloud Uninstall Active Script"
+			  send_stats "甲骨文云卸载活跃脚本"
 			  ;;
 
 		  3)
 		  clear
-		  echo "Reinstall the system"
+		  echo "重装系统"
 		  echo "--------------------------------"
 		  echo -e "${gl_hong}注意: ${gl_bai}重装有风险失联，不放心者慎用。重装预计花费15分钟，请提前备份数据。"
 		  read -e -p "确定继续吗？(Y/N): " choice
@@ -9074,7 +9074,7 @@ linux_ldnmp() {
 	ldnmp_tato
 	echo -e "${gl_huang}------------------------"
 	echo -e "${gl_huang}1.   ${gl_bai}安装LDNMP环境 ${gl_huang}★${gl_bai}                   ${gl_huang}2.   ${gl_bai}安装WordPress ${gl_huang}★${gl_bai}"
-	echo -e "${gl_huang}3.   ${gl_bai}Install Discuz Forum${gl_huang}4.   ${gl_bai}安装可道云桌面"
+	echo -e "${gl_huang}3.   ${gl_bai}安装Discuz论坛                    ${gl_huang}4.   ${gl_bai}安装可道云桌面"
 	echo -e "${gl_huang}5.   ${gl_bai}安装苹果CMS影视站                 ${gl_huang}6.   ${gl_bai}安装独角数发卡网"
 	echo -e "${gl_huang}7.   ${gl_bai}安装flarum论坛网站                ${gl_huang}8.   ${gl_bai}安装typecho轻量博客网站"
 	echo -e "${gl_huang}9.   ${gl_bai}安装LinkStack共享链接平台         ${gl_huang}20.  ${gl_bai}自定义动态站点"
@@ -9109,7 +9109,7 @@ linux_ldnmp() {
 	  clear
 	  # Discuz论坛
 	  webname="Discuz论坛"
-	  send_stats "安装$webname"
+	  send_stats "Install$webname"
 	  echo "开始部署 $webname"
 	  add_yuming
 	  repeat_add_yuming
@@ -9138,11 +9138,11 @@ linux_ldnmp() {
 
 
 	  ldnmp_web_on
-	  echo "数据库地址: mysql"
+	  echo "Database address: mysql"
 	  echo "数据库名: $dbname"
 	  echo "用户名: $dbuse"
 	  echo "密码: $dbusepasswd"
-	  echo "表前缀: discuz_"
+	  echo "Table prefix: discuz_"
 
 
 		;;
@@ -9151,7 +9151,7 @@ linux_ldnmp() {
 	  clear
 	  # 可道云桌面
 	  webname="可道云桌面"
-	  send_stats "安装$webname"
+	  send_stats "Install$webname"
 	  echo "开始部署 $webname"
 	  add_yuming
 	  repeat_add_yuming
@@ -9177,10 +9177,10 @@ linux_ldnmp() {
 	  restart_ldnmp
 
 	  ldnmp_web_on
-	  echo "数据库地址: mysql"
+	  echo "Database address: mysql"
 	  echo "用户名: $dbuse"
 	  echo "密码: $dbusepasswd"
-	  echo "数据库名: $dbname"
+	  echo "Database name:$dbname"
 	  echo "redis主机: redis"
 
 		;;
@@ -9223,21 +9223,21 @@ linux_ldnmp() {
 	  ldnmp_web_on
 	  echo "数据库地址: mysql"
 	  echo "数据库端口: 3306"
-	  echo "数据库名: $dbname"
-	  echo "用户名: $dbuse"
+	  echo "Database name:$dbname"
+	  echo "username:$dbuse"
 	  echo "密码: $dbusepasswd"
 	  echo "数据库前缀: mac_"
 	  echo "------------------------"
-	  echo "安装成功后登录后台地址"
+	  echo "After successful installation, log in to the backend address"
 	  echo "https://$yuming/vip.php"
 
 		;;
 
 	  6)
 	  clear
-	  # 独脚数卡
+	  # One-legged number card
 	  webname="独脚数卡"
-	  send_stats "安装$webname"
+	  send_stats "Install$webname"
 	  echo "开始部署 $webname"
 	  add_yuming
 	  repeat_add_yuming
@@ -9265,13 +9265,13 @@ linux_ldnmp() {
 
 
 	  ldnmp_web_on
-	  echo "数据库地址: mysql"
+	  echo "Database address: mysql"
 	  echo "数据库端口: 3306"
 	  echo "数据库名: $dbname"
 	  echo "用户名: $dbuse"
 	  echo "密码: $dbusepasswd"
 	  echo ""
-	  echo "redis地址: redis"
+	  echo "redis address: redis"
 	  echo "redis密码: 默认不填写"
 	  echo "redis端口: 6379"
 	  echo ""
@@ -9678,7 +9678,7 @@ linux_ldnmp() {
 	  clear
 	  webname="AI绘画提示词生成器"
 	  send_stats "安装$webname"
-	  echo "开始部署 $webname"
+	  echo "Start deployment$webname"
 	  add_yuming
 	  nginx_install_status
 
@@ -9752,7 +9752,7 @@ linux_ldnmp() {
 	  rm -f $(ls -t *.zip | head -n 1)
 
 	  clear
-	  echo -e "[${gl_huang}2/2${gl_bai}] index.html所在路径"
+	  echo -e "[${gl_huang}2/2${gl_bai}] The path where index.html is located"
 	  echo "-------------"
 	  # find "$(realpath .)" -name "index.html" -print
 	  find "$(realpath .)" -name "index.html" -print | xargs -I {} dirname {}
@@ -9782,15 +9782,15 @@ linux_ldnmp() {
 
 	32)
 	  clear
-	  send_stats "LDNMP环境备份"
+	  send_stats "LDNMP environment backup"
 
 	  local backup_filename="web_$(date +"%Y%m%d%H%M%S").tar.gz"
-	  echo -e "${gl_kjlan}正在备份 $backup_filename ...${gl_bai}"
+	  echo -e "${gl_kjlan}Backing up$backup_filename ...${gl_bai}"
 	  cd /home/ && tar czvf "$backup_filename" web
 
 	  while true; do
 		clear
-		echo "备份文件已创建: /home/$backup_filename"
+		echo "Backup file created: /home/$backup_filename"
 		read -e -p "要传送备份数据到远程服务器吗？(Y/N): " choice
 		case "$choice" in
 		  [Yy])
@@ -9820,7 +9820,7 @@ linux_ldnmp() {
 
 	33)
 	  clear
-	  send_stats "Scheduled remote backup"
+	  send_stats "定时远程备份"
 	  read -e -p "输入远程服务器IP: " useip
 	  read -e -p "输入远程服务器密码: " usepasswd
 
@@ -9832,18 +9832,18 @@ linux_ldnmp() {
 	  sed -i "s/123456/$usepasswd/g" ${useip}_beifen.sh
 
 	  echo "------------------------"
-	  echo "1. 每周备份                 2. 每天备份"
+	  echo "1. Weekly backup 2. Daily backup"
 	  read -e -p "请输入你的选择: " dingshi
 
 	  case $dingshi in
 		  1)
 			  check_crontab_installed
-			  read -e -p "选择每周备份的星期几 (0-6，0代表星期日): " weekday
+			  read -e -p "Select the day of the week for weekly backup (0-6, 0 represents Sunday):" weekday
 			  (crontab -l ; echo "0 0 * * $weekday ./${useip}_beifen.sh") | crontab - > /dev/null 2>&1
 			  ;;
 		  2)
 			  check_crontab_installed
-			  read -e -p "Select daily backup time (hour, 0-23):" hour
+			  read -e -p "选择每天备份的时间（小时，0-23）: " hour
 			  (crontab -l ; echo "0 $hour * * * ./${useip}_beifen.sh") | crontab - > /dev/null 2>&1
 			  ;;
 		  *)
@@ -9869,7 +9869,7 @@ linux_ldnmp() {
 		  linux_ldnmp
 	  fi
 
-	  # If the user does not enter a file name, the latest compressed package is used
+	  # 如果用户没有输入文件名，使用最新的压缩包
 	  if [ -z "$filename" ]; then
 		  local filename=$(ls -t /home/*.tar.gz | head -1)
 	  fi
@@ -9887,7 +9887,7 @@ linux_ldnmp() {
 		  install_certbot
 		  install_ldnmp
 	  else
-		  echo "No compressed package found."
+		  echo "没有找到压缩包。"
 	  fi
 
 	  ;;
@@ -9905,8 +9905,8 @@ linux_ldnmp() {
 	  root_use
 	  while true; do
 		  clear
-		  send_stats "Update LDNMP environment"
-		  echo "更新LDNMP环境"
+		  send_stats "更新LDNMP环境"
+		  echo "Update LDNMP environment"
 		  echo "------------------------"
 		  ldnmp_v
 		  echo "发现新版本的组件"
@@ -9929,11 +9929,11 @@ linux_ldnmp() {
 		  fi
 		  echo "------------------------"
 		  echo
-		  echo "1. 更新nginx               2. 更新mysql              3. 更新php              4. 更新redis"
+		  echo "1. Update nginx 2. Update mysql 3. Update php 4. Update redis"
 		  echo "------------------------"
 		  echo "5. 更新完整环境"
 		  echo "------------------------"
-		  echo "0. 返回上一级选单"
+		  echo "0. Return to the previous menu"
 		  echo "------------------------"
 		  read -e -p "Please enter your choice:" sub_choice
 		  case $sub_choice in
@@ -9944,7 +9944,7 @@ linux_ldnmp() {
 
 			  2)
 			  local ldnmp_pods="mysql"
-			  read -e -p "Please enter${ldnmp_pods}版本号 （如: 8.0 8.3 8.4 9.0）（回车获取最新版）: " version
+			  read -e -p "请输入${ldnmp_pods}Version number (such as: 8.0 8.3 8.4 9.0) (press enter to get the latest version):" version
 			  local version=${version:-latest}
 
 			  cd /home/web/
@@ -9955,13 +9955,13 @@ linux_ldnmp() {
 			  docker compose up -d --force-recreate $ldnmp_pods
 			  docker restart $ldnmp_pods
 			  cp /home/web/docker-compose1.yml /home/web/docker-compose.yml
-			  send_stats "更新$ldnmp_pods"
-			  echo "更新${ldnmp_pods}完成"
+			  send_stats "renew$ldnmp_pods"
+			  echo "renew${ldnmp_pods}Finish"
 
 				  ;;
 			  3)
 			  local ldnmp_pods="php"
-			  read -e -p "请输入${ldnmp_pods}版本号 （如: 7.4 8.0 8.1 8.2 8.3）（回车获取最新版）: " version
+			  read -e -p "Please enter${ldnmp_pods}Version number (such as: 7.4 8.0 8.1 8.2 8.3) (press enter to get the latest version):" version
 			  local version=${version:-8.3}
 			  cd /home/web/
 			  cp /home/web/docker-compose.yml /home/web/docker-compose1.yml
@@ -9995,7 +9995,7 @@ linux_ldnmp() {
 			  docker restart $ldnmp_pods > /dev/null 2>&1
 			  cp /home/web/docker-compose1.yml /home/web/docker-compose.yml
 			  send_stats "renew$ldnmp_pods"
-			  echo "更新${ldnmp_pods}完成"
+			  echo "renew${ldnmp_pods}Finish"
 
 				  ;;
 			  4)
@@ -10013,7 +10013,7 @@ linux_ldnmp() {
 				read -e -p "$(echo -e "${gl_huang}提示: ${gl_bai}长时间不更新环境的用户，请慎重更新LDNMP环境，会有数据库更新失败的风险。确定更新LDNMP环境吗？(Y/N): ")" choice
 				case "$choice" in
 				  [Yy])
-					send_stats "完整更新LDNMP环境"
+					send_stats "Complete update of LDNMP environment"
 					cd /home/web/
 					docker compose down --rmi all
 
@@ -10038,7 +10038,7 @@ linux_ldnmp() {
 
 	38)
 		root_use
-		send_stats "卸载LDNMP环境"
+		send_stats "Uninstall the LDNMP environment"
 		read -e -p "$(echo -e "${gl_hong}强烈建议：${gl_bai}先备份全部网站数据，再卸载LDNMP环境。确定删除所有网站数据吗？(Y/N): ")" choice
 		case "$choice" in
 		  [Yy])
@@ -10062,7 +10062,7 @@ linux_ldnmp() {
 	  ;;
 
 	*)
-		echo "无效的输入!"
+		echo "Invalid input!"
 	esac
 	break_end
 
@@ -10078,7 +10078,7 @@ linux_ldnmp() {
 moltbot_menu() {
 	local app_id="114"
 
-	send_stats "clawdbot/moltbot management"
+	send_stats "clawdbot/moltbot管理"
 
 	check_openclaw_update() {
 		if ! command -v npm >/dev/null 2>&1; then
@@ -10099,7 +10099,7 @@ moltbot_menu() {
 		fi
 
 		if [ "$local_version" != "$remote_version" ]; then
-			echo "${gl_huang}检测到新版本:$remote_version${gl_bai}"
+			echo "${gl_huang}New version detected:$remote_version${gl_bai}"
 		else
 			echo "${gl_lv}当前版本已是最新:$local_version${gl_bai}"
 		fi
@@ -10110,15 +10110,15 @@ moltbot_menu() {
 		if command -v openclaw >/dev/null 2>&1; then
 			echo "${gl_lv}Installed${gl_bai}"
 		else
-			echo "${gl_hui}Not installed${gl_bai}"
+			echo "${gl_hui}未安装${gl_bai}"
 		fi
 	}
 
 	get_running_status() {		
 		if pgrep -f "openclaw.*gateway" >/dev/null 2>&1; then
-			echo "${gl_lv}Running${gl_bai}"
+			echo "${gl_lv}运行中${gl_bai}"
 		else
-			echo "${gl_hui}Not running${gl_bai}"
+			echo "${gl_hui}未运行${gl_bai}"
 		fi
 	}
 
@@ -10138,31 +10138,31 @@ moltbot_menu() {
 		echo -e "$install_status $running_status $update_message"
 		echo "======================================="
 		echo "1.  安装"
-		echo "2.  启动"
+		echo "2. Start"
 		echo "3.  停止"
 		echo "--------------------"
-		echo "4.  状态日志查看"
+		echo "4. View status log"
 		echo "5. Change model"
 		echo "6.  API管理"
 		echo "7.  机器人连接对接"
-		echo "8.  插件管理（安装/删除）"
+		echo "8. Plug-in management (installation/removal)"
 		echo "9.  技能管理（安装/删除）"
 		echo "10. 编辑主配置文件"
 		echo "11. 配置向导"
 		echo "12. 健康检测与修复"
-		echo "13. WebUI访问与设置"
+		echo "13. WebUI access and settings"
 		echo "14. TUI命令行对话窗口"
-		echo "15. 记忆/Memory"
-		echo "16. Permission management"
+		echo "15. Memory/Memory"
+		echo "16. 权限管理"
 		echo "17. 多智能体管理"
 		echo "--------------------"
 		echo "18. Backup and restore"
-		echo "19. 更新"
-		echo "20. 卸载"
+		echo "19. Update"
+		echo "20. Uninstall"
 		echo "--------------------"
 		echo "0. 返回上一级选单"
 		echo "--------------------"
-		printf "请输入选项并回车: "
+		printf "Please enter options and press Enter:"
 	}
 
 
@@ -10308,7 +10308,7 @@ def collect_available_refs(exclude_provider=None):
 
 
 def prompt_delete_provider(name):
-    prompt = f"⚠️ {name} /models 探测连续失败 3 次。是否删除该 API 供应商及其全部相关模型？[y/N]: "
+    prompt = f"⚠️ {name} /models probe failed 3 times in a row. Delete this API provider and all related models? [y/N]:"
     try:
         ans = input(prompt).strip().lower()
     except EOFError:
@@ -10343,11 +10343,11 @@ def rebind_defaults_before_delete(name):
         if ref_provider(val) == name:
             repl = get_replacement()
             if not repl:
-                summary.append(f'❌ {name}: {fk} 指向该 provider，但无可用替代模型，已中止删除')
+                summary.append(f'❌ {name}: {fk} points to the provider, but no alternative model is available, deletion aborted')
                 return False
             defaults[fk] = repl
             changed = True
-            summary.append(f'🔁 Switched before deletion {fk}: {val} -> {repl}')
+            summary.append(f'🔁 删除前已切换 {fk}: {val} -> {repl}')
 
     return True
 
@@ -10368,7 +10368,7 @@ def delete_provider_and_refs(name):
         providers.pop(name, None)
         changed = True
 
-    summary.append(f'🗑️ 已删除 provider {name}，并移除 defaults.models 下 {len(removed_refs)} 个模型引用')
+    summary.append(f'🗑️ Provider {name} has been deleted and {len(removed_refs)} model references under defaults.models have been removed')
     return True
 
 
@@ -10405,7 +10405,7 @@ for name, provider in list(providers.items()):
     model_list = provider.get('models', [])
 
     if not base_url or not api_key or not isinstance(model_list, list) or not model_list:
-        summary.append(f'ℹ️ Skip {name}: None baseUrl/apiKey/models')
+        summary.append(f'ℹ️ 跳过 {name}: 无 baseUrl/apiKey/models')
         continue
 
     if api not in SUPPORTED_APIS:
@@ -10417,19 +10417,19 @@ for name, provider in list(providers.items()):
     data, err, attempts = fetch_remote_models_with_retry(name, base_url, api_key, retries=3)
     if err is not None:
         summary.append(f'⚠️ {name}: /models detection failed, retried {attempts} times ({type(err).__name__}: {err})')
-        send_stat('OpenClaw API确认介入')
+        send_stat('OpenClaw API confirmed intervention')
         if prompt_delete_provider(name):
             deleted = delete_provider_and_refs(name)
             if deleted:
                 send_stat('OpenClaw API deletion failed Provider-Confirm')
-                summary.append(f'✅ {name}: 用户已确认删除该 provider 及全部相关模型引用')
+                summary.append(f'✅ {name}: The user has confirmed to delete the provider and all related model references')
         else:
-            send_stat('OpenClaw API删失败Provider-拒绝')
-            summary.append(f'ℹ️ {name}: 用户未确认删除，保留现有 provider 配置')
+            send_stat('OpenClaw API deletion failed Provider-rejected')
+            summary.append(f'ℹ️ {name}: The user has not confirmed the deletion and retains the existing provider configuration.')
         continue
 
     if attempts > 1:
-        summary.append(f'🔁 {name}: /models 第 {attempts} 次重试后成功')
+        summary.append(f'🔁 {name}: /models Successful after {attempts} retry')
 
     if not (isinstance(data, dict) and isinstance(data.get('data'), list)):
         summary.append(f'⚠️ 跳过 {name}: /models 返回结构不可识别')
@@ -10442,7 +10442,7 @@ for name, provider in list(providers.items()):
     remote_set = set(remote_ids)
 
     if not remote_set:
-        fatal_errors.append(f'❌ {name} 上游 /models 为空，无法为该 provider 提供兜底模型')
+        fatal_errors.append(f'❌ {name}’s upstream /models is empty and cannot provide a bottom-up model for this provider.')
         continue
 
     local_models = [m for m in model_list if isinstance(m, dict) and m.get('id')]
@@ -10471,7 +10471,7 @@ for name, provider in list(providers.items()):
         new_models.append(nm)
 
     if not new_models:
-        fatal_errors.append(f'❌ {name} 同步后无可用模型，无法保障默认模型/回退模型兜底')
+        fatal_errors.append(f'❌ {name} has no available model after synchronization, and the default model/fallback model cannot be guaranteed.')
         continue
 
     expected_refs = {model_ref(name, str(m['id'])) for m in new_models if isinstance(m, dict) and m.get('id')}
@@ -10506,14 +10506,14 @@ for name, provider in list(providers.items()):
         provider['models'] = new_models
         changed = True
 
-    summary.append(f'✅ {name}: Added {len(added_ids)}, deleted {len(removed_ids)}, currently {len(new_models)}')
+    summary.append(f'✅ {name}: 新增 {len(added_ids)} 个，删除 {len(removed_ids)} 个，当前 {len(new_models)} 个')
 
     if added_ids:
-        summary.append(f'➕ 新增模型({len(added_ids)}):')
+        summary.append(f'➕ Add new model ({len(added_ids)}):')
         for mid in added_ids:
             summary.append(f'  + {mid}')
     if removed_ids:
-        summary.append(f'➖ 删除模型({len(removed_ids)}):')
+        summary.append(f'➖ Delete model ({len(removed_ids)}):')
         for mid in removed_ids:
             summary.append(f'  - {mid}')
 
@@ -10567,14 +10567,14 @@ PY
 
 
 	start_bot() {
-		echo "Starting OpenClaw..."
+		echo "启动 OpenClaw..."
 		send_stats "Starting OpenClaw..."
 		start_gateway
 		break_end
 	}
 
 	stop_bot() {
-		echo "Stop OpenClaw..."
+		echo "停止 OpenClaw..."
 		send_stats "Stop OpenClaw..."
 		tmux kill-session -t gateway > /dev/null 2>&1
 		openclaw gateway stop
@@ -10582,7 +10582,7 @@ PY
 	}
 
 	view_logs() {
-		echo "View the OpenClaw status log"
+		echo "查看 OpenClaw 状态日志"
 		send_stats "View OpenClaw logs"
 		openclaw status
 		openclaw gateway status
@@ -10595,9 +10595,9 @@ PY
 
 
 	# OpenClaw API protocol detection logic has been removed: API types are no longer automatically detected/determined.
-	# Note: The API type is explicitly configured by the user (models.providers.<name>.api), and the script no longer attempts to call /responses for inference.
+	# Note: The API type is configured explicitly by the user (models.providers.<name>.api), and the script no longer attempts to call /responses for inference.
 
-	# Construct model configuration JSON
+	# 构造模型配置 JSON
 	build-openclaw-provider-models-json() {
 		local provider_name="$1"
 		local model_ids="$2"
@@ -10651,7 +10651,7 @@ EOF
 		echo "$models_array"
 	}
 
-	# Write provider and model configuration
+	# 写入 provider 与模型配置
 	write-openclaw-provider-models() {
 		local provider_name="$1"
 		local base_url="$2"
@@ -10660,7 +10660,7 @@ EOF
 		local config_file
 		config_file=$(openclaw_get_config_file)
 
-		# No longer automatically detects/corrects API protocols; maintains user configuration
+		# 不再自动探测/纠正 API 协议；保持用户配置为准
 		DETECTED_API="openai-completions"
 
 		[[ -f "$config_file" ]] && cp "$config_file" "${config_file}.bak.$(date +%s)"
@@ -10700,32 +10700,32 @@ EOF
 		' "$config_file" > "${config_file}.tmp" && mv "${config_file}.tmp" "$config_file"
 	}
 
-	# Core function: get and add all models
+	# 核心函数：获取并添加所有模型
 	add-all-models-from-provider() {
 		local provider_name="$1"
 		local base_url="$2"
 		local api_key="$3"
 
-		echo "🔍 Getting$provider_nameAll available models of..."
+		echo "🔍 正在获取 $provider_name 的所有可用模型..."
 
 		local models_json=$(curl -s -m 10 \
 			-H "Authorization: Bearer $api_key" \
 			"${base_url}/models")
 
 		if [[ -z "$models_json" ]]; then
-			echo "❌ Unable to obtain model list"
+			echo "❌ 无法获取模型列表"
 			return 1
 		fi
 
 		local model_ids=$(echo "$models_json" | grep -oP '"id":\s*"\K[^"]+')
 
 		if [[ -z "$model_ids" ]]; then
-			echo "❌ No models found"
+			echo "❌ 未找到任何模型"
 			return 1
 		fi
 
 		local model_count=$(echo "$model_ids" | wc -l)
-		echo "✅ Discover$model_countmodels"
+		echo "✅ 发现 $model_count 个模型"
 
 		local models_array
 		models_array=$(build-openclaw-provider-models-json "$provider_name" "$model_ids")
@@ -10733,16 +10733,16 @@ EOF
 		write-openclaw-provider-models "$provider_name" "$base_url" "$api_key" "$models_array"
 
 		if [[ $? -eq 0 ]]; then
-			echo "✅ Added successfully$model_countmodels arrive$provider_name"
-			echo "📦 Model reference format:$provider_name/<model-id>"
+			echo "✅ 成功添加 $model_count 个模型到 $provider_name"
+			echo "📦 模型引用格式: $provider_name/<model-id>"
 			return 0
 		else
-			echo "❌ Configuration injection failed"
+			echo "❌ 配置注入失败"
 			return 1
 		fi
 	}
 
-	# Add only the default model and keep the provider
+	# 仅添加默认模型并保留 provider
 	add-default-model-only-to-provider() {
 		local provider_name="$1"
 		local base_url="$2"
@@ -10750,7 +10750,7 @@ EOF
 		local default_model="$4"
 
 		if [[ -z "$default_model" ]]; then
-			echo "❌ The default model cannot be empty"
+			echo "❌ 默认模型不能为空"
 			return 1
 		fi
 
@@ -10760,47 +10760,47 @@ EOF
 		write-openclaw-provider-models "$provider_name" "$base_url" "$api_key" "$models_array"
 
 		if [[ $? -eq 0 ]]; then
-			echo "✅ Provider added:$provider_name"
-			echo "✅ Only write to the default model:$default_model"
+			echo "✅ 已添加 provider：$provider_name"
+			echo "✅ 仅写入默认模型：$default_model"
 			return 0
 		else
-			echo "❌ Configuration injection failed"
+			echo "❌ 配置注入失败"
 			return 1
 		fi
 	}
 
 	add-openclaw-provider-interactive() {
-		send_stats "OpenClaw API added"
-		echo "=== Interactively add OpenClaw Provider (full model) ==="
+		send_stats "OpenClaw API添加"
+		echo "=== 交互式添加 OpenClaw Provider (全量模型) ==="
 
-		# 1. Provider name
-		read -erp "Please enter the Provider name (eg: deepseek):" provider_name
+		# 1. Provider 名称
+		read -erp "请输入 Provider 名称 (如: deepseek): " provider_name
 		while [[ -z "$provider_name" ]]; do
-			echo "❌ Provider name cannot be empty"
-			read -erp "Please enter Provider name:" provider_name
+			echo "❌ Provider 名称不能为空"
+			read -erp "请输入 Provider 名称: " provider_name
 		done
 
 		# 2. Base URL
-		read -erp "Please enter Base URL (eg: https://api.xxx.com/v1):" base_url
+		read -erp "请输入 Base URL (如: https://api.xxx.com/v1): " base_url
 		while [[ -z "$base_url" ]]; do
-			echo "❌ Base URL cannot be empty"
-			read -erp "Please enter Base URL:" base_url
+			echo "❌ Base URL 不能为空"
+			read -erp "请输入 Base URL: " base_url
 		done
 		base_url="${base_url%/}"
 
 		# 3. API Key
-		read -rsp "Please enter API Key (input will not be displayed):" api_key
+		read -rsp "请输入 API Key (输入不显示): " api_key
 		echo
 		while [[ -z "$api_key" ]]; do
-			echo "❌ API Key cannot be empty"
-			read -rsp "Please enter API Key:" api_key
+			echo "❌ API Key 不能为空"
+			read -rsp "请输入 API Key: " api_key
 			echo
 		done
 
-		# 4. No longer detecting/determining API types; protocols are selected and maintained by users themselves
+		# 4. 不再探测/判断 API 类型；协议由用户自行选择与维护
 
-		# 5. Get model list
-		echo "🔍 Getting list of available models..."
+		# 5. 获取模型列表
+		echo "🔍 正在获取可用模型列表..."
 		models_json=$(curl -s -m 10 \
 			-H "Authorization: Bearer $api_key" \
 			"${base_url}/models")
@@ -10810,9 +10810,9 @@ EOF
 
 			if [[ -n "$available_models" ]]; then
 				model_count=$(echo "$available_models" | wc -l)
-				echo "✅ Discover$model_countAvailable models:"
+				echo "✅ 发现 $model_count 个可用模型："
 				echo "--------------------------------"
-				# Show all, with serial number
+				# 全部显示，带序号
 				i=1
 				model_list=()
 				while read -r model; do
@@ -10824,51 +10824,51 @@ EOF
 			fi
 		fi
 
-		# 5. Select the default model
+		# 5. 选择默认模型
 		echo
-		read -erp "Please enter the default Model ID (or serial number, leave blank to use the first one):" input_model
+		read -erp "请输入默认 Model ID (或序号，留空则使用第一个): " input_model
 
 		if [[ -z "$input_model" && -n "$available_models" ]]; then
 			default_model=$(echo "$available_models" | head -1)
-			echo "🎯 Using the first model:$default_model"
+			echo "🎯 使用第一个模型: $default_model"
 		elif [[ "$input_model" =~ ^[0-9]+$ ]] && [ "${#model_list[@]}" -gt 0 ] && [ "$input_model" -ge 1 ] && [ "$input_model" -le "${#model_list[@]}" ]; then
 			default_model="${model_list[$((input_model-1))]}"
-			echo "🎯 Selected models:$default_model"
+			echo "🎯 已选择模型: $default_model"
 		else
 			default_model="$input_model"
 		fi
 
-		# 6. Confirm information
+		# 6. 确认信息
 		echo
-		echo "====== Confirmation ======"
+		echo "====== 确认信息 ======"
 		echo "Provider    : $provider_name"
 		echo "Base URL    : $base_url"
 		echo "API Key     : ${api_key:0:8}****"
-		echo "Default model:$default_model"
-		echo "Total number of models:$model_count"
+		echo "默认模型    : $default_model"
+		echo "模型总数    : $model_count"
 		echo "======================"
 
-		read -erp "Do you want to add all other available models at the same time? (y/N):" confirm
+		read -erp "是否同时添加其他所有可用模型？(y/N): " confirm
 
 		install jq
 		if [[ "$confirm" =~ ^[Yy]$ ]]; then
 			add-all-models-from-provider "$provider_name" "$base_url" "$api_key"
 			add_result=$?
-			finish_msg="✅ Done! all$model_countmodels loaded"
+			finish_msg="✅ 完成！所有 $model_count 个模型已加载"
 		else
 			add-default-model-only-to-provider "$provider_name" "$base_url" "$api_key" "$default_model"
 			add_result=$?
-			finish_msg="✅ Done! Provider is retained and only the default model is loaded:$default_model"
+			finish_msg="✅ 完成！已保留 provider，并仅加载默认模型：$default_model"
 		fi
 
 		if [[ $add_result -eq 0 ]]; then
 			echo
-			echo "🔄 Set default model and restart gateway..."
+			echo "🔄 设置默认模型并重启网关..."
 			openclaw models set "$provider_name/$default_model"
 			openclaw_sync_sessions_model "$provider_name/$default_model"
 			start_gateway
 			echo "$finish_msg"
-			echo "✅ Current API protocol type:$DETECTED_API"
+			echo "✅ 当前 API 协议类型: $DETECTED_API"
 		fi
 
 		break_end
@@ -10878,7 +10878,7 @@ EOF
 
 openclaw_api_manage_list() {
 	local config_file="${HOME}/.openclaw/openclaw.json"
-	send_stats "OpenClaw API List"
+	send_stats "OpenClaw API列表"
 
 	while IFS=$'\t' read -r rec_type idx name base_url model_count api_type latency_txt latency_level; do
 		case "$rec_type" in
@@ -10894,7 +10894,7 @@ openclaw_api_manage_list() {
 					unchecked) latency_color="$gl_bai" ;;
 				esac
 
-				printf '%b\n' "[$idx] ${name} | API: ${base_url}| Agreement:${api_type}| Number of models:${gl_huang}${model_count}${gl_bai}| Delay/Status:${latency_color}${latency_txt}${gl_bai}"
+				printf '%b\n' "[$idx] ${name} | API: ${base_url} | 协议: ${api_type} | 模型数量: ${gl_huang}${model_count}${gl_bai} | 延迟/状态: ${latency_color}${latency_txt}${gl_bai}"
 				;;
 		esac
 	done < <(python3 - "$config_file" <<-'PY'
@@ -10922,10 +10922,10 @@ def ping_models(base_url, api_key):
 
 
 def classify_latency(latency):
-    if latency == 'Not available':
-        return 'Not available', 'unavailable'
-    if latency == 'Not detected':
-        return 'Not detected', 'unchecked'
+    if latency == '不可用':
+        return '不可用', 'unavailable'
+    if latency == '未检测':
+        return '未检测', 'unchecked'
     if isinstance(latency, int):
         if latency <= 800:
             level = 'low'
@@ -10941,18 +10941,18 @@ try:
     with open(path, 'r', encoding='utf-8') as f:
         obj = json.load(f)
 except FileNotFoundError:
-    print('MSG\tℹ️ openclaw.json not found, please complete the installation/initialization first.')
+    print('MSG\tℹ️ 未找到 openclaw.json，请先完成安装/初始化。')
     raise SystemExit(0)
 except Exception as e:
-    print(f'MSG\t❌ Failed to read configuration: {type(e).__name__}: {e}')
+    print(f'MSG\t❌ 读取配置失败: {type(e).__name__}: {e}')
     raise SystemExit(0)
 
 providers = ((obj.get('models') or {}).get('providers') or {})
 if not isinstance(providers, dict) or not providers:
-    print('MSG\tℹ️ No API provider is currently configured.')
+    print('MSG\tℹ️ 当前未配置任何 API provider。')
     raise SystemExit(0)
 
-print('MSG\t--- Configured API list ---')
+print('MSG\t--- 已配置 API 列表 ---')
 
 for idx, name in enumerate(sorted(providers.keys()), start=1):
     provider = providers.get(name)
@@ -10973,7 +10973,7 @@ for idx, name in enumerate(sorted(providers.keys()), start=1):
                 try:
                     latency_raw = ping_models(base_url, api_key)
                 except Exception:
-                    latency_raw = 'Not available'
+                    latency_raw = '不可用'
             else:
                 latency_raw = '不可用'
 
@@ -11003,7 +11003,7 @@ sync-openclaw-provider-interactive() {
 		return 1
 	fi
 
-	read -erp "Please enter the API name (provider) to be synchronized and press Enter to synchronize all:" provider_name
+	read -erp "请输入要同步的 API 名称(provider)，直接回车同步全部: " provider_name
 	if [ -z "$provider_name" ]; then
 		if sync_openclaw_api_models; then
 			start_gateway
@@ -11035,7 +11035,7 @@ work = copy.deepcopy(obj)
 models_cfg = work.setdefault('models', {})
 providers = models_cfg.get('providers', {})
 if not isinstance(providers, dict) or not providers:
-    print('❌ API providers not detected, unable to synchronize')
+    print('❌ 未检测到 API providers，无法同步')
     raise SystemExit(2)
 
 provider = providers.get(target)
@@ -11229,7 +11229,7 @@ PY2
 			echo "❌ 同步失败：上游 /models 请求失败"
 			;;
 		5)
-			echo "❌ Synchronization failed: the upstream model is empty or there is no available model after synchronization"
+			echo "❌ 同步失败：上游模型为空或同步后无可用模型"
 			;;
 		*)
 			echo "❌ 同步失败：请检查配置文件结构或日志输出"
@@ -11242,7 +11242,7 @@ PY2
 openclaw_detect_api_protocol_by_provider() {
 	# 协议探测逻辑已移除：脚本不再自动探测/判定 API 类型。
 	# 保留函数以兼容菜单调用，但不做任何改写。
-	echo "ℹ️ Protocol detection has been turned off: please manually${HOME}Set provider.api in /.openclaw/openclaw.json to openai-completions or openai-responses"
+	echo "ℹ️ 已关闭协议探测：请手动在 ${HOME}/.openclaw/openclaw.json 中设置 provider.api 为 openai-completions 或 openai-responses"
 	return 0
 }
 
@@ -11251,7 +11251,7 @@ fix-openclaw-provider-protocol-interactive() {
 	send_stats "OpenClaw API协议切换"
 
 	if [ ! -f "$config_file" ]; then
-		echo "❌ Configuration file not found:$config_file"
+		echo "❌ 未找到配置文件: $config_file"
 		break_end
 		return 1
 	fi
@@ -11324,7 +11324,7 @@ PY
 			echo "❌ Switching failed: protocol value is illegal"
 			;;
 		*)
-			echo "❌ Switching failed: please check the configuration file structure or log output"
+			echo "❌ 切换失败：请检查配置文件结构或日志输出"
 			;;
 	esac
 
@@ -11334,7 +11334,7 @@ PY
 	delete-openclaw-provider-interactive() {
 		local config_file
 		config_file=$(openclaw_get_config_file)
-		send_stats "OpenClaw API delete entry"
+		send_stats "OpenClaw API删除入口"
 
 		if [ ! -f "$config_file" ]; then
 			echo "❌ Configuration file not found:$config_file"
@@ -11344,7 +11344,7 @@ PY
 
 		read -erp "Please enter the API name (provider) to be deleted:" provider_name
 		if [ -z "$provider_name" ]; then
-			send_stats "OpenClaw API Delete Cancel"
+			send_stats "OpenClaw API删除取消"
 			echo "❌ provider 名称不能为空"
 			break_end
 			return 1
@@ -11441,7 +11441,7 @@ for fk in ('modelFallback', 'imageModelFallback'):
     val = defaults.get(fk)
     if ref_provider(val) == name:
         if not replacement:
-            print(f'❌ 删除中止：{fk} 指向该 provider，且无可用替代模型')
+            print(f'❌ Deletion aborted: {fk} points to the provider and no alternative model is available')
             raise SystemExit(3)
         defaults[fk] = replacement
         print(f'🔁 {fk} 切换: {val} -> {replacement}')
@@ -11456,25 +11456,25 @@ with open(path, 'w', encoding='utf-8') as f:
     json.dump(work, f, ensure_ascii=False, indent=2)
     f.write('\n')
 
-print(f'🗑️ 已删除 provider: {name}')
+print(f'🗑️ Deleted provider: {name}')
 print(f'🧹 已清理 defaults.models 中 {len(removed_refs)} 个关联模型引用')
 PY
 		local rc=$?
 		case "$rc" in
 			0)
 				send_stats "OpenClaw API deletion confirmation"
-				echo "✅Deletion completed"
+				echo "✅ 删除完成"
 				start_gateway
 				;;
 			2)
 				echo "❌ 删除失败：provider 不存在"
 				;;
 			3)
-				send_stats "OpenClaw API Delete Cancel"
-				echo "❌ Deletion failed: no replacement model available, original configuration has been maintained"
+				send_stats "OpenClaw API删除取消"
+				echo "❌ 删除失败：无可用替代模型，已保持原配置"
 				;;
 			*)
-				echo "❌ 删除失败：请检查配置文件结构或日志输出"
+				echo "❌ Deletion failed: please check the configuration file structure or log output"
 				;;
 		esac
 
@@ -11487,7 +11487,7 @@ PY
 		clear
 		echo ""
 		echo -e "${gl_kjlan}╔════════════════════════════════════════════════════════════╗${gl_bai}"
-		echo -e "${gl_kjlan}║${gl_bai}            ${gl_huang}🌟 API vendor recommendation list${gl_bai}                          ${gl_kjlan}║${gl_bai}"
+		echo -e "${gl_kjlan}║${gl_bai}            ${gl_huang}🌟 API 厂商推荐列表${gl_bai}                          ${gl_kjlan}║${gl_bai}"
 		echo -e "${gl_kjlan}║${gl_bai}            ${gl_zi}Some entrances contain AFF${gl_bai}                            ${gl_kjlan}║${gl_bai}"
 		echo -e "${gl_kjlan}╚════════════════════════════════════════════════════════════╝${gl_bai}"
 		echo ""
@@ -11506,7 +11506,7 @@ PY
 		echo -e "  ${gl_huang}● 优云智算${gl_bai} ${gl_zi}[AFF]${gl_bai}"
 		echo -e "    ${gl_kjlan}https://passport.compshare.cn/register?referral_code=4mscFZXfutfFi8swMVsPuf${gl_bai}"
 		echo ""
-		echo -e "  ${gl_huang}● 硅基流动${gl_bai} ${gl_zi}[AFF]${gl_bai}"
+		echo -e "  ${gl_huang}● Silicon based flow${gl_bai} ${gl_zi}[AFF]${gl_bai}"
 		echo -e "    ${gl_kjlan}https://cloud.siliconflow.cn/i/irWVdPic${gl_bai}"
 		echo ""
 		echo -e "  ${gl_huang}● 智谱 GLM${gl_bai} ${gl_zi}[AFF]${gl_bai}"
@@ -11518,7 +11518,7 @@ PY
 		echo -e "  ${gl_huang}● 云雾 API${gl_bai} ${gl_zi}[AFF]${gl_bai}"
 		echo -e "    ${gl_kjlan}https://yunwu.ai/register?aff=ZuyK${gl_bai}"
 		echo ""
-		echo -e "  ${gl_huang}● 柏拉图AI${gl_bai} ${gl_zi}[AFF]${gl_bai}"
+		echo -e "  ${gl_huang}● Plato AI${gl_bai} ${gl_zi}[AFF]${gl_bai}"
 		echo -e "    ${gl_kjlan}https://api.bltcy.ai/register?aff=TBzb114019${gl_bai}"
 		echo ""
 		echo -e "  ${gl_lv}● MiniMax${gl_bai}"
@@ -11534,30 +11534,30 @@ PY
 		echo -e "    ${gl_kjlan}https://ai.baishan.com/${gl_bai}"
 		echo ""
 		echo -e "${gl_kjlan}────────────────────────────────────────────────────────────${gl_bai}"
-		echo -e "  ${gl_zi}legend:${gl_lv}● 官方入口${gl_bai}  ${gl_huang}● AFF 推荐入口${gl_bai}"
+		echo -e "  ${gl_zi}图例：${gl_lv}● Official entrance${gl_bai}  ${gl_huang}● AFF 推荐入口${gl_bai}"
 		echo ""
 		echo -e "${gl_huang}提示：复制链接到浏览器打开即可访问${gl_bai}"
 		echo ""
-		read -erp "按回车键返回..." dummy
+		read -erp "Press Enter to return..." dummy
 	}
 
 	openclaw_api_manage_menu() {
-		send_stats "OpenClaw API入口"
+		send_stats "OpenClaw API entrance"
 		while true; do
 			clear
 			echo "======================================="
-			echo "OpenClaw API 管理"
+			echo "OpenClaw API Management"
 			echo "======================================="
 			openclaw_api_manage_list
 			echo "---------------------------------------"
 			echo "1. Add API"
 			echo "2. 同步API供应商模型列表"
-			echo "3. 切换 API 类型（completions / responses）"
-			echo "4. 删除API"
-			echo "5. Recommended by API vendors"
+			echo "3. Switch API type (completions/responses)"
+			echo "4. Delete API"
+			echo "5. API 厂商推荐"
 			echo "0. 退出"
 			echo "---------------------------------------"
-			read -erp "请输入你的选择: " api_choice
+			read -erp "Please enter your choice:" api_choice
 
 			case "$api_choice" in
 				1)
@@ -11579,7 +11579,7 @@ PY
 					return 0
 					;;
 				*)
-					echo "无效的选择，请重试。"
+					echo "Invalid selection, please try again."
 					sleep 1
 					;;
 			esac
@@ -11631,7 +11631,7 @@ REPO
 			local status_color_ok='[32m'
 			local status_color_fail='[31m'
 			local status_color_reset='[0m'
-			if [ "$status_text" = "可用" ]; then
+			if [ "$status_text" = "Available" ]; then
 				printf "%b最小检测结果：%s%b
 " "$status_color_ok" "$status_text" "$status_color_reset"
 			else
@@ -11808,7 +11808,7 @@ PYTHON_EOF
 			second_reply="$reply_preview"
 
 			reply_trimmed=$(printf '%s' "$second_reply" | cut -c1-120)
-			[ -z "$reply_trimmed" ] && reply_trimmed="(空返回)"
+			[ -z "$reply_trimmed" ] && reply_trimmed="(empty return)"
 
 			if [ "$second_exit" = "0" ] && [ "$second_http" -ge 200 ] && [ "$second_http" -lt 300 ]; then
 				OPENCLAW_PROBE_STATUS="OK"
@@ -11840,7 +11840,7 @@ PYTHON_EOF
 
 			models_raw=$(jq -r '.agents.defaults.models | if type == "object" then keys[] else .[] end' "$oc_config" 2>/dev/null | sed '/^\s*$/d')
 			if [ -z "$models_raw" ]; then
-				echo "获取模型列表失败：配置文件中未找到 agents.defaults.models。"
+				echo "Failed to get model list: agents.defaults.models not found in configuration file."
 				break_end
 				return 1
 			fi
@@ -11867,7 +11867,7 @@ PYTHON_EOF
 				read -e -p "请输入要设置的模型名称 (例如 openrouter/openai/gpt-4o)（输入 0 退出）： " selected_model
 
 				if [ "$selected_model" = "0" ]; then
-					echo "操作已取消，正在退出..."
+					echo "Operation canceled, exiting..."
 					break
 				fi
 
@@ -12099,7 +12099,7 @@ data['plugins'] = plugins
 config_file.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding='utf-8')
 PYTHON_EOF
 				then
-					echo "✅ Synchronized plugins.allow whitelist:$plugin_id"
+					echo "✅ 已同步 plugins.allow 白名单: $plugin_id"
 					return 0
 				fi
 			fi
@@ -12195,18 +12195,18 @@ PYTHON_EOF
 			echo "  - [telegram]     	# Telegram 机器人"
 			echo "  - [slack]        	# Slack 企业通讯"
 			echo "  - [msteams]      	# Microsoft Teams"
-			echo "- [discord] # Discord community management"
+			echo "  - [discord]      	# Discord 社区管理"
 			echo "  - [whatsapp]     	# WhatsApp 自动化"
 			echo ""
 			echo "🧠 记忆与 AI:"
-			echo "- [memory-core] # Basic memory (file retrieval)"
+			echo "  - [memory-core]  	# 基础记忆 (文件检索)"
 			echo "  - [memory-lancedb]	# 增强记忆 (向量数据库)"
 			echo "  - [copilot-proxy]	# Copilot 接口转发"
 			echo ""
 			echo "⚙️ 功能扩展:"
-			echo "- [lobster] # Approval flow (with manual confirmation)"
+			echo "  - [lobster]      	# 审批流 (带人工确认)"
 			echo "  - [voice-call]   	# 语音通话能力"
-			echo "- [nostr] # Encrypted private chat"
+			echo "  - [nostr]        	# 加密隐私聊天"
 			echo "--------------------------------------------------------"
 
 			echo "1) 安装/启用插件"
@@ -12217,7 +12217,7 @@ PYTHON_EOF
 			[ "$plugin_action" = "0" ] && break
 			[ -z "$plugin_action" ] && continue
 
-			read -e -p "Please enter plugin IDs (separated by spaces, enter 0 to exit):" raw_input
+			read -e -p "请输入插件 ID（空格分隔，输入 0 退出）： " raw_input
 			[ "$raw_input" = "0" ] && break
 			[ -z "$raw_input" ] && continue
 
@@ -12235,12 +12235,12 @@ PYTHON_EOF
 				[ -z "$plugin_id" ] && continue
 
 				if [ "$plugin_action" = "1" ]; then
-					echo "🔍 Checking plugin status:$plugin_id"
+					echo "🔍 正在检查插件状态: $plugin_id"
 					local plugin_list
 					plugin_list=$(openclaw plugins list 2>/dev/null)
 
 					if echo "$plugin_list" | grep -qw "$plugin_id" && echo "$plugin_list" | grep "$plugin_id" | grep -q "disabled"; then
-						echo "💡 Plugin [$plugin_id] Pre-installed, activating..."
+						echo "💡 插件 [$plugin_id] 已预装，正在激活..."
 						if openclaw plugins enable "$plugin_id"; then
 							sync_openclaw_plugin_allowlist "$plugin_id"
 							success_list="$success_list $plugin_id"
@@ -12252,7 +12252,7 @@ PYTHON_EOF
 					fi
 
 					if [ -d "/usr/lib/node_modules/openclaw/extensions/$plugin_id" ]; then
-						echo "💡 Found that the plug-in exists in the system's built-in directory, try to enable it directly..."
+						echo "💡 发现系统内置目录存在该插件，尝试直接启用..."
 						if openclaw plugins enable "$plugin_id"; then
 							sync_openclaw_plugin_allowlist "$plugin_id"
 							success_list="$success_list $plugin_id"
@@ -12263,11 +12263,11 @@ PYTHON_EOF
 						continue
 					fi
 
-					echo "📥 Not found locally, try to download and install:$plugin_full"
+					echo "📥 本地未发现，尝试下载安装: $plugin_full"
 					rm -rf "${HOME}/.openclaw/extensions/$plugin_id"
 					[ "$HOME" != "/root" ] && rm -rf "/root/.openclaw/extensions/$plugin_id"
 					if openclaw plugins install "$plugin_full"; then
-						echo "✅ Download successful, activating..."
+						echo "✅ 下载成功，正在启用..."
 						if openclaw plugins enable "$plugin_id"; then
 							sync_openclaw_plugin_allowlist "$plugin_id"
 							success_list="$success_list $plugin_id"
@@ -12276,7 +12276,7 @@ PYTHON_EOF
 							failed_list="$failed_list $plugin_id"
 						fi
 					else
-						echo "❌ Installation failed:$plugin_full"
+						echo "❌ 安装失败：$plugin_full"
 						failed_list="$failed_list $plugin_id"
 					fi
 				else
@@ -12285,7 +12285,7 @@ PYTHON_EOF
 					if openclaw plugins uninstall "$plugin_id"; then
 						echo "✅ 已卸载: $plugin_id"
 					else
-						echo "⚠️ Uninstallation failed, it may be a pre-installed plug-in, only disable:$plugin_id"
+						echo "⚠️ 卸载失败，可能为预装插件，仅禁用: $plugin_id"
 					fi
 					sync_openclaw_plugin_denylist "$plugin_id" >/dev/null 2>&1
 					success_list="$success_list $plugin_id"
@@ -12296,11 +12296,11 @@ PYTHON_EOF
 			echo ""
 			echo "====== 操作汇总 ======"
 			echo "✅ 成功:$success_list"
-			[ -n "$failed_list" ] && echo "❌ Failure:$failed_list"
+			[ -n "$failed_list" ] && echo "❌ 失败:$failed_list"
 			[ -n "$skipped_list" ] && echo "⏭️ 跳过:$skipped_list"
 
 			if [ "$changed" = true ]; then
-				echo "🔄 Restarting OpenClaw service to load changes..."
+				echo "🔄 正在重启 OpenClaw 服务以加载变更..."
 				start_gateway
 			fi
 			break_end
@@ -12309,43 +12309,43 @@ PYTHON_EOF
 
 
 	install_skill() {
-		send_stats "Skill management"
+		send_stats "技能管理"
 		while true; do
 			clear
 			echo "========================================"
 			echo "            技能管理 (安装/删除)            "
 			echo "========================================"
-			echo "Currently installed skills:"
+			echo "当前已安装技能:"
 			openclaw skills list
 			echo "----------------------------------------"
 
-			# Output a list of recommended practical skills
-			echo "Recommended practical skills (you can directly copy the name and enter it):"
-			echo "github # Manage GitHub Issues/PR/CI (gh CLI)"
-			echo "notion # Manipulate Notion pages, databases and blocks"
-			echo "apple-notes # macOS native note management (create/edit/search)"
-			echo "apple-reminders # macOS reminder management (to-do list)"
-			echo "1password # Automate reading and injecting 1Password keys"
-			echo "gog # Google Workspace (Gmail/cloud disk/documents) all-round assistant"
-			echo "things-mac # Deep integration of Things 3 task management"
-			echo "bluebubbles # Send and receive iMessages perfectly with BlueBubbles"
-			echo "himalaya # Terminal mail management (IMAP/SMTP powerful tool)"
-			echo "summarize # One-click summary of webpage/podcast/YouTube video content"
-			echo "openhue # Control Philips Hue smart lighting scenes"
-			echo "video-frames # Video frame extraction and short clip editing (ffmpeg driver)"
-			echo "openai-whisper # Convert local audio to text (offline privacy protection)"
-			echo "coding-agent # Automatically run programming assistants such as Claude Code/Codex"
+			# 输出推荐的实用技能列表
+			echo "推荐的实用技能（可直接复制名称输入）："
+			echo "github             # 管理 GitHub Issues/PR/CI (gh CLI)"
+			echo "notion             # 操作 Notion 页面、数据库和块"
+			echo "apple-notes        # macOS 原生笔记管理 (创建/编辑/搜索)"
+			echo "apple-reminders    # macOS 提醒事项管理 (待办清单)"
+			echo "1password          # 自动化读取和注入 1Password 密钥"
+			echo "gog                # Google Workspace (Gmail/云盘/文档) 全能助手"
+			echo "things-mac         # 深度整合 Things 3 任务管理"
+			echo "bluebubbles        # 通过 BlueBubbles 完美收发 iMessage"
+			echo "himalaya           # 终端邮件管理 (IMAP/SMTP 强力工具)"
+			echo "summarize          # 网页/播客/YouTube 视频内容一键总结"
+			echo "openhue            # 控制 Philips Hue 智能灯光场景"
+			echo "video-frames       # 视频抽帧与短片剪辑 (ffmpeg 驱动)"
+			echo "openai-whisper     # 本地音频转文字 (离线隐私保护)"
+			echo "coding-agent       # 自动运行 Claude Code/Codex 等编程助手"
 			echo "----------------------------------------"
 
-			echo "1) Installation skills"
-			echo "2) Delete skills"
-			echo "0) Return"
-			read -e -p "Please select an action:" skill_action
+			echo "1) 安装技能"
+			echo "2) 删除技能"
+			echo "0) 返回"
+			read -e -p "请选择操作：" skill_action
 
 			[ "$skill_action" = "0" ] && break
 			[ -z "$skill_action" ] && continue
 
-			read -e -p "Please enter skill names (separated by spaces, enter 0 to exit):" skill_input
+			read -e -p "请输入技能名称（空格分隔，输入 0 退出）： " skill_input
 			[ "$skill_input" = "0" ] && break
 			[ -z "$skill_input" ] && continue
 
@@ -12356,9 +12356,9 @@ PYTHON_EOF
 			local token
 
 			if [ "$skill_action" = "2" ]; then
-				read -e -p "Secondary confirmation: Deletion only affects the user directory ~/.openclaw/workspace/skills. Are you sure to continue? (y/N):" confirm_del
+				read -e -p "二次确认：删除仅影响用户目录 ~/.openclaw/workspace/skills，确认继续？(y/N): " confirm_del
 				if [[ ! "$confirm_del" =~ ^[Yy]$ ]]; then
-					echo "Deletion canceled."
+					echo "已取消删除。"
 					break_end
 					continue
 				fi
@@ -12372,47 +12372,47 @@ PYTHON_EOF
 				if [ "$skill_action" = "1" ]; then
 					local skill_found=false
 					if [ -d "${HOME}/.openclaw/workspace/skills/${skill_name}" ]; then
-						echo "💡 Skills [$skill_name] is installed in the user directory."
+						echo "💡 技能 [$skill_name] 已在用户目录安装。"
 						skill_found=true
 					elif [ -d "/usr/lib/node_modules/openclaw/skills/${skill_name}" ]; then
-						echo "💡 Skills [$skill_name] is installed in the system directory."
+						echo "💡 技能 [$skill_name] 已在系统目录安装。"
 						skill_found=true
 					fi
 
 					if [ "$skill_found" = true ]; then
-						read -e -p "Skill [$skill_name] Already installed, do you want to reinstall? (y/N):" reinstall
+						read -e -p "技能 [$skill_name] 已安装，是否重新安装？(y/N): " reinstall
 						if [[ ! "$reinstall" =~ ^[Yy]$ ]]; then
 							skipped_list="$skipped_list $skill_name"
 							continue
 						fi
 					fi
 
-					echo "Installing skills:$skill_name ..."
+					echo "正在安装技能：$skill_name ..."
 					if npx clawhub install "$skill_name" --yes --no-input 2>/dev/null || npx clawhub install "$skill_name"; then
-						echo "✅ Skills$skill_nameInstallation successful."
+						echo "✅ 技能 $skill_name 安装成功。"
 						success_list="$success_list $skill_name"
 						changed=true
 					else
-						echo "❌ Installation failed:$skill_name"
+						echo "❌ 安装失败：$skill_name"
 						failed_list="$failed_list $skill_name"
 					fi
 				else
-					echo "🗑️ Deleting skills:$skill_name"
+					echo "🗑️ 正在删除技能: $skill_name"
 					npx clawhub uninstall "$skill_name" --yes --no-input 2>/dev/null || npx clawhub uninstall "$skill_name" >/dev/null 2>&1
 					if [ -d "${HOME}/.openclaw/workspace/skills/${skill_name}" ]; then
 						rm -rf "${HOME}/.openclaw/workspace/skills/${skill_name}"
-						echo "✅ User skill directory has been deleted:$skill_name"
+						echo "✅ 已删除用户技能目录: $skill_name"
 						success_list="$success_list $skill_name"
 						changed=true
 					else
-						echo "⏭️ User skill directory not found:$skill_name"
+						echo "⏭️ 未发现用户技能目录: $skill_name"
 						skipped_list="$skipped_list $skill_name"
 					fi
 				fi
 			done
 
 			echo ""
-			echo "====== Operation Summary ======"
+			echo "====== 操作汇总 ======"
 			echo "✅ 成功:$success_list"
 			[ -n "$failed_list" ] && echo "❌ 失败:$failed_list"
 			[ -n "$skipped_list" ] && echo "⏭️ 跳过:$skipped_list"
@@ -12670,7 +12670,7 @@ openclaw_json_get_bool() {
 
 			case $bot_choice in
 				1)
-					read -e -p "Please enter the connection code received by the TG robot (for example, NYA99R2F) (enter 0 to exit):" code
+					read -e -p "请输入TG机器人收到的连接码 (例如 NYA99R2F)（输入 0 退出）： " code
 					if [ "$code" = "0" ]; then continue; fi
 					if [ -z "$code" ]; then echo "错误：连接码不能为空。"; sleep 1; continue; fi
 					openclaw pairing approve telegram "$code"
@@ -12862,7 +12862,7 @@ PY
 	}
 
 	openclaw_memory_backup_export() {
-		send_stats "OpenClaw memory full backup"
+		send_stats "OpenClaw记忆全量备份"
 		local backup_root=$(openclaw_backup_root)
 		local ts=$(date +%Y%m%d-%H%M%S)
 		local out_file="$backup_root/openclaw-memory-full-${ts}.tar.gz"
@@ -13463,18 +13463,18 @@ for entry in data:
     chunks = s.get("chunks", 0)
     print("  已收录: %s 文件 / %s 块" % (files, chunks))
     dirty = s.get("dirty")
-    dirty_str = "yes" if dirty else "否"
+    dirty_str = "是" if dirty else "否"
     print("  待刷新: %s" % dirty_str)
     vec = s.get("vector", {})
     if isinstance(vec, dict) and vec.get("enabled"):
-        vec_str = "就绪" if vec.get("available") else "Enabled (not available)"
+        vec_str = "就绪" if vec.get("available") else "已启用(不可用)"
     else:
         vec_str = "未启用"
     print("  向量库: %s" % vec_str)
     ws = s.get("workspaceDir") or "-"
-    print("Workspace: %s" % ws)
+    print("  工作区: %s" % ws)
     db = s.get("dbPath") or "-"
-    print("Index library: %s" % db)
+    print("  索引库: %s" % db)
     scan = entry.get("scan", {})
     if isinstance(scan, dict):
         issues = scan.get("issues", [])
@@ -13556,7 +13556,7 @@ PY
 
 		OPENCLAW_MEMORY_RECOMMEND_REASON=()
 		if [ "$qmd_ok" = "true" ]; then
-			OPENCLAW_MEMORY_RECOMMEND_REASON+=("QMD is available")
+			OPENCLAW_MEMORY_RECOMMEND_REASON+=("QMD 可用")
 		else
 			OPENCLAW_MEMORY_RECOMMEND_REASON+=("未检测到 QMD")
 		fi
@@ -13567,7 +13567,7 @@ PY
 		fi
 		case "$model_status" in
 			ok) OPENCLAW_MEMORY_RECOMMEND_REASON+=("本地模型文件存在") ;;
-			hf) OPENCLAW_MEMORY_RECOMMEND_REASON+=("Model comes from HF download source (may be slow/failed in China)") ;;
+			hf) OPENCLAW_MEMORY_RECOMMEND_REASON+=("模型来自 HF 下载源（国内可能慢/失败）") ;;
 			*) OPENCLAW_MEMORY_RECOMMEND_REASON+=("本地模型文件不存在或不可用") ;;
 		esac
 		if [ "$hf_ok" = "ok" ]; then
@@ -13664,7 +13664,7 @@ PY
 		local ver
 		ver=$(sqlite3 --version 2>/dev/null | awk '{print $1}')
 		echo "✅ sqlite3 可用: ${ver:-unknown}"
-		echo "ℹ️ sqlite extension support cannot be reliably detected and will continue."
+		echo "ℹ️ sqlite 扩展支持无法可靠检测，将继续。"
 		return 0
 	}
 
@@ -13673,7 +13673,7 @@ PY
 			export PATH="$HOME/.bun/bin:$PATH"
 		fi
 		if command -v bun >/dev/null 2>&1; then
-			echo "✅ bun 已存在"
+			echo "✅ bun already exists"
 			return 0
 		fi
 		echo "⬇️ 安装 bun..."
@@ -13682,14 +13682,14 @@ PY
 		elif command -v wget >/dev/null 2>&1; then
 			wget -qO- https://bun.sh/install | bash
 		else
-			echo "❌ Unable to install bun as curl or wget is not detected."
+			echo "❌ 未检测到 curl 或 wget，无法安装 bun。"
 			return 1
 		fi
 		if [ -d "$HOME/.bun/bin" ]; then
 			export PATH="$HOME/.bun/bin:$PATH"
 		fi
 		if command -v bun >/dev/null 2>&1; then
-			echo "✅ bun installation completed"
+			echo "✅ bun 安装完成"
 			return 0
 		fi
 		echo "❌ bun 安装失败"
@@ -13708,7 +13708,7 @@ PY
 				echo "⚠️ qmd 命令存在但模块损坏，重新安装..."
 			fi
 		fi
-		echo "⬇️ 通过 npm 安装 qmd: @tobilu/qmd"
+		echo "⬇️ Install qmd via npm: @tobilu/qmd"
 		npm install -g @tobilu/qmd
 		qmd_path=$(command -v qmd 2>/dev/null || true)
 		if [ -z "$qmd_path" ]; then
@@ -13716,7 +13716,7 @@ PY
 			return 1
 		fi
 		if ! qmd --version >/dev/null 2>&1; then
-			echo "❌ qmd 安装后仍无法运行"
+			echo "❌ qmd still cannot run after installation"
 			return 1
 		fi
 		OPENCLAW_MEMORY_QMD_PATH="$qmd_path"
@@ -13729,26 +13729,26 @@ PY
 		echo "✅ 环境就绪"
 		echo "方案: ${OPENCLAW_MEMORY_AUTO_SCHEME:-unknown}"
 		if [ "$OPENCLAW_MEMORY_CONFIG_ONLY" = "true" ]; then
-			echo "模式: 仅写配置（未安装/未下载）"
+			echo "Mode: Write configuration only (not installed/not downloaded)"
 		fi
 		if [ "$OPENCLAW_MEMORY_PREHEAT" = "true" ]; then
-			echo "索引: 已执行"
+			echo "Index: Executed"
 		else
 			echo "索引: 已跳过"
 		fi
 		if [ "$OPENCLAW_MEMORY_RESTARTED" = "true" ]; then
-			echo "重启: 已执行"
+			echo "Restart: executed"
 		else
-			echo "重启: 已跳过"
+			echo "Restart: skipped"
 		fi
 		if [ -n "$OPENCLAW_MEMORY_QMD_PATH" ]; then
 			echo "qmd: $OPENCLAW_MEMORY_QMD_PATH"
 		fi
 		if [ -n "$OPENCLAW_MEMORY_MODEL_PATH" ]; then
-			echo "模型: $OPENCLAW_MEMORY_MODEL_PATH"
+			echo "Model:$OPENCLAW_MEMORY_MODEL_PATH"
 		fi
 		if [ -n "$OPENCLAW_MEMORY_COUNTRY" ]; then
-			echo "地区: $OPENCLAW_MEMORY_COUNTRY"
+			echo "area:$OPENCLAW_MEMORY_COUNTRY"
 		fi
 		if [ -n "$OPENCLAW_MEMORY_HF_BASE" ]; then
 			echo "下载源: $OPENCLAW_MEMORY_HF_BASE"
@@ -13763,13 +13763,13 @@ PY
 		OPENCLAW_MEMORY_PREHEAT="true"
 		OPENCLAW_MEMORY_RESTARTED="false"
 		OPENCLAW_MEMORY_CONFIG_ONLY="false"
-		echo "即将执行自动部署（详细模式）"
+		echo "Automatic deployment is about to be performed (verbose mode)"
 		echo "目标方案: $scheme_label"
-		echo "地区: ${OPENCLAW_MEMORY_COUNTRY:-unknown}"
+		echo "Region: ${OPENCLAW_MEMORY_COUNTRY:-unknown}"
 		echo "镜像源探测: huggingface.co=${OPENCLAW_MEMORY_HF_OK:-unknown} hf-mirror.com=${OPENCLAW_MEMORY_MIRROR_OK:-unknown}"
-		echo "下载源: ${OPENCLAW_MEMORY_HF_BASE:-unknown}"
+		echo "Download source: ${OPENCLAW_MEMORY_HF_BASE:-unknown}"
 		if [ -n "$OPENCLAW_MEMORY_EXPECT_PATH" ]; then
-			echo "预计下载路径: $OPENCLAW_MEMORY_EXPECT_PATH"
+			echo "Estimated download path:$OPENCLAW_MEMORY_EXPECT_PATH"
 		fi
 		if [ -n "$OPENCLAW_MEMORY_EXPECT_SIZE" ]; then
 			echo "可能流量/磁盘占用: $OPENCLAW_MEMORY_EXPECT_SIZE"
@@ -14768,21 +14768,21 @@ try:
         al = agent_data.get("allowlist", [])
         if al:
             found = True
-            print("Agent [%s]:" % agent_id)
+            print("  智能体 [%s]:" % agent_id)
             for item in al:
                 print("    - %s" % item)
     if not found:
         print("  (空，未配置任何白名单规则)")
 except Exception as e:
-    print("(Parse failed:" + str(e) + ")")
+    print("  (解析失败: " + str(e) + ")")
 ' "$allowlist_json"
 			else
-				echo "(unable to obtain)"
+				echo "  (无法获取)"
 			fi
 			echo "---------------------------------------"
 			echo "1. 添加白名单规则"
 			echo "2. 移除白名单规则"
-			echo "0. Return"
+			echo "0. 返回"
 			echo "---------------------------------------"
 			read -e -p "请选择: " al_choice
 			case "$al_choice" in
@@ -14807,7 +14807,7 @@ except Exception as e:
 	}
 
 	openclaw_permission_menu() {
-		send_stats "OpenClaw权限管理"
+		send_stats "OpenClaw permission management"
 		while true; do
 			clear
 			echo "======================================="
@@ -14817,36 +14817,36 @@ except Exception as e:
 			echo "---------------------------------------"
 			echo -e "${gl_kjlan}1.${gl_bai} 切换为标准安全模式（日常推荐，弹卡片审批）"
 			echo -e "${gl_kjlan}2.${gl_bai} 切换为开发增强模式（允许智能体申请提权）"
-			echo -e "${gl_kjlan}3.${gl_bai} 切换为完全开放模式（${gl_hong}高风险！彻底解除所有宿主机拦截${gl_bai}）"
+			echo -e "${gl_kjlan}3.${gl_bai} 切换为完全开放模式（${gl_hong}High risk! Completely remove all host interceptions${gl_bai}）"
 			echo -e "${gl_kjlan}4.${gl_bai} 恢复官方默认沙盒防御策略"
-			echo -e "${gl_kjlan}5.${gl_bai} 运行底层安全审计与自动修复"
-			echo -e "${gl_kjlan}6.${gl_bai} 管理 Exec 命令白名单"
+			echo -e "${gl_kjlan}5.${gl_bai}Run underlying security audits and automatic repairs"
+			echo -e "${gl_kjlan}6.${gl_bai}Manage Exec command whitelist"
 			echo -e "${gl_kjlan}0.${gl_bai} 返回上一级"
 			echo "---------------------------------------"
 			read -e -p "请输入你的选择: " perm_choice
 			case "$perm_choice" in
 				1)
-					echo "准备应用：标准安全模式"
-					read -e -p "输入 yes 确认: " confirm
-					if [ "$confirm" = "yes" ]; then openclaw_permission_apply_standard; else echo "已取消"; fi
+					echo "Prepare to apply: Standard safe mode"
+					read -e -p "Enter yes to confirm:" confirm
+					if [ "$confirm" = "yes" ]; then openclaw_permission_apply_standard; else echo "Canceled"; fi
 					break_end
 					;;
 				2)
-					echo "准备应用：开发增强模式"
-					read -e -p "输入 yes 确认: " confirm
-					if [ "$confirm" = "yes" ]; then openclaw_permission_apply_developer; else echo "已取消"; fi
+					echo "Preparing the App: Developing Enhanced Mode"
+					read -e -p "Enter yes to confirm:" confirm
+					if [ "$confirm" = "yes" ]; then openclaw_permission_apply_developer; else echo "Canceled"; fi
 					break_end
 					;;
 				3)
-					echo -e "${gl_hong}⚠️ 完全开放模式会彻底瓦解 exec 审批并自动放行高危代码。${gl_bai}"
-					read -e -p "输入 FULL 确认继续: " confirm
-					if [ "$confirm" = "FULL" ]; then openclaw_permission_apply_full; else echo "已取消"; fi
+					echo -e "${gl_hong}⚠️ Fully open mode will completely collapse exec approval and automatically release high-risk code.${gl_bai}"
+					read -e -p "Enter FULL to confirm to continue:" confirm
+					if [ "$confirm" = "FULL" ]; then openclaw_permission_apply_full; else echo "Canceled"; fi
 					break_end
 					;;
 				4)
-					echo "将清除所有定制覆盖，恢复 OpenClaw 刚安装时的严格沙盒状态。"
-					read -e -p "输入 yes 确认: " confirm
-					if [ "$confirm" = "yes" ]; then openclaw_permission_restore_official_defaults; else echo "已取消"; fi
+					echo "All custom overrides will be cleared, restoring OpenClaw to its strictly sandboxed state when first installed."
+					read -e -p "Enter yes to confirm:" confirm
+					if [ "$confirm" = "yes" ]; then openclaw_permission_restore_official_defaults; else echo "Canceled"; fi
 					break_end
 					;;
 				5)
@@ -14859,7 +14859,7 @@ except Exception as e:
 					return 0
 					;;
 				*)
-					echo "无效的选择，请重试。"
+					echo "Invalid selection, please try again."
 					sleep 1
 					;;
 			esac
@@ -14924,7 +14924,7 @@ except Exception:
 
 	openclaw_multiagent_require_openclaw() {
 		if ! openclaw_has_command openclaw; then
-			echo "❌ 未检测到 openclaw 命令，请先安装或初始化 OpenClaw。"
+			echo "❌ The openclaw command is not detected, please install or initialize OpenClaw first."
 			return 1
 		fi
 		return 0
@@ -14939,7 +14939,7 @@ except Exception:
 				return 0
 			fi
 		fi
-		# 回退：从配置文件读取
+		# Fallback: reading from configuration file
 		local config_file
 		config_file=$(openclaw_permission_config_file)
 		if [ -s "$config_file" ]; then
@@ -14970,7 +14970,7 @@ PY
 				return 0
 			fi
 		fi
-		# 回退：从配置文件读取
+		# Fallback: reading from configuration file
 		local config_file
 		config_file=$(openclaw_permission_config_file)
 		if [ -s "$config_file" ]; then
@@ -15006,7 +15006,7 @@ PY
 				return 0
 			fi
 		fi
-		# 回退：从文件系统读取
+		# Fallback: Reading from the file system
 		python3 <<'PY'
 import json,os
 base=os.path.expanduser("~/.openclaw/agents")
@@ -15043,20 +15043,20 @@ PY
 		local config_file default_agent
 		config_file=$(openclaw_multiagent_config_file)
 		default_agent=$(openclaw_multiagent_default_agent)
-		echo "配置文件: ${config_file:-$(openclaw_permission_config_file)}"
-		echo "默认智能体: $default_agent"
+		echo "Configuration file: ${config_file:-$(openclaw_permission_config_file)}"
+		echo "Default agent:$default_agent"
 		python3 -c '
 import json,sys
 agents=json.loads(sys.argv[1] or "[]")
 bindings=json.loads(sys.argv[2] or "[]")
 sess_obj=json.loads(sys.argv[3] or "{}")
 sessions=sess_obj.get("sessions",[]) if isinstance(sess_obj,dict) else []
-print("已配置智能体数: %s" % len(agents))
-print("路由绑定数: %s" % len(bindings))
-print("会话总数: %s" % len(sessions))
+print("Number of configured agents: %s" % len(agents))
+print("Number of route bindings: %s" % len(bindings))
+print("Total sessions: %s" % len(sessions))
 print("---------------------------------------")
 if not agents:
-    print("当前未配置任何多智能体。")
+    print("No multi-agent is currently configured.")
 else:
     for item in agents[:8]:
         aid = item.get("id","?")
@@ -15066,61 +15066,61 @@ else:
         model = item.get("model") or "-"
         is_default = item.get("isDefault", False)
         bcount = item.get("bindings", 0)
-        default_tag = " [默认]" if is_default else ""
-        print("- 智能体ID: \033[1;36m%s\033[0m%s" % (aid, default_tag))
-        print("  身份名称: %s %s" % (identity, emoji))
-        print("  模型: %s" % model)
-        print("  工作目录: %s" % ws)
-        print("  绑定数: %s" % bcount)
+        default_tag = "[default]" if is_default else ""
+        print("- Agent ID: \033[1;36m%s\033[0m%s" % (aid, default_tag))
+        print("Identity name: %s %s" % (identity, emoji))
+        print("Model: %s" % model)
+        print("Working directory: %s" % ws)
+        print("Number of bindings: %s" % bcount)
 ' "$(openclaw_multiagent_agents_json)" "$(openclaw_multiagent_bindings_json)" "$(openclaw_multiagent_sessions_json)"
 	}
 
 	openclaw_multiagent_list_agents() {
-		send_stats "OpenClaw多智能体-列出Agent"
+		send_stats "OpenClaw Multi-Agent - List Agents"
 		python3 -c 'import json,sys; agents=json.loads(sys.argv[1] or "[]");
-if not agents: print("暂无已配置 Agent。"); raise SystemExit(0)
+if not agents: print("No Agent has been configured yet."); raise SystemExit(0)
 for idx,item in enumerate(agents,1):
  print("%s. %s" % (idx, item.get("id","?"))); print("   workspace : %s" % item.get("workspace","-")); ident=(item.get("identityName") or "-") + ((" " + item.get("identityEmoji")) if item.get("identityEmoji") else ""); print("   identity  : %s" % ident.strip()); print("   model     : %s" % (item.get("model") or "-")); print("   bindings  : %s" % item.get("bindings",0)); print("   default   : %s" % ("yes" if item.get("isDefault") else "no"))' "$(openclaw_multiagent_agents_json)"
 	}
 
 	openclaw_multiagent_add_agent() {
-		send_stats "OpenClaw多智能体-新增Agent"
+		send_stats "OpenClaw multi-agent-new Agent"
 		openclaw_multiagent_require_openclaw || return 1
 		local agent_id workspace confirm
-		read -e -p "请输入新的 Agent ID: " agent_id
-		[ -z "$agent_id" ] && echo "已取消：Agent ID 不能为空。" && return 1
-		read -e -p "请输入 workspace 路径（默认 ~/.openclaw/workspace-${agent_id}）: " workspace
+		read -e -p "Please enter new Agent ID:" agent_id
+		[ -z "$agent_id" ] && echo "Canceled: Agent ID cannot be empty." && return 1
+		read -e -p "Please enter the workspace path (default ~/.openclaw/workspace-${agent_id}）: " workspace
 		[ -z "$workspace" ] && workspace="~/.openclaw/workspace-${agent_id}"
-		echo "将创建智能体: $agent_id"
-		echo "工作目录: $workspace"
-		read -e -p "输入 yes 确认继续: " confirm
-		[ "$confirm" = "yes" ] || { echo "已取消"; return 1; }
+		echo "The agent will be created:$agent_id"
+		echo "Working directory:$workspace"
+		read -e -p "Enter yes to confirm to continue:" confirm
+		[ "$confirm" = "yes" ] || { echo "Canceled"; return 1; }
 		if openclaw agents add "$agent_id" --workspace "$workspace"; then
-			echo "✅ 智能体创建成功: $agent_id"
+			echo "✅The agent is created successfully:$agent_id"
 			local name theme
-			read -e -p "请输入智能体身份名称 (如: 代码专家): " name
+			read -e -p "Please enter the agent identity name (e.g.: Code Expert):" name
 			[ -z "$name" ] && name="$agent_id"
-			read -e -p "请输入智能体性格主题 (如: 严谨、高效): " theme
-			[ -z "$theme" ] && theme="助手"
-			echo "正在配置智能体身份..."
+			read -e -p "Please enter the agent personality theme (for example: rigorous, efficient):" theme
+			[ -z "$theme" ] && theme="assistant"
+			echo "Configuring agent identity..."
 			openclaw agents set-identity --agent "$agent_id" --name "$name" --theme "$theme"
 		else
-			echo "❌ 智能体创建失败"
+			echo "❌ Agent creation failed"
 			return 1
 		fi
 	}
 
 	openclaw_multiagent_delete_agent() {
-		send_stats "OpenClaw多智能体-删除Agent"
+		send_stats "OpenClaw multi-agent-delete agent"
 		openclaw_multiagent_require_openclaw || return 1
 		local agent_id confirm
-		read -e -p "请输入要删除的 Agent ID: " agent_id
-		[ -z "$agent_id" ] && echo "已取消：Agent ID 不能为空。" && return 1
-		echo "⚠️ 删除智能体可能影响其工作目录、路由绑定与会话路由。"
-		read -e -p "输入 DELETE 确认删除 ${agent_id}: " confirm
-		[ "$confirm" = "DELETE" ] || { echo "已取消"; return 1; }
+		read -e -p "Please enter the Agent ID to delete:" agent_id
+		[ -z "$agent_id" ] && echo "Canceled: Agent ID cannot be empty." && return 1
+		echo "⚠️ Deleting an agent may affect its working directory, route bindings, and session routing."
+		read -e -p "Enter DELETE to confirm deletion${agent_id}: " confirm
+		[ "$confirm" = "DELETE" ] || { echo "Canceled"; return 1; }
 		if openclaw agents delete "$agent_id"; then
-			echo "✅ 智能体删除成功: $agent_id"
+			echo "✅ Agent deleted successfully:$agent_id"
 		else
 			echo "❌ 智能体删除失败"
 			return 1
@@ -15128,12 +15128,12 @@ for idx,item in enumerate(agents,1):
 	}
 
 	openclaw_multiagent_list_bindings() {
-		send_stats "OpenClaw多智能体-查看路由绑定"
+		send_stats "OpenClaw multi-agent - view routing bindings"
 		python3 -c '
 import json,sys
 bindings=json.loads(sys.argv[1] or "[]")
 if not bindings:
-    print("暂无路由绑定。")
+    print("There is no route binding yet.")
     raise SystemExit(0)
 for idx,item in enumerate(bindings,1):
     desc = item.get("description") or "-"
@@ -15142,7 +15142,7 @@ for idx,item in enumerate(bindings,1):
 	}
 
 	openclaw_multiagent_add_binding() {
-		send_stats "OpenClaw多智能体-新增路由绑定"
+		send_stats "OpenClaw multi-agent-new routing binding"
 		openclaw_multiagent_require_openclaw || return 1
 		local agent_id bind_value confirm
 		read -e -p "请输入智能体 ID: " agent_id
@@ -15160,13 +15160,13 @@ for idx,item in enumerate(bindings,1):
 	}
 
 	openclaw_multiagent_remove_binding() {
-		send_stats "OpenClaw多智能体-移除路由绑定"
+		send_stats "OpenClaw multi-agent - remove route binding"
 		openclaw_multiagent_require_openclaw || return 1
 		local agent_id bind_value confirm
 		read -e -p "请输入智能体 ID: " agent_id
 		read -e -p "请输入要移除的路由绑定值: " bind_value
 		{ [ -z "$agent_id" ] || [ -z "$bind_value" ]; } && echo "已取消：参数不能为空。" && return 1
-		echo "将移除智能体 [$agent_id] 的路由绑定 [$bind_value]"
+		echo "will remove the agent [$agent_id] 的路由绑定 [$bind_value]"
 		read -e -p "输入 yes 确认继续: " confirm
 		[ "$confirm" = "yes" ] || { echo "已取消"; return 1; }
 		if openclaw agents unbind --agent "$agent_id" --bind "$bind_value"; then
@@ -15248,7 +15248,7 @@ print("✅ 多智能体健康检查完成")
 		openclaw_multiagent_require_openclaw || return 1
 		openclaw_multiagent_list_agents
 		read -e -p "输入要修改身份的智能体ID: " agent_id
-		[ -z "$agent_id" ] && { echo "ID 不能为空"; return 1; }
+		[ -z "$agent_id" ] && { echo "ID cannot be empty"; return 1; }
 		echo "修改选项（留空跳过）："
 		read -e -p "  新名称: " new_name
 		read -e -p "  新 Emoji: " new_emoji
@@ -15336,7 +15336,7 @@ openclaw_backup_restore_menu() {
 				5) openclaw_backup_delete_file ;;
 				0) return 0 ;;
 				*)
-					echo "Invalid selection, please try again."
+					echo "无效的选择，请重试。"
 					sleep 1
 					;;
 			esac
@@ -15346,7 +15346,7 @@ openclaw_backup_restore_menu() {
 
 	update_moltbot() {
 		echo "更新 OpenClaw..."
-		send_stats "Update OpenClaw..."
+		send_stats "更新 OpenClaw..."
 		install_node_and_tools
 		git config --global url."${gh_proxy}github.com/".insteadOf ssh://git@github.com/
 		git config --global url."${gh_proxy}github.com/".insteadOf git@github.com:
@@ -15446,12 +15446,12 @@ openclaw_backup_restore_menu() {
 		)
 
 		clear
-		echo "Visit address:"
+		echo "访问地址:"
 		echo "https://${yuming}/#token=$token"
 		echo "先访问URL触发设备ID，然后回车下一步进行配对。"
 		read
 		echo -e "${gl_kjlan}正在加载设备列表……${gl_bai}"
-		# Automatically add domain names to allowedOrigins
+		# 自动添加域名到 allowedOrigins
 		config_file=$(openclaw_get_config_file)
 		if [ -f "$config_file" ]; then
 			new_origin="https://${yuming}"
@@ -15477,7 +15477,7 @@ openclaw_backup_restore_menu() {
 
 	}
 
-	# Delete domain name
+	# 删除域名
 	openclaw_remove_domain() {
 		echo "域名格式 example.com 不带https://"
 		web_del
@@ -15491,11 +15491,11 @@ openclaw_backup_restore_menu() {
 			clear
 			openclaw_show_webui_addr
 			echo
-			echo "1. Add domain name access"
-			echo "2. Delete domain name access"
-			echo "0. Exit"
+			echo "1. 添加域名访问"
+			echo "2. 删除域名访问"
+			echo "0. 退出"
 			echo
-			read -e -p "Please select:" choice
+			read -e -p "请选择: " choice
 
 			case "$choice" in
 				1)
@@ -15505,13 +15505,13 @@ openclaw_backup_restore_menu() {
 					;;
 				2)
 					openclaw_remove_domain
-					read -p "Press Enter to return to the menu..."
+					read -p "按回车返回菜单..."
 					;;
 				0)
 					break
 					;;
 				*)
-					echo "Invalid option"
+					echo "无效选项"
 					sleep 1
 					;;
 			esac
@@ -15539,12 +15539,12 @@ openclaw_backup_restore_menu() {
 				openclaw onboard --install-daemon
 				break_end
 				;;
-			12) send_stats "Health detection and repair"
+			12) send_stats "健康检测与修复"
 				openclaw doctor --fix
 				break_end
 				;;
 			13) openclaw_webui_menu ;;
-			14) send_stats "TUI command line conversation"
+			14) send_stats "TUI命令行对话"
 				openclaw tui
 				break_end
 			 	;;
@@ -15570,7 +15570,7 @@ local sub_choice="$1"
 clear
 cd ~
 install git
-echo -e "${gl_kjlan}The application list is being updated. Please wait...${gl_bai}"
+echo -e "${gl_kjlan}正在更新应用列表请稍等……${gl_bai}"
 if [ ! -d apps/.git ]; then
 	timeout 10s git clone --depth 1 ${gh_proxy}github.com/KUAILESHANGWEI/kejidalao.git apps
 else
@@ -15583,12 +15583,12 @@ while true; do
 
 	if [ -z "$sub_choice" ]; then
 	  clear
-	  echo -e "application market"
+	  echo -e "应用市场"
 	  echo -e "${gl_kjlan}-------------------------"
 
 	  local app_numbers=$([ -f /home/docker/appno.txt ] && cat /home/docker/appno.txt || echo "")
 
-	  # Set color with loop
+	  # 用循环设置颜色
 	  for i in {1..150}; do
 		  if echo "$app_numbers" | grep -q "^$i$"; then
 			  declare "color$i=${gl_lv}"
@@ -15597,92 +15597,92 @@ while true; do
 		  fi
 	  done
 
-	  echo -e "${gl_kjlan}1.   ${color1}Pagoda panel official version${gl_kjlan}2.   ${color2}aaPanel Pagoda International Version"
-	  echo -e "${gl_kjlan}3.   ${color3}1Panel new generation management panel${gl_kjlan}4.   ${color4}NginxProxyManager visualization panel"
-	  echo -e "${gl_kjlan}5.   ${color5}OpenList multi-store file list program${gl_kjlan}6.   ${color6}Ubuntu Remote Desktop Web Version"
-	  echo -e "${gl_kjlan}7.   ${color7}Nezha Probe VPS Monitoring Panel${gl_kjlan}8.   ${color8}QB offline BT magnetic download panel"
-	  echo -e "${gl_kjlan}9.   ${color9}Poste.io mail server program${gl_kjlan}10.  ${color10}RocketChat multi-person online chat system"
+	  echo -e "${gl_kjlan}1.   ${color1}宝塔面板官方版                      ${gl_kjlan}2.   ${color2}aaPanel宝塔国际版"
+	  echo -e "${gl_kjlan}3.   ${color3}1Panel新一代管理面板                ${gl_kjlan}4.   ${color4}NginxProxyManager可视化面板"
+	  echo -e "${gl_kjlan}5.   ${color5}OpenList多存储文件列表程序          ${gl_kjlan}6.   ${color6}Ubuntu远程桌面网页版"
+	  echo -e "${gl_kjlan}7.   ${color7}哪吒探针VPS监控面板                 ${gl_kjlan}8.   ${color8}QB离线BT磁力下载面板"
+	  echo -e "${gl_kjlan}9.   ${color9}Poste.io邮件服务器程序              ${gl_kjlan}10.  ${color10}RocketChat多人在线聊天系统"
 	  echo -e "${gl_kjlan}-------------------------"
-	  echo -e "${gl_kjlan}11.  ${color11}禅道项目管理软件                    ${gl_kjlan}12.  ${color12}Qinglong panel scheduled task management platform"
-	  echo -e "${gl_kjlan}13.  ${color13}Cloudreve network disk${gl_huang}★${gl_bai}                     ${gl_kjlan}14.  ${color14}Simple picture bed picture management program"
-	  echo -e "${gl_kjlan}15.  ${color15}emby multimedia management system${gl_kjlan}16.  ${color16}Speedtest speed test panel"
-	  echo -e "${gl_kjlan}17.  ${color17}AdGuardHome removes adware${gl_kjlan}18.  ${color18}onlyoffice在线办公OFFICE"
+	  echo -e "${gl_kjlan}11.  ${color11}禅道项目管理软件                    ${gl_kjlan}12.  ${color12}青龙面板定时任务管理平台"
+	  echo -e "${gl_kjlan}13.  ${color13}Cloudreve网盘 ${gl_huang}★${gl_bai}                     ${gl_kjlan}14.  ${color14}简单图床图片管理程序"
+	  echo -e "${gl_kjlan}15.  ${color15}emby多媒体管理系统                  ${gl_kjlan}16.  ${color16}Speedtest测速面板"
+	  echo -e "${gl_kjlan}17.  ${color17}AdGuardHome去广告软件               ${gl_kjlan}18.  ${color18}onlyoffice在线办公OFFICE"
 	  echo -e "${gl_kjlan}19.  ${color19}雷池WAF防火墙面板                   ${gl_kjlan}20.  ${color20}portainer容器管理面板"
 	  echo -e "${gl_kjlan}-------------------------"
-	  echo -e "${gl_kjlan}21.  ${color21}VScode web version${gl_kjlan}22.  ${color22}UptimeKuma monitoring tool"
-	  echo -e "${gl_kjlan}23.  ${color23}Memos web memo${gl_kjlan}24.  ${color24}Webtop远程桌面网页版 ${gl_huang}★${gl_bai}"
+	  echo -e "${gl_kjlan}21.  ${color21}VScode网页版                        ${gl_kjlan}22.  ${color22}UptimeKuma监控工具"
+	  echo -e "${gl_kjlan}23.  ${color23}Memos网页备忘录                     ${gl_kjlan}24.  ${color24}Webtop远程桌面网页版 ${gl_huang}★${gl_bai}"
 	  echo -e "${gl_kjlan}25.  ${color25}Nextcloud网盘                       ${gl_kjlan}26.  ${color26}QD-Today定时任务管理框架"
 	  echo -e "${gl_kjlan}27.  ${color27}Dockge容器堆栈管理面板              ${gl_kjlan}28.  ${color28}LibreSpeed测速工具"
-	  echo -e "${gl_kjlan}29.  ${color29}searxng聚合搜索站 ${gl_huang}★${gl_bai}                 ${gl_kjlan}30.  ${color30}PhotoPrism Private Album System"
+	  echo -e "${gl_kjlan}29.  ${color29}searxng聚合搜索站 ${gl_huang}★${gl_bai}                 ${gl_kjlan}30.  ${color30}PhotoPrism私有相册系统"
 	  echo -e "${gl_kjlan}-------------------------"
-	  echo -e "${gl_kjlan}31.  ${color31}StirlingPDF Tools Collection${gl_kjlan}32.  ${color32}drawio free online charting software${gl_huang}★${gl_bai}"
+	  echo -e "${gl_kjlan}31.  ${color31}StirlingPDF工具大全                 ${gl_kjlan}32.  ${color32}drawio免费的在线图表软件 ${gl_huang}★${gl_bai}"
 	  echo -e "${gl_kjlan}33.  ${color33}Sun-Panel导航面板                   ${gl_kjlan}34.  ${color34}Pingvin-Share文件分享平台"
-	  echo -e "${gl_kjlan}35.  ${color35}Minimalist circle of friends${gl_kjlan}36.  ${color36}LobeChatAI chat aggregation website"
-	  echo -e "${gl_kjlan}37.  ${color37}MyIP Toolbox${gl_huang}★${gl_bai}                        ${gl_kjlan}38.  ${color38}Xiaoya alist family bucket"
+	  echo -e "${gl_kjlan}35.  ${color35}极简朋友圈                          ${gl_kjlan}36.  ${color36}LobeChatAI聊天聚合网站"
+	  echo -e "${gl_kjlan}37.  ${color37}MyIP工具箱 ${gl_huang}★${gl_bai}                        ${gl_kjlan}38.  ${color38}小雅alist全家桶"
 	  echo -e "${gl_kjlan}39.  ${color39}Bililive直播录制工具                ${gl_kjlan}40.  ${color40}webssh网页版SSH连接工具"
 	  echo -e "${gl_kjlan}-------------------------"
-	  echo -e "${gl_kjlan}41.  ${color41}耗子管理面板                	 ${gl_kjlan}42.  ${color42}Nexterm remote connection tool"
+	  echo -e "${gl_kjlan}41.  ${color41}耗子管理面板                	 ${gl_kjlan}42.  ${color42}Nexterm远程连接工具"
 	  echo -e "${gl_kjlan}43.  ${color43}RustDesk远程桌面(服务端) ${gl_huang}★${gl_bai}          ${gl_kjlan}44.  ${color44}RustDesk远程桌面(中继端) ${gl_huang}★${gl_bai}"
-	  echo -e "${gl_kjlan}45.  ${color45}Docker加速站            		 ${gl_kjlan}46.  ${color46}GitHub acceleration station${gl_huang}★${gl_bai}"
-	  echo -e "${gl_kjlan}47.  ${color47}普罗米修斯监控			 ${gl_kjlan}48.  ${color48}Prometheus (host monitoring)"
-	  echo -e "${gl_kjlan}49.  ${color49}Prometheus (container monitoring)${gl_kjlan}50.  ${color50}Replenishment monitoring tools"
+	  echo -e "${gl_kjlan}45.  ${color45}Docker加速站            		 ${gl_kjlan}46.  ${color46}GitHub加速站 ${gl_huang}★${gl_bai}"
+	  echo -e "${gl_kjlan}47.  ${color47}普罗米修斯监控			 ${gl_kjlan}48.  ${color48}普罗米修斯(主机监控)"
+	  echo -e "${gl_kjlan}49.  ${color49}普罗米修斯(容器监控)		 ${gl_kjlan}50.  ${color50}补货监控工具"
 	  echo -e "${gl_kjlan}-------------------------"
-	  echo -e "${gl_kjlan}51.  ${color51}PVE open chick panel${gl_kjlan}52.  ${color52}DPanel container management panel"
-	  echo -e "${gl_kjlan}53.  ${color53}llama3 chat AI large model${gl_kjlan}54.  ${color54}AMH host website building management panel"
-	  echo -e "${gl_kjlan}55.  ${color55}FRP intranet penetration (server)${gl_huang}★${gl_bai}	         ${gl_kjlan}56.  ${color56}FRP intranet penetration (client)${gl_huang}★${gl_bai}"
-	  echo -e "${gl_kjlan}57.  ${color57}Deepseek chat AI large model${gl_kjlan}58.  ${color58}Dify large model knowledge base${gl_huang}★${gl_bai}"
-	  echo -e "${gl_kjlan}59.  ${color59}NewAPI large model asset management${gl_kjlan}60.  ${color60}JumpServer open source bastion machine"
+	  echo -e "${gl_kjlan}51.  ${color51}PVE开小鸡面板			 ${gl_kjlan}52.  ${color52}DPanel容器管理面板"
+	  echo -e "${gl_kjlan}53.  ${color53}llama3聊天AI大模型                  ${gl_kjlan}54.  ${color54}AMH主机建站管理面板"
+	  echo -e "${gl_kjlan}55.  ${color55}FRP内网穿透(服务端) ${gl_huang}★${gl_bai}	         ${gl_kjlan}56.  ${color56}FRP内网穿透(客户端) ${gl_huang}★${gl_bai}"
+	  echo -e "${gl_kjlan}57.  ${color57}Deepseek聊天AI大模型                ${gl_kjlan}58.  ${color58}Dify大模型知识库 ${gl_huang}★${gl_bai}"
+	  echo -e "${gl_kjlan}59.  ${color59}NewAPI大模型资产管理                ${gl_kjlan}60.  ${color60}JumpServer开源堡垒机"
 	  echo -e "${gl_kjlan}-------------------------"
-	  echo -e "${gl_kjlan}61.  ${color61}Online translation server${gl_kjlan}62.  ${color62}RAGFlow large model knowledge base"
-	  echo -e "${gl_kjlan}63.  ${color63}OpenWebUI self-hosted AI platform${gl_huang}★${gl_bai}             ${gl_kjlan}64.  ${color64}it-tools toolbox"
-	  echo -e "${gl_kjlan}65.  ${color65}n8n automated workflow platform${gl_huang}★${gl_bai}               ${gl_kjlan}66.  ${color66}yt-dlp video download tool"
-	  echo -e "${gl_kjlan}67.  ${color67}ddns-go dynamic DNS management tool${gl_huang}★${gl_bai}            ${gl_kjlan}68.  ${color68}AllinSSL certificate management platform"
-	  echo -e "${gl_kjlan}69.  ${color69}SFTPGo file transfer tool${gl_kjlan}70.  ${color70}AstrBot chatbot framework"
+	  echo -e "${gl_kjlan}61.  ${color61}在线翻译服务器			 ${gl_kjlan}62.  ${color62}RAGFlow大模型知识库"
+	  echo -e "${gl_kjlan}63.  ${color63}OpenWebUI自托管AI平台 ${gl_huang}★${gl_bai}             ${gl_kjlan}64.  ${color64}it-tools工具箱"
+	  echo -e "${gl_kjlan}65.  ${color65}n8n自动化工作流平台 ${gl_huang}★${gl_bai}               ${gl_kjlan}66.  ${color66}yt-dlp视频下载工具"
+	  echo -e "${gl_kjlan}67.  ${color67}ddns-go动态DNS管理工具 ${gl_huang}★${gl_bai}            ${gl_kjlan}68.  ${color68}AllinSSL证书管理平台"
+	  echo -e "${gl_kjlan}69.  ${color69}SFTPGo文件传输工具                  ${gl_kjlan}70.  ${color70}AstrBot聊天机器人框架"
 	  echo -e "${gl_kjlan}-------------------------"
-	  echo -e "${gl_kjlan}71.  ${color71}Navidrome private music server${gl_kjlan}72.  ${color72}bitwarden password manager${gl_huang}★${gl_bai}"
-	  echo -e "${gl_kjlan}73.  ${color73}LibreTV Private Movies${gl_kjlan}74.  ${color74}MoonTV private movies"
-	  echo -e "${gl_kjlan}75.  ${color75}Melody music wizard${gl_kjlan}76.  ${color76}Online DOS old games"
-	  echo -e "${gl_kjlan}77.  ${color77}Thunder offline download tool${gl_kjlan}78.  ${color78}PandaWiki intelligent document management system"
-	  echo -e "${gl_kjlan}79.  ${color79}Beszel server monitoring${gl_kjlan}80.  ${color80}linkwarden bookmark management"
+	  echo -e "${gl_kjlan}71.  ${color71}Navidrome私有音乐服务器             ${gl_kjlan}72.  ${color72}bitwarden密码管理器 ${gl_huang}★${gl_bai}"
+	  echo -e "${gl_kjlan}73.  ${color73}LibreTV私有影视                     ${gl_kjlan}74.  ${color74}MoonTV私有影视"
+	  echo -e "${gl_kjlan}75.  ${color75}Melody音乐精灵                      ${gl_kjlan}76.  ${color76}在线DOS老游戏"
+	  echo -e "${gl_kjlan}77.  ${color77}迅雷离线下载工具                    ${gl_kjlan}78.  ${color78}PandaWiki智能文档管理系统"
+	  echo -e "${gl_kjlan}79.  ${color79}Beszel服务器监控                    ${gl_kjlan}80.  ${color80}linkwarden书签管理"
 	  echo -e "${gl_kjlan}-------------------------"
-	  echo -e "${gl_kjlan}81.  ${color81}JitsiMeet video conference${gl_kjlan}82.  ${color82}gpt-load high-performance AI transparent proxy"
-	  echo -e "${gl_kjlan}83.  ${color83}komari server monitoring tool${gl_kjlan}84.  ${color84}Wallos personal financial management tool"
-	  echo -e "${gl_kjlan}85.  ${color85}immich picture video manager${gl_kjlan}86.  ${color86}jellyfin media management system"
-	  echo -e "${gl_kjlan}87.  ${color87}SyncTV is a great tool for watching movies together${gl_kjlan}88.  ${color88}Owncast self-hosted live streaming platform"
-	  echo -e "${gl_kjlan}89.  ${color89}FileCodeBox file express${gl_kjlan}90.  ${color90}matrix decentralized chat protocol"
+	  echo -e "${gl_kjlan}81.  ${color81}JitsiMeet视频会议                   ${gl_kjlan}82.  ${color82}gpt-load高性能AI透明代理"
+	  echo -e "${gl_kjlan}83.  ${color83}komari服务器监控工具                ${gl_kjlan}84.  ${color84}Wallos个人财务管理工具"
+	  echo -e "${gl_kjlan}85.  ${color85}immich图片视频管理器                ${gl_kjlan}86.  ${color86}jellyfin媒体管理系统"
+	  echo -e "${gl_kjlan}87.  ${color87}SyncTV一起看片神器                  ${gl_kjlan}88.  ${color88}Owncast自托管直播平台"
+	  echo -e "${gl_kjlan}89.  ${color89}FileCodeBox文件快递                 ${gl_kjlan}90.  ${color90}matrix去中心化聊天协议"
 	  echo -e "${gl_kjlan}-------------------------"
-	  echo -e "${gl_kjlan}91.  ${color91}gitea private code repository${gl_kjlan}92.  ${color92}FileBrowser file manager"
-	  echo -e "${gl_kjlan}93.  ${color93}Dufs minimalist static file server${gl_kjlan}94.  ${color94}Gopeed high-speed download tool"
-	  echo -e "${gl_kjlan}95.  ${color95}paperless document management platform${gl_kjlan}96.  ${color96}2FAuth self-hosted two-step authenticator"
-	  echo -e "${gl_kjlan}97.  ${color97}WireGuard networking (server)${gl_kjlan}98.  ${color98}WireGuard组网(客户端)"
-	  echo -e "${gl_kjlan}99.  ${color99}DSM Synology Virtual Machine${gl_kjlan}100. ${color100}Syncthing peer-to-peer file synchronization tool"
+	  echo -e "${gl_kjlan}91.  ${color91}gitea私有代码仓库                   ${gl_kjlan}92.  ${color92}FileBrowser文件管理器"
+	  echo -e "${gl_kjlan}93.  ${color93}Dufs极简静态文件服务器              ${gl_kjlan}94.  ${color94}Gopeed高速下载工具"
+	  echo -e "${gl_kjlan}95.  ${color95}paperless文档管理平台               ${gl_kjlan}96.  ${color96}2FAuth自托管二步验证器"
+	  echo -e "${gl_kjlan}97.  ${color97}WireGuard组网(服务端)               ${gl_kjlan}98.  ${color98}WireGuard组网(客户端)"
+	  echo -e "${gl_kjlan}99.  ${color99}DSM群晖虚拟机                       ${gl_kjlan}100. ${color100}Syncthing点对点文件同步工具"
 	  echo -e "${gl_kjlan}-------------------------"
-	  echo -e "${gl_kjlan}101. ${color101}AI video generation tool${gl_kjlan}102. ${color102}VoceChat multi-person online chat system"
-	  echo -e "${gl_kjlan}103. ${color103}Umami website statistics tool${gl_kjlan}104. ${color104}Stream四层代理转发工具"
-	  echo -e "${gl_kjlan}105. ${color105}思源笔记                            ${gl_kjlan}106. ${color106}Drawnix open source whiteboard tool"
+	  echo -e "${gl_kjlan}101. ${color101}AI视频生成工具                      ${gl_kjlan}102. ${color102}VoceChat多人在线聊天系统"
+	  echo -e "${gl_kjlan}103. ${color103}Umami网站统计工具                   ${gl_kjlan}104. ${color104}Stream四层代理转发工具"
+	  echo -e "${gl_kjlan}105. ${color105}思源笔记                            ${gl_kjlan}106. ${color106}Drawnix开源白板工具"
 	  echo -e "${gl_kjlan}107. ${color107}PanSou网盘搜索                      ${gl_kjlan}108. ${color108}LangBot聊天机器人"
 	  echo -e "${gl_kjlan}109. ${color109}ZFile在线网盘                       ${gl_kjlan}110. ${color110}Karakeep书签管理"
 	  echo -e "${gl_kjlan}-------------------------"
-	  echo -e "${gl_kjlan}111. ${color111}多格式文件转换工具                  ${gl_kjlan}112. ${color112}Lucky大内网穿透工具"
+	  echo -e "${gl_kjlan}111. ${color111}Multi-format file conversion tool${gl_kjlan}112. ${color112}Lucky大内网穿透工具"
 	  echo -e "${gl_kjlan}113. ${color113}Firefox浏览器                       ${gl_kjlan}114. ${color114}OpenClaw机器人管理工具${gl_huang}★${gl_bai}"
 	  echo -e "${gl_kjlan}115. ${color115}Hermes机器人管理工具${gl_huang}★${gl_bai}"
 	  echo -e "${gl_kjlan}-------------------------"
-	  echo -e "${gl_kjlan}第三方应用列表"
+	  echo -e "${gl_kjlan}Third-party application list"
   	  echo -e "${gl_kjlan}想要让你的应用出现在这里？查看开发者指南: ${gl_huang}https://dev.kejilion.sh/${gl_bai}"
 
 	  for f in "$HOME"/apps/*.conf; do
 		  [ -e "$f" ] || continue
 		  local base_name=$(basename "$f" .conf)
-		  # 获取应用描述
+		  # Get app description
 		  local app_text=$(grep "app_text=" "$f" | cut -d'=' -f2 | tr -d '"' | tr -d "'")
 
 		  # 检查安装状态 (匹配 appno.txt 中的 ID)
 		  # 这里假设 appno.txt 中记录的是 base_name (即文件名)
 		  if echo "$app_numbers" | grep -q "^$base_name$"; then
 			  # 如果已安装：显示 base_name - 描述 [已安装] (绿色)
-			  echo -e "${gl_kjlan}$base_name${gl_bai} - ${gl_lv}$app_text [已安装]${gl_bai}"
+			  echo -e "${gl_kjlan}$base_name${gl_bai} - ${gl_lv}$app_text[Installed]${gl_bai}"
 		  else
-			  # 如果未安装：正常显示
+			  # If not installed: display normally
 			  echo -e "${gl_kjlan}$base_name${gl_bai} - $app_text"
 		  fi
 	  done
@@ -15690,7 +15690,7 @@ while true; do
 
 
 	  echo -e "${gl_kjlan}-------------------------"
-	  echo -e "${gl_kjlan}b.   ${gl_bai}备份全部应用数据                    ${gl_kjlan}r.   ${gl_bai}还原全部应用数据"
+	  echo -e "${gl_kjlan}b.   ${gl_bai}Back up all application data${gl_kjlan}r.   ${gl_bai}还原全部应用数据"
 	  echo -e "${gl_kjlan}------------------------"
 	  echo -e "${gl_kjlan}0.   ${gl_bai}返回主菜单"
 	  echo -e "${gl_kjlan}------------------------${gl_bai}"
@@ -15701,7 +15701,7 @@ while true; do
 	  1|bt|baota)
 		local app_id="1"
 		local lujing="[ -d "/www/server/panel" ]"
-		local panelname="宝塔面板"
+		local panelname="pagoda panel"
 		local panelurl="https://www.bt.cn/new/index.html"
 
 		panel_app_install() {
@@ -15829,7 +15829,7 @@ while true; do
 		}
 
 
-		local docker_describe="一个支持多种存储，支持网页浏览和 WebDAV 的文件列表程序，由 gin 和 Solidjs 驱动"
+		local docker_describe="A file listing program that supports multiple storages, web browsing and WebDAV, powered by gin and Solidjs"
 		local docker_url="官网介绍: ${gh_https_url}github.com/OpenListTeam/OpenList"
 		local docker_use="docker exec openlist ./openlist admin random"
 		local docker_passwd=""
@@ -15847,7 +15847,7 @@ while true; do
 
 		docker_rum() {
 
-			read -e -p "设置登录用户名: " admin
+			read -e -p "Set login username:" admin
 			read -e -p "设置登录用户密码: " admin_password
 			docker run -d \
 			  --name=webtop-ubuntu \
@@ -15871,7 +15871,7 @@ while true; do
 
 
 		local docker_describe="webtop基于Ubuntu的容器。若IP无法访问，请添加域名访问。"
-		local docker_url="官网介绍: https://docs.linuxserver.io/images/docker-webtop/"
+		local docker_url="Official website introduction: https://docs.linuxserver.io/images/docker-webtop/"
 		local docker_use=""
 		local docker_passwd=""
 		local app_size="2"
@@ -15881,7 +15881,7 @@ while true; do
 		  ;;
 	  7|nezha)
 		clear
-		send_stats "搭建哪吒"
+		send_stats "Build Nezha"
 
 		local app_id="7"
 		local docker_name="nezha-dashboard"
@@ -15890,20 +15890,20 @@ while true; do
 			check_docker_app
 			check_docker_image_update $docker_name
 			clear
-			echo -e "哪吒监控 $check_docker $update_status"
+			echo -e "Nezha monitoring$check_docker $update_status"
 			echo "开源、轻量、易用的服务器监控与运维工具"
-			echo "官网搭建文档: https://nezha.wiki/guide/dashboard.html"
+			echo "Official website construction documentation: https://nezha.wiki/guide/dashboard.html"
 			if docker ps -a --format '{{.Names}}' 2>/dev/null | grep -q "$docker_name"; then
 				local docker_port=$(docker port $docker_name | awk -F'[:]' '/->/ {print $NF}' | uniq)
 				check_docker_app_ip
 			fi
 			echo ""
 			echo "------------------------"
-			echo "1. 使用"
+			echo "1. Use"
 			echo "------------------------"
-			echo "0. 返回上一级选单"
+			echo "0. Return to the previous menu"
 			echo "------------------------"
-			read -e -p "输入你的选择: " choice
+			read -e -p "Enter your selection:" choice
 
 			case $choice in
 				1)
@@ -15950,8 +15950,8 @@ while true; do
 
 		}
 
-		local docker_describe="qbittorrent离线BT磁力下载服务"
-		local docker_url="官网介绍: https://hub.docker.com/r/linuxserver/qbittorrent"
+		local docker_describe="qbittorrent offline BT magnetic download service"
+		local docker_url="Official website introduction: https://hub.docker.com/r/linuxserver/qbittorrent"
 		local docker_use="sleep 3"
 		local docker_passwd="docker logs qbittorrent"
 		local app_size="1"
@@ -15960,7 +15960,7 @@ while true; do
 		  ;;
 
 	  9|mail)
-		send_stats "搭建邮局"
+		send_stats "Build a post office"
 		clear
 		install telnet
 		local app_id="9"
@@ -15970,33 +15970,33 @@ while true; do
 			check_docker_image_update $docker_name
 
 			clear
-			echo -e "邮局服务 $check_docker $update_status"
+			echo -e "postal service$check_docker $update_status"
 			echo "poste.io 是一个开源的邮件服务器解决方案，"
 			echo "视频介绍: https://www.bilibili.com/video/BV1wv421C71t?t=0.1"
 
 			echo ""
-			echo "端口检测"
+			echo "Port detection"
 			port=25
 			timeout=3
 			if echo "quit" | timeout $timeout telnet smtp.qq.com $port | grep 'Connected'; then
-			  echo -e "${gl_lv}端口 $port 当前可用${gl_bai}"
+			  echo -e "${gl_lv}port$portCurrently available${gl_bai}"
 			else
-			  echo -e "${gl_hong}端口 $port 当前不可用${gl_bai}"
+			  echo -e "${gl_hong}port$port 当前不可用${gl_bai}"
 			fi
 			echo ""
 
 			if docker ps -a --format '{{.Names}}' 2>/dev/null | grep -q "$docker_name"; then
 				yuming=$(cat /home/docker/mail.txt)
-				echo "访问地址: "
+				echo "Visit address:"
 				echo "https://$yuming"
 			fi
 
 			echo "------------------------"
-			echo "1. 安装           2. 更新           3. 卸载"
+			echo "1. Install 2. Update 3. Uninstall"
 			echo "------------------------"
 			echo "0. 返回上一级选单"
 			echo "------------------------"
-			read -e -p "输入你的选择: " choice
+			read -e -p "Enter your selection:" choice
 
 			case $choice in
 				1)
@@ -16007,7 +16007,7 @@ while true; do
 					echo "$yuming" > /home/docker/mail.txt
 					echo "------------------------"
 					ip_address
-					echo "先解析这些DNS记录"
+					echo "First parse these DNS records"
 					echo "A           mail            $ipv4_address"
 					echo "CNAME       imap            $yuming"
 					echo "CNAME       pop             $yuming"
@@ -16333,7 +16333,7 @@ while true; do
 
 
 		local docker_describe="AdGuardHome是一款全网广告拦截与反跟踪软件，未来将不止是一个DNS服务器。"
-		local docker_url="Official website introduction: https://hub.docker.com/r/adguard/adguardhome"
+		local docker_url="官网介绍: https://hub.docker.com/r/adguard/adguardhome"
 		local docker_use=""
 		local docker_passwd=""
 		local app_size="1"
@@ -16482,7 +16482,7 @@ while true; do
 
 
 		local docker_describe="VScode是一款强大的在线代码编写工具"
-		local docker_url="Official website introduction:${gh_proxy}github.com/coder/code-server"
+		local docker_url="官网介绍: ${gh_proxy}github.com/coder/code-server"
 		local docker_use="sleep 3"
 		local docker_passwd="docker exec vscode-web cat /home/coder/.config/code-server/config.yaml"
 		local app_size="1"
@@ -16509,8 +16509,8 @@ while true; do
 		}
 
 
-		local docker_describe="Uptime Kuma Easy-to-use self-hosted monitoring tool"
-		local docker_url="Official website introduction:${gh_proxy}github.com/louislam/uptime-kuma"
+		local docker_describe="Uptime Kuma 易于使用的自托管监控工具"
+		local docker_url="官网介绍: ${gh_proxy}github.com/louislam/uptime-kuma"
 		local docker_use=""
 		local docker_passwd=""
 		local app_size="1"
@@ -16529,8 +16529,8 @@ while true; do
 
 		}
 
-		local docker_describe="Memos is a lightweight, self-hosted memo center"
-		local docker_url="Official website introduction:${gh_proxy}github.com/usememos/memos"
+		local docker_describe="Memos是一款轻量级、自托管的备忘录中心"
+		local docker_url="官网介绍: ${gh_proxy}github.com/usememos/memos"
 		local docker_use=""
 		local docker_passwd=""
 		local app_size="1"
@@ -16545,8 +16545,8 @@ while true; do
 
 		docker_rum() {
 
-			read -e -p "Set login username:" admin
-			read -e -p "Set login user password:" admin_password
+			read -e -p "设置登录用户名: " admin
+			read -e -p "设置登录用户密码: " admin_password
 			docker run -d \
 			  --name=webtop \
 			  --security-opt seccomp=unconfined \
@@ -16570,8 +16570,8 @@ while true; do
 		}
 
 
-		local docker_describe="webtop is based on the Chinese version of Alpine container. If the IP cannot be accessed, please add a domain name for access."
-		local docker_url="Official website introduction: https://docs.linuxserver.io/images/docker-webtop/"
+		local docker_describe="webtop基于Alpine的中文版容器。若IP无法访问，请添加域名访问。"
+		local docker_url="官网介绍: https://docs.linuxserver.io/images/docker-webtop/"
 		local docker_use=""
 		local docker_passwd=""
 		local app_size="2"
@@ -16591,9 +16591,9 @@ while true; do
 
 		}
 
-		local docker_describe="With over 400,000 deployments, Nextcloud is the most popular local content collaboration platform you can download"
-		local docker_url="Official website introduction: https://nextcloud.com/"
-		local docker_use="echo \"Account: nextcloud Password:$rootpasswd\""
+		local docker_describe="Nextcloud拥有超过 400,000 个部署，是您可以下载的最受欢迎的本地内容协作平台"
+		local docker_url="官网介绍: https://nextcloud.com/"
+		local docker_use="echo \"账号: nextcloud  密码: $rootpasswd\""
 		local docker_passwd=""
 		local app_size="3"
 		docker_app
@@ -16611,8 +16611,8 @@ while true; do
 
 		}
 
-		local docker_describe="QD-Today is an HTTP request scheduled task automatic execution framework"
-		local docker_url="Official website introduction: https://qd-today.github.io/qd/zh_CN/"
+		local docker_describe="QD-Today是一个HTTP请求定时任务自动执行框架"
+		local docker_url="官网介绍: https://qd-today.github.io/qd/zh_CN/"
 		local docker_use=""
 		local docker_passwd=""
 		local app_size="1"
@@ -16631,8 +16631,8 @@ while true; do
 
 		}
 
-		local docker_describe="dockge is a visual docker-compose container management panel"
-		local docker_url="Official website introduction:${gh_proxy}github.com/louislam/dockge"
+		local docker_describe="dockge是一个可视化的docker-compose容器管理面板"
+		local docker_url="官网介绍: ${gh_proxy}github.com/louislam/dockge"
 		local docker_use=""
 		local docker_passwd=""
 		local app_size="1"
@@ -16651,8 +16651,8 @@ while true; do
 
 		}
 
-		local docker_describe="librespeed is a lightweight speed testing tool implemented in Javascript that can be used out of the box"
-		local docker_url="Official website introduction:${gh_proxy}github.com/librespeed/speedtest"
+		local docker_describe="librespeed是用Javascript实现的轻量级速度测试工具，即开即用"
+		local docker_url="官网介绍: ${gh_proxy}github.com/librespeed/speedtest"
 		local docker_use=""
 		local docker_passwd=""
 		local app_size="1"
@@ -16676,8 +16676,8 @@ while true; do
 
 		}
 
-		local docker_describe="searxng is a private and private search engine site"
-		local docker_url="Official website introduction: https://hub.docker.com/r/alandoyle/searxng"
+		local docker_describe="searxng是一个私有且隐私的搜索引擎站点"
+		local docker_url="官网介绍: https://hub.docker.com/r/alandoyle/searxng"
 		local docker_use=""
 		local docker_passwd=""
 		local app_size="1"
@@ -16708,9 +16708,9 @@ while true; do
 		}
 
 
-		local docker_describe="Photoprism is a very powerful private photo album system"
-		local docker_url="Official website introduction: https://www.photoprism.app/"
-		local docker_use="echo \"Account: admin Password:$rootpasswd\""
+		local docker_describe="photoprism非常强大的私有相册系统"
+		local docker_url="官网介绍: https://www.photoprism.app/"
+		local docker_use="echo \"账号: admin  密码: $rootpasswd\""
 		local docker_passwd=""
 		local app_size="1"
 		docker_app
@@ -16737,7 +16737,7 @@ while true; do
 		}
 
 		local docker_describe="这是一个强大的本地托管基于 Web 的 PDF 操作工具，使用 docker，允许您对 PDF 文件执行各种操作，例如拆分合并、转换、重新组织、添加图像、旋转、压缩等。"
-		local docker_url="Official website introduction:${gh_proxy}github.com/Stirling-Tools/Stirling-PDF"
+		local docker_url="官网介绍: ${gh_proxy}github.com/Stirling-Tools/Stirling-PDF"
 		local docker_use=""
 		local docker_passwd=""
 		local app_size="1"
@@ -16757,8 +16757,8 @@ while true; do
 		}
 
 
-		local docker_describe="This is a powerful charting software. You can draw mind maps, topology diagrams, and flow charts."
-		local docker_url="Official website introduction: https://www.drawio.com/"
+		local docker_describe="这是一个强大图表绘制软件。思维导图，拓扑图，流程图，都能画"
+		local docker_url="官网介绍: https://www.drawio.com/"
 		local docker_use=""
 		local docker_passwd=""
 		local app_size="1"
@@ -16782,8 +16782,8 @@ while true; do
 
 		}
 
-		local docker_describe="Sun-Panel server, NAS navigation panel, Homepage, browser homepage"
-		local docker_url="Official website introduction: https://doc.sun-panel.top/zh_cn/"
+		local docker_describe="Sun-Panel服务器、NAS导航面板、Homepage、浏览器首页"
+		local docker_url="官网介绍: https://doc.sun-panel.top/zh_cn/"
 		local docker_use="echo \"账号: admin@sun.cc  密码: 12345678\""
 		local docker_passwd=""
 		local app_size="1"
@@ -16806,8 +16806,8 @@ while true; do
 				stonith404/pingvin-share
 		}
 
-		local docker_describe="Pingvin Share is a self-buildable file sharing platform and an alternative to WeTransfer"
-		local docker_url="Official website introduction:${gh_proxy}github.com/stonith404/pingvin-share"
+		local docker_describe="Pingvin Share 是一个可自建的文件分享平台，是 WeTransfer 的一个替代品"
+		local docker_url="官网介绍: ${gh_proxy}github.com/stonith404/pingvin-share"
 		local docker_use=""
 		local docker_passwd=""
 		local app_size="1"
@@ -16833,9 +16833,9 @@ while true; do
 		}
 
 
-		local docker_describe="Minimalist Moments, high imitation WeChat Moments, record your wonderful life"
-		local docker_url="Official website introduction:${gh_proxy}github.com/kingwrcy/moments?tab=readme-ov-file"
-		local docker_use="echo \"Account: admin Password: a123456\""
+		local docker_describe="极简朋友圈，高仿微信朋友圈，记录你的美好生活"
+		local docker_url="官网介绍: ${gh_proxy}github.com/kingwrcy/moments?tab=readme-ov-file"
+		local docker_use="echo \"账号: admin  密码: a123456\""
 		local docker_passwd=""
 		local app_size="1"
 		docker_app
@@ -16857,7 +16857,7 @@ while true; do
 				lobehub/lobe-chat
 		}
 
-		local docker_describe="LobeChat aggregates the mainstream AI large models on the market, ChatGPT/Claude/Gemini/Groq/Ollama"
+		local docker_describe="LobeChat聚合市面上主流的AI大模型，ChatGPT/Claude/Gemini/Groq/Ollama"
 		local docker_url="官网介绍: ${gh_proxy}github.com/lobehub/lobe-chat"
 		local docker_use=""
 		local docker_passwd=""
@@ -16878,8 +16878,8 @@ while true; do
 		}
 
 
-		local docker_describe="It is a multifunctional IP toolbox that allows you to view your own IP information and connectivity, and displays it using a web panel."
-		local docker_url="Official website introduction:${gh_proxy}github.com/jason5ng32/MyIP/blob/main/README_ZH.md"
+		local docker_describe="是一个多功能IP工具箱，可以查看自己IP信息及连通性，用网页面板呈现"
+		local docker_url="官网介绍: ${gh_proxy}github.com/jason5ng32/MyIP/blob/main/README_ZH.md"
 		local docker_use=""
 		local docker_passwd=""
 		local app_size="1"
@@ -16887,7 +16887,7 @@ while true; do
 		  ;;
 
 	  38|xiaoya)
-		send_stats "Xiaoya family bucket"
+		send_stats "小雅全家桶"
 		clear
 		install_docker
 		check_disk_space 1
@@ -16912,8 +16912,8 @@ while true; do
 
 		}
 
-		local docker_describe="Bililive-go is a live broadcast recording tool that supports multiple live broadcast platforms"
-		local docker_url="Official website introduction:${gh_proxy}github.com/hr3lxphr6j/bililive-go"
+		local docker_describe="Bililive-go是一个支持多种直播平台的直播录制工具"
+		local docker_url="官网介绍: ${gh_proxy}github.com/hr3lxphr6j/bililive-go"
 		local docker_use=""
 		local docker_passwd=""
 		local app_size="1"
@@ -16929,8 +16929,8 @@ while true; do
 			docker run -d -p ${docker_port}:5032 --restart=always --name webssh -e TZ=Asia/Shanghai jrohy/webssh
 		}
 
-		local docker_describe="Simple online ssh connection tool and sftp tool"
-		local docker_url="Official website introduction:${gh_proxy}github.com/Jrohy/webssh"
+		local docker_describe="简易在线ssh连接工具和sftp工具"
+		local docker_url="官网介绍: ${gh_proxy}github.com/Jrohy/webssh"
 		local docker_use=""
 		local docker_passwd=""
 		local app_size="1"
@@ -16941,8 +16941,8 @@ while true; do
 
 		local app_id="41"
 		local lujing="[ -d "/www/server/panel" ]"
-		local panelname="AcePanel original mouse panel"
-		local panelurl="Official address:${gh_proxy}github.com/acepanel/panel"
+		local panelname="AcePanel 原耗子面板"
+		local panelurl="官方地址: ${gh_proxy}github.com/acepanel/panel"
 
 		panel_app_install() {
 			cd ~
@@ -16983,8 +16983,8 @@ while true; do
 
 		}
 
-		local docker_describe="nexterm is a powerful online SSH/VNC/RDP connection tool."
-		local docker_url="Official website introduction:${gh_proxy}github.com/gnmyt/Nexterm"
+		local docker_describe="nexterm是一款强大的在线SSH/VNC/RDP连接工具。"
+		local docker_url="官网介绍: ${gh_proxy}github.com/gnmyt/Nexterm"
 		local docker_use=""
 		local docker_passwd=""
 		local app_size="1"
@@ -17004,10 +17004,10 @@ while true; do
 		}
 
 
-		local docker_describe="Rustdesk's open source remote desktop (server) is similar to its own Sunflower private server."
-		local docker_url="Official website introduction: https://rustdesk.com/zh-cn/"
+		local docker_describe="rustdesk开源的远程桌面(服务端)，类似自己的向日葵私服。"
+		local docker_url="官网介绍: https://rustdesk.com/zh-cn/"
 		local docker_use="docker logs hbbs"
-		local docker_passwd="echo \"Record your IP and key, which will be used in the remote desktop client. Go to option 44 to install the relay!\""
+		local docker_passwd="echo \"把你的IP和key记录下，会在远程桌面客户端中用到。去44选项装中继端吧！\""
 		local app_size="1"
 		docker_app
 		  ;;
@@ -17024,9 +17024,9 @@ while true; do
 
 		}
 
-		local docker_describe="Rustdesk's open source remote desktop (relay) is similar to its own Sunflower private server."
-		local docker_url="Official website introduction: https://rustdesk.com/zh-cn/"
-		local docker_use="echo \"Go to the official website to download the remote desktop client: https://rustdesk.com/zh-cn/\""
+		local docker_describe="rustdesk开源的远程桌面(中继端)，类似自己的向日葵私服。"
+		local docker_url="官网介绍: https://rustdesk.com/zh-cn/"
+		local docker_use="echo \"前往官网下载远程桌面的客户端: https://rustdesk.com/zh-cn/\""
 		local docker_passwd=""
 		local app_size="1"
 		docker_app
@@ -17050,8 +17050,8 @@ while true; do
 
 		}
 
-		local docker_describe="Docker Registry is a service for storing and distributing Docker images."
-		local docker_url="Official website introduction: https://hub.docker.com/_/registry"
+		local docker_describe="Docker Registry 是一个用于存储和分发 Docker 镜像的服务。"
+		local docker_url="官网介绍: https://hub.docker.com/_/registry"
 		local docker_use=""
 		local docker_passwd=""
 		local app_size="2"
@@ -17070,8 +17070,8 @@ while true; do
 
 		}
 
-		local docker_describe="GHProxy implemented using Go is used to accelerate the pulling of Github repositories in some areas."
-		local docker_url="Official website introduction:${gh_https_url}github.com/WJQSERVER-STUDIO/ghproxy"
+		local docker_describe="使用Go实现的GHProxy，用于加速部分地区Github仓库的拉取。"
+		local docker_url="官网介绍: ${gh_https_url}github.com/WJQSERVER-STUDIO/ghproxy"
 		local docker_use=""
 		local docker_passwd=""
 		local app_size="1"
@@ -17081,9 +17081,9 @@ while true; do
 	  47|prometheus|grafana)
 
 		local app_id="47"
-		local app_name="Prometheus monitoring"
-		local app_text="Prometheus+Grafana enterprise-level monitoring system"
-		local app_url="Official website introduction: https://prometheus.io"
+		local app_name="普罗米修斯监控"
+		local app_text="Prometheus+Grafana企业级监控系统"
+		local app_url="官网介绍: https://prometheus.io"
 		local docker_name="grafana"
 		local docker_port="8047"
 		local app_size="2"
@@ -17092,9 +17092,9 @@ while true; do
 			prometheus_install
 			clear
 			ip_address
-			echo "Installation completed"
+			echo "已经安装完成"
 			check_docker_app_ip
-			echo "The initial username and password are: admin"
+			echo "初始用户名密码均为: admin"
 		}
 
 		docker_app_update() {
@@ -17112,7 +17112,7 @@ while true; do
 			docker rmi -f grafana/grafana:latest
 
 			rm -rf /home/docker/monitoring
-			echo "App uninstalled"
+			echo "应用已卸载"
 		}
 
 		docker_app_plus
@@ -17135,8 +17135,8 @@ while true; do
 
 		}
 
-		local docker_describe="This is a Prometheus host data collection component, please deploy it on the monitored host."
-		local docker_url="Official website introduction:${gh_https_url}github.com/prometheus/node_exporter"
+		local docker_describe="这是一个普罗米修斯的主机数据采集组件，请部署在被监控主机上。"
+		local docker_url="官网介绍: ${gh_https_url}github.com/prometheus/node_exporter"
 		local docker_use=""
 		local docker_passwd=""
 		local app_size="1"
@@ -17165,8 +17165,8 @@ while true; do
 
 		}
 
-		local docker_describe="This is a Prometheus container data collection component, please deploy it on the monitored host."
-		local docker_url="Official website introduction:${gh_https_url}github.com/google/cadvisor"
+		local docker_describe="这是一个普罗米修斯的容器数据采集组件，请部署在被监控主机上。"
+		local docker_url="官网介绍: ${gh_https_url}github.com/google/cadvisor"
 		local docker_use=""
 		local docker_passwd=""
 		local app_size="1"
@@ -17188,8 +17188,8 @@ while true; do
 
 		}
 
-		local docker_describe="This is a small tool for website change detection, replenishment monitoring and notification"
-		local docker_url="Official website introduction:${gh_https_url}github.com/dgtlmoon/changedetection.io"
+		local docker_describe="这是一款网站变化检测、补货监控和通知的小工具"
+		local docker_url="官网介绍: ${gh_https_url}github.com/dgtlmoon/changedetection.io"
 		local docker_use=""
 		local docker_passwd=""
 		local app_size="1"
@@ -17199,7 +17199,7 @@ while true; do
 
 	  51|pve)
 		clear
-		send_stats "PVE open chick"
+		send_stats "PVE开小鸡"
 		check_disk_space 1
 		curl -L ${gh_proxy}raw.githubusercontent.com/KUAILESHANGWEI/kejidalao/main/vendor/github/oneclickvirt/pve/scripts/install_pve.sh -o install_pve.sh && chmod +x install_pve.sh && bash install_pve.sh
 		  ;;
@@ -17221,8 +17221,8 @@ while true; do
 
 		}
 
-		local docker_describe="Docker visual panel system provides complete docker management functions."
-		local docker_url="Official website introduction:${gh_https_url}github.com/donknap/dpanel"
+		local docker_describe="Docker可视化面板系统，提供完善的docker管理功能。"
+		local docker_url="官网介绍: ${gh_https_url}github.com/donknap/dpanel"
 		local docker_use=""
 		local docker_passwd=""
 		local app_size="1"
@@ -17241,8 +17241,8 @@ while true; do
 
 		}
 
-		local docker_describe="OpenWebUI is a large language model web page framework that is connected to the new llama3 large language model."
-		local docker_url="Official website introduction:${gh_https_url}github.com/open-webui/open-webui"
+		local docker_describe="OpenWebUI一款大语言模型网页框架，接入全新的llama3大语言模型"
+		local docker_url="官网介绍: ${gh_https_url}github.com/open-webui/open-webui"
 		local docker_use="docker exec ollama ollama run llama3.2:1b"
 		local docker_passwd=""
 		local app_size="5"
@@ -17253,8 +17253,8 @@ while true; do
 
 		local app_id="54"
 		local lujing="[ -d "/www/server/panel" ]"
-		local panelname="AMH panel"
-		local panelurl="Official address: https://amh.sh/index.htm?amh"
+		local panelname="AMH面板"
+		local panelurl="官方地址: https://amh.sh/index.htm?amh"
 
 		panel_app_install() {
 			cd ~
@@ -17293,8 +17293,8 @@ while true; do
 
 		}
 
-		local docker_describe="OpenWebUI is a large language model web page framework that is connected to the new DeepSeek R1 large language model."
-		local docker_url="Official website introduction:${gh_https_url}github.com/open-webui/open-webui"
+		local docker_describe="OpenWebUI一款大语言模型网页框架，接入全新的DeepSeek R1大语言模型"
+		local docker_url="官网介绍: ${gh_https_url}github.com/open-webui/open-webui"
 		local docker_use="docker exec ollama ollama run deepseek-r1:1.5b"
 		local docker_passwd=""
 		local app_size="5"
@@ -17304,8 +17304,8 @@ while true; do
 
 	  58|dify)
 		local app_id="58"
-		local app_name="DifyKnowledge Base"
-		local app_text="It is an open source large language model (LLM) application development platform. Self-hosted training data for AI generation"
+		local app_name="Dify知识库"
+		local app_text="是一款开源的大语言模型(LLM) 应用开发平台。自托管训练数据用于AI生成"
 		local app_url="官方网站: https://docs.dify.ai/zh-hans"
 		local docker_name="docker-nginx-1"
 		local docker_port="8058"
@@ -17324,7 +17324,7 @@ while true; do
 			docker compose up -d
 
 			clear
-			echo "Installation completed"
+			echo "已经安装完成"
 			check_docker_app_ip
 		}
 
@@ -17339,7 +17339,7 @@ while true; do
 		docker_app_uninstall() {
 			cd  /home/docker/dify/docker/ && docker compose down --rmi all
 			rm -rf /home/docker/dify
-			echo "App uninstalled"
+			echo "应用已卸载"
 		}
 
 		docker_app_plus
@@ -17349,7 +17349,7 @@ while true; do
 	  59|new-api)
 		local app_id="59"
 		local app_name="NewAPI"
-		local app_text="New generation of large model gateway and AI asset management system"
+		local app_text="新一代大模型网关与AI资产管理系统"
 		local app_url="官方网站: ${gh_https_url}github.com/Calcium-Ion/new-api"
 		local docker_name="new-api"
 		local docker_port="8059"
@@ -17367,7 +17367,7 @@ while true; do
 
 			docker compose up -d
 			clear
-			echo "Installation completed"
+			echo "已经安装完成"
 			check_docker_app_ip
 		}
 
@@ -17403,8 +17403,8 @@ while true; do
 
 		local app_id="60"
 		local app_name="JumpServer开源堡垒机"
-		local app_text="It is an open source privileged access management (PAM) tool. This program occupies port 80 and does not support adding domain names for access."
-		local app_url="Official introduction:${gh_https_url}github.com/jumpserver/jumpserver"
+		local app_text="是一个开源的特权访问管理 (PAM) 工具，该程序占用80端口不支持添加域名访问了"
+		local app_url="官方介绍: ${gh_https_url}github.com/jumpserver/jumpserver"
 		local docker_name="jms_web"
 		local docker_port="80"
 		local app_size="2"
@@ -17412,10 +17412,10 @@ while true; do
 		docker_app_install() {
 			curl -sSL ${gh_proxy}github.com/KUAILESHANGWEI/kejidalao/releases/download/third-party-assets/jumpserver-quick_start.sh | bash
 			clear
-			echo "Installation completed"
+			echo "已经安装完成"
 			check_docker_app_ip
 			echo "初始用户名: admin"
-			echo "Initial password: ChangeMe"
+			echo "初始密码: ChangeMe"
 		}
 
 
@@ -17467,8 +17467,8 @@ while true; do
 	  62|ragflow)
 		local app_id="62"
 		local app_name="RAGFlow知识库"
-		local app_text="Open source RAG (Retrieval Augmented Generation) engine based on deep document understanding"
-		local app_url="官方网站: ${gh_https_url}github.com/infiniflow/ragflow"
+		local app_text="基于深度文档理解的开源 RAG（检索增强生成）引擎"
+		local app_url="Official website:${gh_https_url}github.com/infiniflow/ragflow"
 		local docker_name="ragflow-server"
 		local docker_port="8062"
 		local app_size="8"
@@ -17479,7 +17479,7 @@ while true; do
 			sed -i "s/- 80:80/- ${docker_port}:80/; /- 443:443/d" docker-compose.yml
 			docker compose up -d
 			clear
-			echo "Installation completed"
+			echo "已经安装完成"
 			check_docker_app_ip
 		}
 
@@ -17570,7 +17570,7 @@ while true; do
 		}
 
 		local docker_describe="是一款功能强大的自动化工作流平台"
-		local docker_url="官网介绍: ${gh_https_url}github.com/n8n-io/n8n"
+		local docker_url="Official website introduction:${gh_https_url}github.com/n8n-io/n8n"
 		local docker_use=""
 		local docker_passwd=""
 		local app_size="1"
@@ -17598,7 +17598,7 @@ while true; do
 
 		}
 
-		local docker_describe="自动将你的公网 IP（IPv4/IPv6）实时更新到各大 DNS 服务商，实现动态域名解析。"
+		local docker_describe="Automatically update your public IP (IPv4/IPv6) to major DNS service providers in real time to achieve dynamic domain name resolution."
 		local docker_url="官网介绍: ${gh_https_url}github.com/jeessy2/ddns-go"
 		local docker_use=""
 		local docker_passwd=""
@@ -17709,7 +17709,7 @@ while true; do
 
 		}
 
-		local docker_describe="是一个轻量、高性能的音乐流媒体服务器"
+		local docker_describe="It is a lightweight, high-performance music streaming server"
 		local docker_url="官网介绍: https://www.navidrome.org/"
 		local docker_use=""
 		local docker_passwd=""
@@ -17768,8 +17768,8 @@ while true; do
 
 		}
 
-		local docker_describe="免费在线视频搜索与观看平台"
-		local docker_url="官网介绍: ${gh_https_url}github.com/LibreSpark/LibreTV"
+		local docker_describe="Free online video search and viewing platform"
+		local docker_url="Official website introduction:${gh_https_url}github.com/LibreSpark/LibreTV"
 		local docker_use=""
 		local docker_passwd=""
 		local app_size="1"
@@ -17783,8 +17783,8 @@ while true; do
 
 		local app_id="74"
 
-		local app_name="moontv私有影视"
-		local app_text="免费在线视频搜索与观看平台"
+		local app_name="moontv private film and television"
+		local app_text="Free online video search and viewing platform"
 		local app_url="视频介绍: ${gh_https_url}github.com/MoonTechLab/LunaTV"
 		local docker_name="moontv-core"
 		local docker_port="8074"
@@ -17793,7 +17793,7 @@ while true; do
 		docker_app_install() {
 			read -e -p "设置登录用户名: " admin
 			read -e -p "设置登录用户密码: " admin_password
-			read -e -p "输入授权码: " shouquanma
+			read -e -p "Enter authorization code:" shouquanma
 
 
 			mkdir -p /home/docker/moontv
@@ -17809,7 +17809,7 @@ while true; do
 			cd /home/docker/moontv/
 			docker compose up -d
 			clear
-			echo "已经安装完成"
+			echo "Installation completed"
 			check_docker_app_ip
 		}
 
@@ -17850,7 +17850,7 @@ while true; do
 
 		}
 
-		local docker_describe="你的音乐精灵，旨在帮助你更好地管理音乐。"
+		local docker_describe="Your music wizard, designed to help you better manage your music."
 		local docker_url="官网介绍: ${gh_https_url}github.com/foamzou/melody"
 		local docker_use=""
 		local docker_passwd=""
@@ -17878,7 +17878,7 @@ while true; do
 		}
 
 		local docker_describe="是一个中文DOS游戏合集网站"
-		local docker_url="官网介绍: ${gh_https_url}github.com/rwv/chinese-dos-games"
+		local docker_url="Official website introduction:${gh_https_url}github.com/rwv/chinese-dos-games"
 		local docker_use=""
 		local docker_passwd=""
 		local app_size="2"
@@ -17896,7 +17896,7 @@ while true; do
 
 		docker_rum() {
 
-			read -e -p "设置登录用户名: " app_use
+			read -e -p "Set login username:" app_use
 			read -e -p "设置登录密码: " app_passwd
 
 			docker run -d \
@@ -17913,8 +17913,8 @@ while true; do
 		}
 
 		local docker_describe="迅雷你的离线高速BT磁力下载工具"
-		local docker_url="官网介绍: ${gh_https_url}github.com/cnk3x/xunlei"
-		local docker_use="echo \"手机登录迅雷，再输入邀请码，邀请码: 迅雷牛通\""
+		local docker_url="Official website introduction:${gh_https_url}github.com/cnk3x/xunlei"
+		local docker_use="echo \"Log in to Xunlei with your mobile phone and enter the invitation code. Invitation code: Xunlei Niutong\""
 		local docker_passwd=""
 		local app_size="1"
 		docker_app
@@ -17927,7 +17927,7 @@ while true; do
 
 		local app_id="78"
 		local app_name="PandaWiki"
-		local app_text="PandaWiki是一款AI大模型驱动的开源智能文档管理系统，强烈建议不要自定义端口部署。"
+		local app_text="PandaWiki is an open source intelligent document management system driven by AI large models. It is strongly recommended not to customize port deployment."
 		local app_url="官方介绍: ${gh_https_url}github.com/chaitin/PandaWiki"
 		local docker_name="panda-wiki-nginx"
 		local docker_port="2443"
@@ -17971,7 +17971,7 @@ while true; do
 		}
 
 		local docker_describe="Beszel轻量易用的服务器监控"
-		local docker_url="官网介绍: https://beszel.dev/zh/"
+		local docker_url="Official website introduction: https://beszel.dev/zh/"
 		local docker_use=""
 		local docker_passwd=""
 		local app_size="1"
@@ -17994,7 +17994,7 @@ while true; do
 			  install git openssl
 			  mkdir -p /home/docker/linkwarden && cd /home/docker/linkwarden
 
-			  # 下载官方 docker-compose 和 env 文件
+			  # Download the official docker-compose and env files
 			  curl -O ${gh_proxy}raw.githubusercontent.com/KUAILESHANGWEI/kejidalao/main/vendor/github/linkwarden/linkwarden/docker-compose.yml
 			  curl -L ${gh_proxy}raw.githubusercontent.com/KUAILESHANGWEI/kejidalao/main/vendor/github/linkwarden/linkwarden/.env.sample -o ".env"
 
@@ -18013,7 +18013,7 @@ while true; do
 
 			  sed -i "s/3000:3000/${docker_port}:3000/g" /home/docker/linkwarden/docker-compose.yml
 
-			  # 启动容器
+			  # Start container
 			  docker compose up -d
 
 			  clear
@@ -18188,7 +18188,7 @@ while true; do
 		}
 
 		local docker_describe="开源个人订阅追踪器，可用于财务管理"
-		local docker_url="官网介绍: ${gh_https_url}github.com/ellite/Wallos"
+		local docker_url="Official website introduction:${gh_https_url}github.com/ellite/Wallos"
 		local docker_use=""
 		local docker_passwd=""
 		local app_size="1"
@@ -18199,8 +18199,8 @@ while true; do
 	  85|immich)
 
 		  local app_id="85"
-		  local app_name="immich图片视频管理器"
-		  local app_text="高性能自托管照片和视频管理解决方案。"
+		  local app_name="immich picture video manager"
+		  local app_text="High-performance self-hosted photo and video management solution."
 		  local app_url="官网介绍: ${gh_https_url}github.com/immich-app/immich"
 		  local docker_name="immich_server"
 		  local docker_port="8085"
@@ -18230,7 +18230,7 @@ while true; do
 		  docker_app_uninstall() {
 			  cd /home/docker/${docker_name} && docker compose down --rmi all
 			  rm -rf /home/docker/${docker_name}
-			  echo "应用已卸载"
+			  echo "App has been uninstalled"
 		  }
 
 		  docker_app_plus
@@ -18265,8 +18265,8 @@ while true; do
 
 		}
 
-		local docker_describe="是一款开源媒体服务器软件"
-		local docker_url="官网介绍: https://jellyfin.org/"
+		local docker_describe="Is an open source media server software"
+		local docker_url="Official website introduction: https://jellyfin.org/"
 		local docker_use=""
 		local docker_passwd=""
 		local app_size="1"
@@ -18294,7 +18294,7 @@ while true; do
 		}
 
 		local docker_describe="远程一起观看电影和直播的程序。它提供了同步观影、直播、聊天等功能"
-		local docker_url="官网介绍: ${gh_https_url}github.com/synctv-org/synctv"
+		local docker_url="Official website introduction:${gh_https_url}github.com/synctv-org/synctv"
 		local docker_use="echo \"初始账号和密码: root  登陆后请及时修改登录密码\""
 		local docker_passwd=""
 		local app_size="1"
@@ -18325,7 +18325,7 @@ while true; do
 
 		local docker_describe="开源、免费的自建直播平台"
 		local docker_url="官网介绍: https://owncast.online"
-		local docker_use="echo \"访问地址后面带 /admin 访问管理员页面\""
+		local docker_use="echo \"The access address is followed by /admin to access the administrator page\""
 		local docker_passwd="echo \"初始账号: admin  初始密码: abc123  登陆后请及时修改登录密码\""
 		local app_size="1"
 		docker_app
@@ -18352,10 +18352,10 @@ while true; do
 
 		}
 
-		local docker_describe="匿名口令分享文本和文件，像拿快递一样取文件"
+		local docker_describe="Share texts and files with anonymous passwords, and pick up files like express delivery"
 		local docker_url="官网介绍: ${gh_https_url}github.com/vastsa/FileCodeBox"
 		local docker_use="echo \"访问地址后面带 /#/admin 访问管理员页面\""
-		local docker_passwd="echo \"管理员密码: FileCodeBox2023\""
+		local docker_passwd="echo \"Administrator password: FileCodeBox2023\""
 		local app_size="1"
 		docker_app
 
@@ -18391,7 +18391,7 @@ while true; do
 			  --restart=always \
 			  matrixdotorg/synapse:latest
 
-			echo "创建初始用户或管理员。请设置以下内容用户名和密码以及是否为管理员。"
+			echo "Create an initial user or administrator. Please set the following username and password and whether you are an administrator."
 			docker exec -it matrix register_new_matrix_user \
 			  http://localhost:8008 \
 			  -c /data/homeserver.yaml
@@ -18408,7 +18408,7 @@ while true; do
 
 		}
 
-		local docker_describe="Matrix是一个去中心化的聊天协议"
+		local docker_describe="Matrix is ​​a decentralized chat protocol"
 		local docker_url="官网介绍: https://matrix.org/"
 		local docker_use=""
 		local docker_passwd=""
@@ -18423,7 +18423,7 @@ while true; do
 
 		local app_id="91"
 
-		local app_name="gitea私有代码仓库"
+		local app_name="gitea private code repository"
 		local app_text="免费新一代的代码托管平台，提供接近 GitHub 的使用体验。"
 		local app_url="视频介绍: ${gh_https_url}github.com/go-gitea/gitea"
 		local docker_name="gitea"
@@ -18443,7 +18443,7 @@ while true; do
 			cd /home/docker/gitea/
 			docker compose up -d
 			clear
-			echo "已经安装完成"
+			echo "Installation completed"
 			check_docker_app_ip
 		}
 
@@ -18457,7 +18457,7 @@ while true; do
 		docker_app_uninstall() {
 			cd /home/docker/gitea/ && docker compose down --rmi all
 			rm -rf /home/docker/gitea
-			echo "应用已卸载"
+			echo "App has been uninstalled"
 		}
 
 		docker_app_plus
@@ -18487,8 +18487,8 @@ while true; do
 
 		}
 
-		local docker_describe="是一个基于Web的文件管理器"
-		local docker_url="官网介绍: https://filebrowser.org/"
+		local docker_describe="Is a web-based file manager"
+		local docker_url="Official website introduction: https://filebrowser.org/"
 		local docker_use="docker logs filebrowser"
 		local docker_passwd=""
 		local app_size="1"
@@ -18545,7 +18545,7 @@ while true; do
 
 		}
 
-		local docker_describe="分布式高速下载工具，支持多种协议"
+		local docker_describe="Distributed high-speed download tool, supporting multiple protocols"
 		local docker_url="官网介绍: ${gh_https_url}github.com/GopeedLab/gopeed"
 		local docker_use=""
 		local docker_passwd=""
@@ -18635,7 +18635,7 @@ while true; do
 			block_container_port "$docker_name" "$ipv4_address"
 
 			clear
-			echo "Installation completed"
+			echo "已经安装完成"
 			check_docker_app_ip
 		}
 
@@ -18803,7 +18803,7 @@ while true; do
 			# 写入配置文件
 			echo "$input" > "$CONFIG_FILE"
 
-			echo "Client configuration saved to$CONFIG_FILE"
+			echo "客户端配置已保存到 $CONFIG_FILE"
 
 			ip link delete wg0 &>/dev/null
 
@@ -18826,7 +18826,7 @@ while true; do
 		}
 
 		local docker_describe="现代化、高性能的虚拟专用网络工具"
-		local docker_url="Official website introduction: https://www.wireguard.com/"
+		local docker_url="官网介绍: https://www.wireguard.com/"
 		local docker_use=""
 		local docker_passwd=""
 		local app_size="1"
@@ -18840,7 +18840,7 @@ while true; do
 		local app_id="99"
 
 		local app_name="dsm群晖虚拟机"
-		local app_text="Virtual DSM in Docker container"
+		local app_text="Docker容器中的虚拟DSM"
 		local app_url="官网: ${gh_https_url}github.com/vdsm/virtual-dsm"
 		local docker_name="dsm"
 		local docker_port="8099"
@@ -18868,7 +18868,7 @@ while true; do
 			docker compose up -d
 
 			clear
-			echo "Installation completed"
+			echo "已经安装完成"
 			check_docker_app_ip
 		}
 
@@ -18911,7 +18911,7 @@ while true; do
 			  syncthing/syncthing:latest
 		}
 
-		local docker_describe="An open source peer-to-peer file synchronization tool, similar to Dropbox and Resilio Sync, but completely decentralized."
+		local docker_describe="开源的点对点文件同步工具，类似于 Dropbox、Resilio Sync，但完全去中心化。"
 		local docker_url="官网介绍: ${gh_https_url}github.com/syncthing/syncthing"
 		local docker_use=""
 		local docker_passwd=""
@@ -18924,8 +18924,8 @@ while true; do
 	  101|moneyprinterturbo)
 		local app_id="101"
 		local app_name="AI视频生成工具"
-		local app_text="MoneyPrinterTurbo is a tool that uses AI large models to synthesize high-definition short videos"
-		local app_url="Official website:${gh_https_url}github.com/harry0703/MoneyPrinterTurbo"
+		local app_text="MoneyPrinterTurbo是一款使用AI大模型合成高清短视频的工具"
+		local app_url="官方网站: ${gh_https_url}github.com/harry0703/MoneyPrinterTurbo"
 		local docker_name="moneyprinterturbo"
 		local docker_port="8101"
 		local app_size="3"
@@ -18953,7 +18953,7 @@ while true; do
 		docker_app_uninstall() {
 			cd  /home/docker/MoneyPrinterTurbo/ && docker compose down --rmi all
 			rm -rf /home/docker/MoneyPrinterTurbo
-			echo "App uninstalled"
+			echo "应用已卸载"
 		}
 
 		docker_app_plus
@@ -18980,7 +18980,7 @@ while true; do
 		}
 
 		local docker_describe="是一款支持独立部署的个人云社交媒体聊天服务"
-		local docker_url="Official website introduction:${gh_https_url}github.com/Privoce/vocechat-web"
+		local docker_url="官网介绍: ${gh_https_url}github.com/Privoce/vocechat-web"
 		local docker_use=""
 		local docker_passwd=""
 		local app_size="1"
@@ -18991,9 +18991,9 @@ while true; do
 
 	  103|umami)
 		local app_id="103"
-		local app_name="Umami website statistics tool"
+		local app_name="Umami网站统计工具"
 		local app_text="开源、轻量、隐私友好的网站分析工具，类似于GoogleAnalytics。"
-		local app_url="Official website:${gh_https_url}github.com/umami-software/umami"
+		local app_url="官方网站: ${gh_https_url}github.com/umami-software/umami"
 		local docker_name="umami-umami-1"
 		local docker_port="8103"
 		local app_size="1"
@@ -19005,9 +19005,9 @@ while true; do
 
 			docker compose up -d
 			clear
-			echo "Installation completed"
+			echo "已经安装完成"
 			check_docker_app_ip
-			echo "Initial username: admin"
+			echo "初始用户名: admin"
 			echo "初始密码: umami"
 		}
 
@@ -19022,7 +19022,7 @@ while true; do
 		docker_app_uninstall() {
 			cd  /home/docker/umami/ && docker compose down --rmi all
 			rm -rf /home/docker/umami
-			echo "App uninstalled"
+			echo "应用已卸载"
 		}
 
 		docker_app_plus
@@ -19043,7 +19043,7 @@ while true; do
 
 		docker_rum() {
 
-			read -e -p "Set login password:" app_passwd
+			read -e -p "设置登录密码: " app_passwd
 
 			docker run -d \
 			  --name siyuan \
@@ -19058,8 +19058,8 @@ while true; do
 
 		}
 
-		local docker_describe="Siyuan Notes is a privacy-first knowledge management system"
-		local docker_url="Official website introduction:${gh_https_url}github.com/siyuan-note/siyuan"
+		local docker_describe="思源笔记是一款隐私优先的知识管理系统"
+		local docker_url="官网介绍: ${gh_https_url}github.com/siyuan-note/siyuan"
 		local docker_use=""
 		local docker_passwd=""
 		local app_size="1"
@@ -19086,7 +19086,7 @@ while true; do
 		}
 
 		local docker_describe="是一款强大的开源白板工具，集成思维导图、流程图等。"
-		local docker_url="Official website introduction:${gh_https_url}github.com/plait-board/drawnix"
+		local docker_url="官网介绍: ${gh_https_url}github.com/plait-board/drawnix"
 		local docker_use=""
 		local docker_passwd=""
 		local app_size="1"
@@ -19120,7 +19120,7 @@ discourse,yunsou,ahhhhfs,nsgame,gying" \
 
 		}
 
-		local docker_describe="PanSou is a high-performance network disk resource search API service."
+		local docker_describe="PanSou是一个高性能的网盘资源搜索API服务。"
 		local docker_url="官网介绍: ${gh_https_url}github.com/fish2018/pansou"
 		local docker_use=""
 		local docker_passwd=""
@@ -19134,9 +19134,9 @@ discourse,yunsou,ahhhhfs,nsgame,gying" \
 
 	  108|langbot)
 		local app_id="108"
-		local app_name="LangBot chatbot"
-		local app_text="It is an open source large language model native instant messaging robot development platform."
-		local app_url="Official website:${gh_https_url}github.com/langbot-app/LangBot"
+		local app_name="LangBot聊天机器人"
+		local app_text="是一个开源的大语言模型原生即时通信机器人开发平台"
+		local app_url="官方网站: ${gh_https_url}github.com/langbot-app/LangBot"
 		local docker_name="langbot_plugin_runtime"
 		local docker_port="8108"
 		local app_size="1"
@@ -19148,7 +19148,7 @@ discourse,yunsou,ahhhhfs,nsgame,gying" \
 
 			docker compose up -d
 			clear
-			echo "Installation completed"
+			echo "已经安装完成"
 			check_docker_app_ip
 		}
 
@@ -19163,7 +19163,7 @@ discourse,yunsou,ahhhhfs,nsgame,gying" \
 		docker_app_uninstall() {
 			cd  /home/docker/LangBot/docker/ && docker compose down --rmi all
 			rm -rf /home/docker/LangBot
-			echo "App uninstalled"
+			echo "应用已卸载"
 		}
 
 		docker_app_plus
@@ -19192,8 +19192,8 @@ discourse,yunsou,ahhhhfs,nsgame,gying" \
 
 		}
 
-		local docker_describe="It is an online network disk program suitable for individuals or small teams."
-		local docker_url="Official website introduction:${gh_https_url}github.com/zfile-dev/zfile"
+		local docker_describe="是一个适用于个人或小团队的在线网盘程序。"
+		local docker_url="官网介绍: ${gh_https_url}github.com/zfile-dev/zfile"
 		local docker_use=""
 		local docker_passwd=""
 		local app_size="1"
@@ -19204,9 +19204,9 @@ discourse,yunsou,ahhhhfs,nsgame,gying" \
 
 	  110|karakeep)
 		local app_id="110"
-		local app_name="karakeep bookmark management"
+		local app_name="karakeep书签管理"
 		local app_text="是一款可自行托管的书签应用，带有人工智能功能，专为数据囤积者而设计。"
-		local app_url="Official website:${gh_https_url}github.com/karakeep-app/karakeep"
+		local app_url="官方网站: ${gh_https_url}github.com/karakeep-app/karakeep"
 		local docker_name="docker-web-1"
 		local docker_port="8110"
 		local app_size="1"
@@ -19218,7 +19218,7 @@ discourse,yunsou,ahhhhfs,nsgame,gying" \
 
 			docker compose up -d
 			clear
-			echo "Installation completed"
+			echo "已经安装完成"
 			check_docker_app_ip
 		}
 
@@ -19233,7 +19233,7 @@ discourse,yunsou,ahhhhfs,nsgame,gying" \
 		docker_app_uninstall() {
 			cd  /home/docker/karakeep/docker/ && docker compose down --rmi all
 			rm -rf /home/docker/karakeep
-			echo "App uninstalled"
+			echo "应用已卸载"
 		}
 
 		docker_app_plus
@@ -19258,7 +19258,7 @@ discourse,yunsou,ahhhhfs,nsgame,gying" \
 
 		}
 
-		local docker_describe="It is a powerful multi-format file conversion tool (supports documents, images, audio and video, etc.) It is strongly recommended to add domain name access"
+		local docker_describe="是一个功能强大的多格式文件转换工具（支持文档、图像、音频视频等）强烈建议添加域名访问"
 		local docker_url="项目地址: ${gh_https_url}github.com/c4illin/ConvertX"
 		local docker_use=""
 		local docker_passwd=""
@@ -19273,7 +19273,7 @@ discourse,yunsou,ahhhhfs,nsgame,gying" \
 		local app_id="112"
 		local docker_name="lucky"
 		local docker_img="gdy666/lucky:v2"
-		# Since Lucky uses the host network mode, the port here is only for record/explanation reference and is actually controlled by the application itself (default 16601)
+		# 由于 Lucky 使用 host 网络模式，这里的端口仅作记录/说明参考，实际由应用自身控制（默认16601）
 		local docker_port=8112
 
 		docker_rum() {
@@ -19290,9 +19290,9 @@ discourse,yunsou,ahhhhfs,nsgame,gying" \
 
 		}
 
-		local docker_describe="Lucky is a large intranet penetration and port forwarding management tool that supports DDNS, reverse proxy, WOL and other functions."
+		local docker_describe="Lucky 是一个大内网穿透及端口转发管理工具，支持 DDNS、反向代理、WOL 等功能。"
 		local docker_url="Project address:${gh_https_url}github.com/gdy666/lucky"
-		local docker_use="echo \"Default account password: 666\""
+		local docker_use="echo \"默认账号密码: 666\""
 		local docker_passwd=""
 		local app_size="1"
 		docker_app
@@ -19309,7 +19309,7 @@ discourse,yunsou,ahhhhfs,nsgame,gying" \
 
 		docker_rum() {
 
-			read -e -p "Set login password:" admin_password
+			read -e -p "设置登录密码: " admin_password
 
 			docker run -d --name=${docker_name} --restart=always \
 				-p ${docker_port}:5800 \
@@ -19320,8 +19320,8 @@ discourse,yunsou,ahhhhfs,nsgame,gying" \
 				${docker_img}
 		}
 
-		local docker_describe="It is a Firefox browser running in Docker that supports direct access to the desktop browser interface through the web page."
-		local docker_url="Project address:${gh_https_url}github.com/jlesage/docker-firefox"
+		local docker_describe="是一个运行在 Docker 中的 Firefox 浏览器，支持通过网页直接访问桌面版浏览器界面。"
+		local docker_url="项目地址: ${gh_https_url}github.com/jlesage/docker-firefox"
 		local docker_use=""
 		local docker_passwd=""
 		local app_size="1"
@@ -19342,16 +19342,16 @@ discourse,yunsou,ahhhhfs,nsgame,gying" \
 	  	send_stats "All application backup"
 
 	  	local backup_filename="app_$(date +"%Y%m%d%H%M%S").tar.gz"
-	  	echo -e "${gl_kjlan}Backing up$backup_filename ...${gl_bai}"
+	  	echo -e "${gl_kjlan}正在备份 $backup_filename ...${gl_bai}"
 	  	cd / && tar czvf "$backup_filename" home
 
 	  	while true; do
 			clear
-			echo "Backup file created: /$backup_filename"
-			read -e -p "Do you want to transfer backup data to a remote server? (Y/N):" choice
+			echo "备份文件已创建: /$backup_filename"
+			read -e -p "要传送备份数据到远程服务器吗？(Y/N): " choice
 			case "$choice" in
 			  [Yy])
-				kj_ssh_read_host_port "请输入远端服务器IP:  " "Target server SSH port [default 22]:" "22"
+				kj_ssh_read_host_port "请输入远端服务器IP:  " "目标服务器SSH端口 [默认22]: " "22"
 				local remote_ip="$KJ_SSH_HOST"
 				local TARGET_PORT="$KJ_SSH_PORT"
 				local latest_tar=$(ls -t /app*.tar.gz | head -1)
@@ -19359,14 +19359,14 @@ discourse,yunsou,ahhhhfs,nsgame,gying" \
 				  ssh-keygen -f "/root/.ssh/known_hosts" -R "$remote_ip"
 				  sleep 2  # 添加等待时间
 				  scp -P "$TARGET_PORT" -o StrictHostKeyChecking=no "$latest_tar" "root@$remote_ip:/"
-				  echo "File transferred to remote server/root directory."
+				  echo "文件已传送至远程服务器/根目录。"
 				else
 				  echo "未找到要传送的文件。"
 				fi
 				break
 				;;
 			  *)
-				echo "Note: The current backup only includes docker projects, and does not include data backup of website building panels such as Pagoda and 1panel."
+				echo "注意: 目前备份仅包含docker项目，不包含宝塔，1panel等建站面板的数据备份。"
 				break
 				;;
 			esac
@@ -19377,11 +19377,11 @@ discourse,yunsou,ahhhhfs,nsgame,gying" \
 	  r)
 	  	root_use
 	  	send_stats "全部应用还原"
-	  	echo "Available application backups"
+	  	echo "可用的应用备份"
 	  	echo "-------------------------"
 	  	ls -lt /app*.gz | awk '{print $NF}'
 	  	echo ""
-	  	read -e -p  "Press the Enter key to restore the latest backup, enter the backup file name to restore the specified backup, enter 0 to exit:" filename
+	  	read -e -p  "回车键还原最新的备份，输入备份文件名还原指定的备份，输入0退出：" filename
 
 	  	if [ "$filename" == "0" ]; then
 			  break_end
@@ -19396,7 +19396,7 @@ discourse,yunsou,ahhhhfs,nsgame,gying" \
 	  	if [ -n "$filename" ]; then
 		  	  echo -e "${gl_kjlan}正在解压 $filename ...${gl_bai}"
 		  	  cd / && tar -xzf "$filename"
-			  echo "The application data has been restored. Currently, please manually enter the specified application menu and update the application to restore the application."
+			  echo "应用数据已还原，目前请手动进入指定应用菜单，更新应用，即可还原应用。"
 	  	else
 			  echo "没有找到压缩包。"
 	  	fi
@@ -19437,7 +19437,7 @@ linux_work() {
 	while true; do
 	  clear
 	  send_stats "后台工作区"
-	  echo -e "Backend workspace"
+	  echo -e "后台工作区"
 	  echo -e "系统将为你提供可以后台常驻运行的工作区，你可以用来执行长时间的任务"
 	  echo -e "即使你断开SSH，工作区中的任务也不会中断，后台常驻任务。"
 	  echo -e "${gl_huang}提示: ${gl_bai}进入工作区后使用Ctrl+b再单独按d，退出工作区！"
@@ -19448,21 +19448,21 @@ linux_work() {
 	  echo -e "${gl_kjlan}------------------------"
 	  echo -e "${gl_kjlan}1.   ${gl_bai}1号工作区"
 	  echo -e "${gl_kjlan}2.   ${gl_bai}2号工作区"
-	  echo -e "${gl_kjlan}3.   ${gl_bai}Work Area 3"
+	  echo -e "${gl_kjlan}3.   ${gl_bai}3号工作区"
 	  echo -e "${gl_kjlan}4.   ${gl_bai}4号工作区"
 	  echo -e "${gl_kjlan}5.   ${gl_bai}5号工作区"
-	  echo -e "${gl_kjlan}6.   ${gl_bai}Work Area 6"
+	  echo -e "${gl_kjlan}6.   ${gl_bai}6号工作区"
 	  echo -e "${gl_kjlan}7.   ${gl_bai}7号工作区"
 	  echo -e "${gl_kjlan}8.   ${gl_bai}8号工作区"
-	  echo -e "${gl_kjlan}9.   ${gl_bai}Workspace No. 9"
-	  echo -e "${gl_kjlan}10.  ${gl_bai}Workspace 10"
+	  echo -e "${gl_kjlan}9.   ${gl_bai}9号工作区"
+	  echo -e "${gl_kjlan}10.  ${gl_bai}10号工作区"
 	  echo -e "${gl_kjlan}------------------------"
 	  echo -e "${gl_kjlan}21.  ${gl_bai}SSH常驻模式 ${gl_huang}★${gl_bai}"
 	  echo -e "${gl_kjlan}22.  ${gl_bai}创建/进入工作区"
 	  echo -e "${gl_kjlan}23.  ${gl_bai}注入命令到后台工作区"
 	  echo -e "${gl_kjlan}24.  ${gl_bai}删除指定工作区"
 	  echo -e "${gl_kjlan}------------------------"
-	  echo -e "${gl_kjlan}0.   ${gl_bai}Return to main menu"
+	  echo -e "${gl_kjlan}0.   ${gl_bai}返回主菜单"
 	  echo -e "${gl_kjlan}------------------------${gl_bai}"
 	  read -e -p "请输入你的选择: " sub_choice
 
@@ -19472,7 +19472,7 @@ linux_work() {
 			  clear
 			  install tmux
 			  local SESSION_NAME="work1"
-			  send_stats "Start workspace$SESSION_NAME"
+			  send_stats "启动工作区$SESSION_NAME"
 			  tmux_run
 
 			  ;;
@@ -19480,7 +19480,7 @@ linux_work() {
 			  clear
 			  install tmux
 			  local SESSION_NAME="work2"
-			  send_stats "Start workspace$SESSION_NAME"
+			  send_stats "启动工作区$SESSION_NAME"
 			  tmux_run
 			  ;;
 		  3)
@@ -19494,14 +19494,14 @@ linux_work() {
 			  clear
 			  install tmux
 			  local SESSION_NAME="work4"
-			  send_stats "Start workspace$SESSION_NAME"
+			  send_stats "启动工作区$SESSION_NAME"
 			  tmux_run
 			  ;;
 		  5)
 			  clear
 			  install tmux
 			  local SESSION_NAME="work5"
-			  send_stats "Start workspace$SESSION_NAME"
+			  send_stats "启动工作区$SESSION_NAME"
 			  tmux_run
 			  ;;
 		  6)
@@ -19548,26 +19548,26 @@ linux_work() {
 			  else
 				  local tmux_sshd_status="${gl_hui}关闭${gl_bai}"
 			  fi
-			  send_stats "SSH resident mode"
-			  echo -e "SSH resident mode${tmux_sshd_status}"
-			  echo "After opening the SSH connection, it will directly enter the resident mode and return directly to the previous working state."
+			  send_stats "SSH常驻模式 "
+			  echo -e "SSH常驻模式 ${tmux_sshd_status}"
+			  echo "开启后SSH连接后会直接进入常驻模式，直接回到之前的工作状态。"
 			  echo "------------------------"
 			  echo "1. 开启            2. 关闭"
 			  echo "------------------------"
-			  echo "0. Return to the previous menu"
+			  echo "0. 返回上一级选单"
 			  echo "------------------------"
-			  read -e -p "Please enter your choice:" gongzuoqu_del
+			  read -e -p "请输入你的选择: " gongzuoqu_del
 			  case "$gongzuoqu_del" in
 				1)
 			  	  install tmux
 			  	  local SESSION_NAME="sshd"
 			  	  send_stats "启动工作区$SESSION_NAME"
-				  grep -q "tmux attach-session -t sshd" ~/.bashrc || echo -e "\n# Automatically enter tmux session\nif [[ -z \"\$TMUX\" ]]; then\n    tmux attach-session -t sshd || tmux new-session -s sshd\nfi" >> ~/.bashrc
+				  grep -q "tmux attach-session -t sshd" ~/.bashrc || echo -e "\n# 自动进入 tmux 会话\nif [[ -z \"\$TMUX\" ]]; then\n    tmux attach-session -t sshd || tmux new-session -s sshd\nfi" >> ~/.bashrc
 				  source ~/.bashrc
 			  	  tmux_run
 				  ;;
 				2)
-				  sed -i '/# Automatically enter tmux session/,+4d' ~/.bashrc
+				  sed -i '/# 自动进入 tmux 会话/,+4d' ~/.bashrc
 				  tmux kill-window -t sshd
 				  ;;
 				*)
@@ -19578,16 +19578,16 @@ linux_work() {
 			  ;;
 
 		  22)
-			  read -e -p "Please enter the name of the workspace you created or entered, such as 1001 kj001 work1:" SESSION_NAME
+			  read -e -p "请输入你创建或进入的工作区名称，如1001 kj001 work1: " SESSION_NAME
 			  tmux_run
 			  send_stats "自定义工作区"
 			  ;;
 
 
 		  23)
-			  read -e -p "Please enter the command you want to execute in the background, such as: curl -fsSL https://get.docker.com | sh:" tmuxd
+			  read -e -p "请输入你要后台执行的命令，如:curl -fsSL https://get.docker.com | sh: " tmuxd
 			  tmux_run_d
-			  send_stats "Inject commands into the background workspace"
+			  send_stats "注入命令到后台工作区"
 			  ;;
 
 		  24)
@@ -19619,20 +19619,20 @@ linux_work() {
 
 
 
-# Intelligent switching mirror source function
+# 智能切换镜像源函数
 switch_mirror() {
-	# Optional parameter, default is false
+	# 可选参数，默认为 false
 	local upgrade_software=${1:-false}
 	local clean_cache=${2:-false}
 
-	# Get user country
+	# 获取用户国家
 	local country
 	country=$(curl -s ipinfo.io/country)
 
-	echo "Countries detected:$country"
+	echo "检测到国家：$country"
 
 	if [ "$country" = "CN" ]; then
-		echo "Use domestic mirror sources..."
+		echo "使用国内镜像源..."
 		bash <(curl -sSL https://linuxmirrors.cn/main.sh) \
 		  --source mirrors.huaweicloud.com \
 		  --protocol https \
@@ -19644,7 +19644,7 @@ switch_mirror() {
 		  --install-epel false \
 		  --pure-mode
 	else
-		echo "Use overseas mirror sources..."
+		echo "使用海外镜像源..."
 		if [ -f /etc/os-release ] && grep -qi "oracle" /etc/os-release; then
 			bash <(curl -sSL https://linuxmirrors.cn/main.sh) \
 			  --source mirrors.xtom.com \
@@ -19674,25 +19674,25 @@ switch_mirror() {
 
 fail2ban_panel() {
 		  root_use
-		  send_stats "ssh defense"
+		  send_stats "ssh防御"
 		  while true; do
 
 				check_f2b_status
-				echo -e "SSH defense program$check_f2b_status"
+				echo -e "SSH防御程序 $check_f2b_status"
 				echo "fail2ban是一个SSH防止暴力破解工具"
-				echo "Official website introduction:${gh_proxy}github.com/fail2ban/fail2ban"
+				echo "官网介绍: ${gh_proxy}github.com/fail2ban/fail2ban"
 				echo "------------------------"
-				echo "1. Install a defense program"
+				echo "1. 安装防御程序"
 				echo "------------------------"
-				echo "2. View SSH interception records"
+				echo "2. 查看SSH拦截记录"
 				echo "3. 日志实时监控"
 				echo "------------------------"
-				echo "4. Basic parameter configuration (ban duration/time window/number of retries)"
+				echo "4. 基础参数配置（封禁时长/时间窗口/重试次数）"
 				echo "5. 编辑配置文件（nano）"
 				echo "------------------------"
-				echo "9. Uninstall the defense program"
+				echo "9. 卸载防御程序"
 				echo "------------------------"
-				echo "0. Return to the previous menu"
+				echo "0. 返回上一级选单"
 				echo "------------------------"
 				read -e -p "请输入你的选择: " sub_choice
 				case $sub_choice in
@@ -19742,10 +19742,10 @@ fail2ban_panel() {
 
 net_menu() {
 
-	send_stats "Network card management tool"
+	send_stats "网卡管理工具"
 	show_nics() {
 		echo "================ 当前网卡信息 ================"
-		printf "%-18s %-12s %-20s %-26s\n" "网卡名" "state" "IP address" "MAC地址"
+		printf "%-18s %-12s %-20s %-26s\n" "网卡名" "状态" "IP地址" "MAC地址"
 		echo "------------------------------------------------"
 		for nic in $(ls /sys/class/net); do
 			state=$(cat /sys/class/net/$nic/operstate 2>/dev/null)
@@ -19763,44 +19763,44 @@ net_menu() {
 		echo "=========== 网卡管理菜单 ==========="
 		echo "1. 启用网卡"
 		echo "2. 禁用网卡"
-		echo "3. View network card details"
-		echo "4. Refresh network card information"
-		echo "0. Return to the previous menu"
+		echo "3. 查看网卡详细信息"
+		echo "4. 刷新网卡信息"
+		echo "0. 返回上一级选单"
 		echo "===================================="
-		read -erp "Please select an action:" choice
+		read -erp "请选择操作: " choice
 
 		case $choice in
 			1)
 				send_stats "启用网卡"
-				read -erp "Please enter the name of the network card to be enabled:" nic
+				read -erp "请输入要启用的网卡名: " nic
 				if ip link show "$nic" &>/dev/null; then
-					ip link set "$nic" up && echo "✔ Network card$nic 已启用"
+					ip link set "$nic" up && echo "✔ 网卡 $nic 已启用"
 				else
 					echo "✘ 网卡不存在"
 				fi
-				read -erp "Press Enter to continue..."
+				read -erp "按回车继续..."
 				;;
 			2)
-				send_stats "Disable network card"
-				read -erp "Please enter the name of the network card to be disabled:" nic
+				send_stats "禁用网卡"
+				read -erp "请输入要禁用的网卡名: " nic
 				if ip link show "$nic" &>/dev/null; then
-					ip link set "$nic" down && echo "✔ Network card$nic 已禁用"
+					ip link set "$nic" down && echo "✔ 网卡 $nic 已禁用"
 				else
-					echo "✘ The network card does not exist"
+					echo "✘ 网卡不存在"
 				fi
 				read -erp "按回车继续..."
 				;;
 			3)
-				send_stats "View network card details"
-				read -erp "Please enter the name of the network card you want to view:" nic
+				send_stats "查看网卡详情"
+				read -erp "请输入要查看的网卡名: " nic
 				if ip link show "$nic" &>/dev/null; then
 					echo "========== $nic 详细信息 =========="
 					ip addr show "$nic"
 					ethtool "$nic" 2>/dev/null | head -n 10
 				else
-					echo "✘ The network card does not exist"
+					echo "✘ 网卡不存在"
 				fi
-				read -erp "Press Enter to continue..."
+				read -erp "按回车继续..."
 				;;
 			4)
 				send_stats "刷新网卡信息"
@@ -19816,17 +19816,17 @@ net_menu() {
 
 
 log_menu() {
-	send_stats "System log management tool"
+	send_stats "系统日志管理工具"
 
 	show_log_overview() {
 		echo "============= 系统日志概览 ============="
 		echo "主机名: $(hostname)"
 		echo "系统时间: $(date)"
 		echo
-		echo "[/var/log directory occupation]"
+		echo "[ /var/log 目录占用 ]"
 		du -sh /var/log 2>/dev/null
 		echo
-		echo "[journal log occupation]"
+		echo "[ journal 日志占用 ]"
 		journalctl --disk-usage 2>/dev/null
 		echo "========================================"
 	}
@@ -19835,26 +19835,26 @@ log_menu() {
 		clear
 		show_log_overview
 		echo
-		echo "=========== System log management menu ==========="
-		echo "1. Check the latest system log (journal)"
-		echo "2. View the specified service log"
-		echo "3. View login/security logs"
+		echo "=========== 系统日志管理菜单 ==========="
+		echo "1. 查看最近系统日志（journal）"
+		echo "2. 查看指定服务日志"
+		echo "3. 查看登录/安全日志"
 		echo "4. 实时跟踪日志"
-		echo "5. Clean up old journal logs"
-		echo "0. Return to the previous menu"
+		echo "5. 清理旧 journal 日志"
+		echo "0. 返回上一级选单"
 		echo "======================================="
 		read -erp "请选择操作: " choice
 
 		case $choice in
 			1)
-				send_stats "View recent logs"
-				read -erp "View the most recent log lines? [Default 100]:" lines
+				send_stats "查看最近日志"
+				read -erp "查看最近多少行日志？[默认 100]: " lines
 				lines=${lines:-100}
 				journalctl -n "$lines" --no-pager
 				read -erp "按回车继续..."
 				;;
 			2)
-				send_stats "View specified service logs"
+				send_stats "查看指定服务日志"
 				read -erp "请输入服务名（如 sshd、nginx）: " svc
 				if systemctl list-unit-files | grep -q "^$svc"; then
 					journalctl -u "$svc" -n 100 --no-pager
@@ -19864,8 +19864,8 @@ log_menu() {
 				read -erp "按回车继续..."
 				;;
 			3)
-				send_stats "View login/security logs"
-				echo "====== Recent login log ======"
+				send_stats "查看登录/安全日志"
+				echo "====== 最近登录日志 ======"
 				last -n 10
 				echo
 				echo "====== 认证日志 ======"
@@ -19874,36 +19874,36 @@ log_menu() {
 				elif [ -f /var/log/auth.log ]; then
 					tail -n 20 /var/log/auth.log
 				else
-					echo "Security log file not found"
+					echo "未找到安全日志文件"
 				fi
-				read -erp "Press Enter to continue..."
+				read -erp "按回车继续..."
 				;;
 			4)
-				send_stats "Real-time tracking log"
-				echo "1) System log"
-				echo "2) Specify service log"
-				read -erp "Select tracking type:" t
+				send_stats "实时跟踪日志"
+				echo "1) 系统日志"
+				echo "2) 指定服务日志"
+				read -erp "选择跟踪类型: " t
 				if [ "$t" = "1" ]; then
 					journalctl -f
 				elif [ "$t" = "2" ]; then
-					read -erp "Enter service name:" svc
+					read -erp "输入服务名: " svc
 					journalctl -u "$svc" -f
 				else
-					echo "Invalid selection"
+					echo "无效选择"
 				fi
 				;;
 			5)
 				send_stats "清理旧 journal 日志"
-				echo "⚠️ Clean the journal (safe way)"
-				echo "1) Keep the last 7 days"
-				echo "2) Keep the last 3 days"
-				echo "3) Limit the maximum log size to 500M"
-				read -erp "Please select a cleaning method:" c
+				echo "⚠️ 清理 journal 日志（安全方式）"
+				echo "1) 保留最近 7 天"
+				echo "2) 保留最近 3 天"
+				echo "3) 限制日志最大 500M"
+				read -erp "请选择清理方式: " c
 				case $c in
 					1) journalctl --vacuum-time=7d ;;
 					2) journalctl --vacuum-time=3d ;;
 					3) journalctl --vacuum-size=500M ;;
-					*) echo "Invalid option" ;;
+					*) echo "无效选项" ;;
 				esac
 				echo "✔ journal 日志清理完成"
 				sleep 2
@@ -19922,13 +19922,13 @@ env_menu() {
 	BASHRC="$HOME/.bashrc"
 	PROFILE="$HOME/.profile"
 
-	send_stats "System variable management tool"
+	send_stats "系统变量管理工具"
 
 	show_env_vars() {
 		clear
-		send_stats "Environment variables currently in effect"
-		echo "========== Currently in effect environment variables (excerpt) =========="
-		printf "%-20s %s\n" "variable name" "value"
+		send_stats "当前已生效环境变量"
+		echo "========== 当前已生效环境变量（节选） =========="
+		printf "%-20s %s\n" "变量名" "值"
 		echo "-----------------------------------------------"
 		for v in USER HOME SHELL LANG PWD; do
 			printf "%-20s %s\n" "$v" "${!v}"
@@ -19939,17 +19939,17 @@ env_menu() {
 		echo "$PATH" | tr ':' '\n' | nl -ba
 
 		echo
-		echo "========== Variables defined in the configuration file (parsing) =========="
+		echo "========== 配置文件中定义的变量（解析） =========="
 
 		parse_file_vars() {
 			local file="$1"
 			[ -f "$file" ] || return
 
 			echo
-			echo ">>> Source file:$file"
+			echo ">>> 来源文件：$file"
 			echo "-----------------------------------------------"
 
-			# Extract export VAR=xxx or VAR=xxx
+			# 提取 export VAR=xxx 或 VAR=xxx
 			grep -Ev '^\s*#|^\s*$' "$file" \
 			| grep -E '^(export[[:space:]]+)?[A-Za-z_][A-Za-z0-9_]*=' \
 			| while read -r line; do
@@ -19964,55 +19964,55 @@ env_menu() {
 
 		echo
 		echo "==============================================="
-		read -erp "Press Enter to continue..."
+		read -erp "按回车继续..."
 	}
 
 
 	view_file() {
 		local file="$1"
-		send_stats "View variable file$file"
+		send_stats "查看变量文件 $file"
 		clear
 		if [ -f "$file" ]; then
-			echo "========== View files:$file =========="
+			echo "========== 查看文件：$file =========="
 			cat -n "$file"
 			echo "===================================="
 		else
-			echo "File does not exist:$file"
+			echo "文件不存在：$file"
 		fi
-		read -erp "Press Enter to continue..."
+		read -erp "按回车继续..."
 	}
 
 	edit_file() {
 		local file="$1"
-		send_stats "Edit variable file$file"
+		send_stats "编辑变量文件 $file"
 		install nano
 		nano "$file"
 	}
 
 	source_files() {
 		echo "正在重新加载环境变量..."
-		send_stats "Reloading environment variables"
+		send_stats "正在重新加载环境变量"
 		source "$BASHRC"
 		source "$PROFILE"
-		echo "✔ Environment variables have been reloaded"
-		read -erp "Press Enter to continue..."
+		echo "✔ 环境变量已重新加载"
+		read -erp "按回车继续..."
 	}
 
 	while true; do
 		clear
-		echo "=========== System environment variable management =========="
-		echo "Current user:$USER"
+		echo "=========== 系统环境变量管理 =========="
+		echo "当前用户：$USER"
 		echo "--------------------------------------"
-		echo "1. Check the current commonly used environment variables"
-		echo "2. View ~/.bashrc"
-		echo "3. View ~/.profile"
-		echo "4. Edit ~/.bashrc"
-		echo "5. Edit ~/.profile"
-		echo "6. Reload environment variables (source)"
+		echo "1. 查看当前常用环境变量"
+		echo "2. 查看 ~/.bashrc"
+		echo "3. 查看 ~/.profile"
+		echo "4. 编辑 ~/.bashrc"
+		echo "5. 编辑 ~/.profile"
+		echo "6. 重新加载环境变量（source）"
 		echo "--------------------------------------"
-		echo "0. Return to the previous menu"
+		echo "0. 返回上一级选单"
 		echo "--------------------------------------"
-		read -erp "Please select an action:" choice
+		read -erp "请选择操作: " choice
 
 		case "$choice" in
 			1)
@@ -20037,7 +20037,7 @@ env_menu() {
 				break
 				;;
 			*)
-				echo "Invalid option"
+				echo "无效选项"
 				sleep 1
 				;;
 		esac
@@ -20051,40 +20051,40 @@ create_user_with_sshkey() {
 	local sshkey_vl
 
 	if [[ -z "$new_username" ]]; then
-		echo "Usage: create_user_with_sshkey <username>"
+		echo "用法：create_user_with_sshkey <用户名>"
 		return 1
 	fi
 
-	# Create user
+	# 创建用户
 	useradd -m -s /bin/bash "$new_username" || return 1
 
-	echo "Example of importing public key:"
+	echo "导入公钥范例："
 	echo "  - URL：      ${gh_https_url}github.com/torvalds.keys"
-	echo "- Paste directly: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI..."
-	read -e -p "Please import${new_username}public key:" sshkey_vl
+	echo "  - 直接粘贴： ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI..."
+	read -e -p "请导入 ${new_username} 的公钥: " sshkey_vl
 
 	case "$sshkey_vl" in
 		http://*|https://*)
-			send_stats "Import SSH public key from URL"
+			send_stats "从 URL 导入 SSH 公钥"
 			fetch_remote_ssh_keys "$sshkey_vl" "/home/$new_username"
 			;;
 		ssh-rsa*|ssh-ed25519*|ssh-ecdsa*)
-			send_stats "Directly import the public key"
+			send_stats "公钥直接导入"
 			import_sshkey "$sshkey_vl" "/home/$new_username"
 			;;
 		*)
-			echo "Error: unknown parameter '$sshkey_vl'"
+			echo "错误：未知参数 '$sshkey_vl'"
 			return 1
 			;;
 	esac
 
 
-	# Fix permissions
+	# 修正权限
 	chown -R "$new_username:$new_username" "/home/$new_username/.ssh"
 
 	install sudo
 
-	# sudo password-free
+	# sudo 免密
 	if [[ "$is_sudo" == "true" ]]; then
 		cat >"/etc/sudoers.d/$new_username" <<EOF
 $new_username ALL=(ALL) NOPASSWD:ALL
@@ -20097,7 +20097,7 @@ EOF
 	passwd -l "$new_username" &>/dev/null
 	restart_ssh
 
-	echo "user$new_username 创建完成"
+	echo "用户 $new_username 创建完成"
 }
 
 
@@ -20118,13 +20118,13 @@ linux_Settings() {
 
 	while true; do
 	  clear
-	  # send_stats "System Tools"
-	  echo -e "system tools"
+	  # send_stats "系统工具"
+	  echo -e "系统工具"
 	  echo -e "${gl_kjlan}------------------------"
-	  echo -e "${gl_kjlan}1.   ${gl_bai}Set script startup shortcut key${gl_kjlan}2.   ${gl_bai}修改登录密码"
-	  echo -e "${gl_kjlan}3.   ${gl_bai}用户密码登录模式                   ${gl_kjlan}4.   ${gl_bai}Install the specified version of Python"
-	  echo -e "${gl_kjlan}5.   ${gl_bai}Open all ports${gl_kjlan}6.   ${gl_bai}Modify SSH connection port"
-	  echo -e "${gl_kjlan}7.   ${gl_bai}Optimize DNS address${gl_kjlan}8.   ${gl_bai}Reinstall the system with one click${gl_huang}★${gl_bai}"
+	  echo -e "${gl_kjlan}1.   ${gl_bai}设置脚本启动快捷键                 ${gl_kjlan}2.   ${gl_bai}修改登录密码"
+	  echo -e "${gl_kjlan}3.   ${gl_bai}用户密码登录模式                   ${gl_kjlan}4.   ${gl_bai}安装Python指定版本"
+	  echo -e "${gl_kjlan}5.   ${gl_bai}开放所有端口                       ${gl_kjlan}6.   ${gl_bai}修改SSH连接端口"
+	  echo -e "${gl_kjlan}7.   ${gl_bai}优化DNS地址                        ${gl_kjlan}8.   ${gl_bai}一键重装系统 ${gl_huang}★${gl_bai}"
 	  echo -e "${gl_kjlan}9.   ${gl_bai}禁用ROOT账户创建新账户             ${gl_kjlan}10.  ${gl_bai}切换优先ipv4/ipv6"
 	  echo -e "${gl_kjlan}------------------------"
 	  echo -e "${gl_kjlan}11.  ${gl_bai}查看端口占用状态                   ${gl_kjlan}12.  ${gl_bai}修改虚拟内存大小"
@@ -20133,10 +20133,10 @@ linux_Settings() {
 	  echo -e "${gl_kjlan}17.  ${gl_bai}防火墙高级管理器                   ${gl_kjlan}18.  ${gl_bai}修改主机名"
 	  echo -e "${gl_kjlan}19.  ${gl_bai}切换系统更新源                     ${gl_kjlan}20.  ${gl_bai}定时任务管理"
 	  echo -e "${gl_kjlan}------------------------"
-	  echo -e "${gl_kjlan}21.  ${gl_bai}本机host解析                       ${gl_kjlan}22.  ${gl_bai}SSH defense program"
+	  echo -e "${gl_kjlan}21.  ${gl_bai}本机host解析                       ${gl_kjlan}22.  ${gl_bai}SSH防御程序"
 	  echo -e "${gl_kjlan}23.  ${gl_bai}限流自动关机                       ${gl_kjlan}24.  ${gl_bai}用户密钥登录模式"
-	  echo -e "${gl_kjlan}25.  ${gl_bai}TG-bot system monitoring and early warning${gl_kjlan}26.  ${gl_bai}修复OpenSSH高危漏洞"
-	  echo -e "${gl_kjlan}27.  ${gl_bai}Red Hat Linux kernel upgrade${gl_kjlan}28.  ${gl_bai}Linux系统内核参数优化 ${gl_huang}★${gl_bai}"
+	  echo -e "${gl_kjlan}25.  ${gl_bai}TG-bot系统监控预警                 ${gl_kjlan}26.  ${gl_bai}修复OpenSSH高危漏洞"
+	  echo -e "${gl_kjlan}27.  ${gl_bai}红帽系Linux内核升级                ${gl_kjlan}28.  ${gl_bai}Linux系统内核参数优化 ${gl_huang}★${gl_bai}"
 	  echo -e "${gl_kjlan}29.  ${gl_bai}病毒扫描工具 ${gl_huang}★${gl_bai}                     ${gl_kjlan}30.  ${gl_bai}文件管理器"
 	  echo -e "${gl_kjlan}------------------------"
 	  echo -e "${gl_kjlan}31.  ${gl_bai}切换系统语言                       ${gl_kjlan}32.  ${gl_bai}命令行美化工具 ${gl_huang}★${gl_bai}"
@@ -20380,7 +20380,7 @@ EOF
 					2)
 						rm -f /etc/gai.conf
 						echo "已切换为 IPv6 优先"
-						send_stats "已切换为 IPv6 优先"
+						send_stats "Switched to IPv6 priority"
 						;;
 
 					3)
@@ -20419,7 +20419,7 @@ EOF
 				echo "------------------------"
 				echo "0. 返回上一级选单"
 				echo "------------------------"
-				read -e -p "请输入你的选择: " choice
+				read -e -p "Please enter your choice:" choice
 
 				case "$choice" in
 				  1)
@@ -20457,7 +20457,7 @@ EOF
 				send_stats "用户管理"
 				echo "用户列表"
 				echo "----------------------------------------------------------------------------"
-				printf "%-24s %-34s %-20s %-10s\n" "用户名" "用户权限" "用户组" "sudo权限"
+				printf "%-24s %-34s %-20s %-10s\n" "username" "用户权限" "User group" "sudo权限"
 				while IFS=: read -r username _ userid groupid _ _ homedir shell; do
 					local groups=$(groups "$username" | cut -d : -f 2)
 					local sudo_status
@@ -20485,7 +20485,7 @@ EOF
 
 				  case $sub_choice in
 					  1)
-					   # 提示用户输入新用户名
+					   # Prompt user for new username
 					   read -e -p "请输入新用户名: " new_username
 					   create_user_with_sshkey $new_username false
 
@@ -20507,7 +20507,7 @@ EOF
 
 						  ;;
 					  4)
-					   read -e -p "请输入用户名: " username
+					   read -e -p "Please enter username:" username
 				  	   if [[ -f "/etc/sudoers.d/$username" ]]; then
 						   grep -lR "^$username" /etc/sudoers.d/ 2>/dev/null | xargs rm -f
 					   fi
@@ -20542,7 +20542,7 @@ EOF
 			local first_names=("John" "Jane" "Michael" "Emily" "David" "Sophia" "William" "Olivia" "James" "Emma" "Ava" "Liam" "Mia" "Noah" "Isabella")
 			local last_names=("Smith" "Johnson" "Brown" "Davis" "Wilson" "Miller" "Jones" "Garcia" "Martinez" "Williams" "Lee" "Gonzalez" "Rodriguez" "Hernandez")
 
-			# 生成5个随机用户姓名
+			# Generate 5 random user names
 			for i in {1..5}; do
 				local first_name_index=$((RANDOM % ${#first_names[@]}))
 				local last_name_index=$((RANDOM % ${#last_names[@]}))
@@ -20555,7 +20555,7 @@ EOF
 			echo "------------------------"
 			for i in {1..5}; do
 				uuid=$(cat /proc/sys/kernel/random/uuid)
-				echo "随机UUID $i: $uuid"
+				echo "Random UUID$i: $uuid"
 			done
 
 			echo ""
@@ -20563,7 +20563,7 @@ EOF
 			echo "------------------------"
 			for i in {1..5}; do
 				local password=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c16)
-				echo "随机密码 $i: $password"
+				echo "random password$i: $password"
 			done
 
 			echo ""
@@ -20675,7 +20675,7 @@ EOF
 					  echo "$new_hostname" > /etc/hostname
 					  hostname "$new_hostname"
 				  else
-					  # Other systems such as Debian, Ubuntu, CentOS, etc.
+					  # 其他系统，如 Debian, Ubuntu, CentOS 等
 					  hostnamectl set-hostname "$new_hostname"
 					  sed -i "s/$current_hostname/$new_hostname/g" /etc/hostname
 					  systemctl restart systemd-hostnamed
@@ -20705,7 +20705,7 @@ EOF
 
 		  19)
 		  root_use
-		  send_stats "Change system update source"
+		  send_stats "换系统更新源"
 		  clear
 		  echo "选择更新源区域"
 		  echo "接入LinuxMirrors切换系统更新源"
@@ -20714,19 +20714,19 @@ EOF
 		  echo "------------------------"
 		  echo "0. 返回上一级选单"
 		  echo "------------------------"
-		  read -e -p "Enter your selection:" choice
+		  read -e -p "输入你的选择: " choice
 
 		  case $choice in
 			  1)
-				  send_stats "Mainland China default source"
+				  send_stats "中国大陆默认源"
 				  bash <(curl -sSL https://linuxmirrors.cn/main.sh)
 				  ;;
 			  2)
-				  send_stats "Mainland China Education Source"
+				  send_stats "中国大陆教育源"
 				  bash <(curl -sSL https://linuxmirrors.cn/main.sh) --edu
 				  ;;
 			  3)
-				  send_stats "Overseas sources"
+				  send_stats "海外源"
 				  bash <(curl -sSL https://linuxmirrors.cn/main.sh) --abroad
 				  ;;
 			  4)
@@ -20735,7 +20735,7 @@ EOF
 				  ;;
 
 			  *)
-				  echo "Canceled"
+				  echo "已取消"
 				  ;;
 
 		  esac
@@ -20748,57 +20748,57 @@ EOF
 				  clear
 				  check_crontab_installed
 				  clear
-				  echo "Scheduled task list"
+				  echo "定时任务列表"
 				  crontab -l
 				  echo ""
-				  echo "operate"
+				  echo "操作"
 				  echo "------------------------"
-				  echo "1. Add a scheduled task 2. Delete a scheduled task 3. Edit a scheduled task"
+				  echo "1. 添加定时任务              2. 删除定时任务              3. 编辑定时任务"
 				  echo "------------------------"
 				  echo "0. 返回上一级选单"
 				  echo "------------------------"
-				  read -e -p "Please enter your choice:" sub_choice
+				  read -e -p "请输入你的选择: " sub_choice
 
 				  case $sub_choice in
 					  1)
-						  read -e -p "Please enter the execution command of the new task:" newquest
+						  read -e -p "请输入新任务的执行命令: " newquest
 						  echo "------------------------"
-						  echo "1. Monthly tasks 2. Weekly tasks"
-						  echo "3. Daily tasks 4. Hourly tasks"
+						  echo "1. 每月任务                 2. 每周任务"
+						  echo "3. 每天任务                 4. 每小时任务"
 						  echo "------------------------"
-						  read -e -p "Please enter your choice:" dingshi
+						  read -e -p "请输入你的选择: " dingshi
 
 						  case $dingshi in
 							  1)
-								  read -e -p "On what day of the month do you choose to execute the task? (1-30):" day
+								  read -e -p "选择每月的几号执行任务？ (1-30): " day
 								  (crontab -l ; echo "0 0 $day * * $newquest") | crontab - > /dev/null 2>&1
 								  ;;
 							  2)
-								  read -e -p "Choose a day of the week to perform the task? (0-6, 0 represents Sunday):" weekday
+								  read -e -p "选择周几执行任务？ (0-6，0代表星期日): " weekday
 								  (crontab -l ; echo "0 0 * * $weekday $newquest") | crontab - > /dev/null 2>&1
 								  ;;
 							  3)
-								  read -e -p "What time do you choose to perform the task every day? (hours, 0-23):" hour
+								  read -e -p "选择每天几点执行任务？（小时，0-23）: " hour
 								  (crontab -l ; echo "0 $hour * * * $newquest") | crontab - > /dev/null 2>&1
 								  ;;
 							  4)
-								  read -e -p "Enter what time of the hour the task should be executed? (minutes, 0-60):" minute
+								  read -e -p "输入每小时的第几分钟执行任务？（分钟，0-60）: " minute
 								  (crontab -l ; echo "$minute * * * * $newquest") | crontab - > /dev/null 2>&1
 								  ;;
 							  *)
 								  break  # 跳出
 								  ;;
 						  esac
-						  send_stats "Add a scheduled task"
+						  send_stats "添加定时任务"
 						  ;;
 					  2)
-						  read -e -p "Please enter the keyword of the task to be deleted:" kquest
+						  read -e -p "请输入需要删除任务的关键字: " kquest
 						  crontab -l | grep -v "$kquest" | crontab -
-						  send_stats "Delete scheduled tasks"
+						  send_stats "删除定时任务"
 						  ;;
 					  3)
 						  crontab -e
-						  send_stats "Edit scheduled tasks"
+						  send_stats "编辑定时任务"
 						  ;;
 					  *)
 						  break  # 跳出循环，退出菜单
@@ -20810,32 +20810,32 @@ EOF
 
 		  21)
 			  root_use
-			  send_stats "Local host resolution"
+			  send_stats "本地host解析"
 			  while true; do
 				  clear
-				  echo "Native host resolution list"
-				  echo "If you add parsing matching here, dynamic parsing will no longer be used"
+				  echo "本机host解析列表"
+				  echo "如果你在这里添加解析匹配，将不再使用动态解析了"
 				  cat /etc/hosts
 				  echo ""
-				  echo "operate"
+				  echo "操作"
 				  echo "------------------------"
-				  echo "1. Add new resolution 2. Delete resolution address"
+				  echo "1. 添加新的解析              2. 删除解析地址"
 				  echo "------------------------"
-				  echo "0. Return to the previous menu"
+				  echo "0. 返回上一级选单"
 				  echo "------------------------"
-				  read -e -p "Please enter your choice:" host_dns
+				  read -e -p "请输入你的选择: " host_dns
 
 				  case $host_dns in
 					  1)
-						  read -e -p "Please enter a new parsing record format: 110.25.5.33 kejilion.pro:" addhost
+						  read -e -p "请输入新的解析记录 格式: 110.25.5.33 kejilion.pro : " addhost
 						  echo "$addhost" >> /etc/hosts
-						  send_stats "Local host resolution is added"
+						  send_stats "本地host解析新增"
 
 						  ;;
 					  2)
-						  read -e -p "Please enter the keywords of the parsed content that need to be deleted:" delhost
+						  read -e -p "请输入需要删除的解析内容关键字: " delhost
 						  sed -i "/$delhost/d" /etc/hosts
-						  send_stats "Local host resolution and deletion"
+						  send_stats "本地host解析删除"
 						  ;;
 					  *)
 						  break  # 跳出循环，退出菜单
@@ -20851,47 +20851,47 @@ EOF
 
 		  23)
 			root_use
-			send_stats "Current limiting shutdown function"
+			send_stats "限流关机功能"
 			while true; do
 				clear
-				echo "Current limiting shutdown function"
-				echo "Video introduction: https://www.bilibili.com/video/BV1mC411j7Qd?t=0.1"
+				echo "限流关机功能"
+				echo "视频介绍: https://www.bilibili.com/video/BV1mC411j7Qd?t=0.1"
 				echo "------------------------------------------------"
-				echo "The current traffic usage will be cleared when the server is restarted!"
+				echo "当前流量使用情况，重启服务器流量计算会清零！"
 				output_status
-				echo -e "${gl_kjlan}Total received:${gl_bai}$rx"
-				echo -e "${gl_kjlan}Total sent:${gl_bai}$tx"
+				echo -e "${gl_kjlan}总接收: ${gl_bai}$rx"
+				echo -e "${gl_kjlan}总发送: ${gl_bai}$tx"
 
-				# Check if Limiting_Shut_down.sh file exists
+				# 检查是否存在 Limiting_Shut_down.sh 文件
 				if [ -f ~/Limiting_Shut_down.sh ]; then
-					# Get the value of threshold_gb
+					# 获取 threshold_gb 的值
 					local rx_threshold_gb=$(grep -oP 'rx_threshold_gb=\K\d+' ~/Limiting_Shut_down.sh)
 					local tx_threshold_gb=$(grep -oP 'tx_threshold_gb=\K\d+' ~/Limiting_Shut_down.sh)
-					echo -e "${gl_lv}The currently set inbound traffic limit threshold is:${gl_huang}${rx_threshold_gb}${gl_lv}G${gl_bai}"
-					echo -e "${gl_lv}The currently set outbound traffic limiting threshold is:${gl_huang}${tx_threshold_gb}${gl_lv}GB${gl_bai}"
+					echo -e "${gl_lv}当前设置的进站限流阈值为: ${gl_huang}${rx_threshold_gb}${gl_lv}G${gl_bai}"
+					echo -e "${gl_lv}当前设置的出站限流阈值为: ${gl_huang}${tx_threshold_gb}${gl_lv}GB${gl_bai}"
 				else
-					echo -e "${gl_hui}The current limiting shutdown function is not currently enabled${gl_bai}"
+					echo -e "${gl_hui}当前未启用限流关机功能${gl_bai}"
 				fi
 
 				echo
 				echo "------------------------------------------------"
-				echo "The system will detect whether the actual traffic reaches the threshold every minute, and will automatically shut down the server after reaching the threshold!"
+				echo "系统每分钟会检测实际流量是否到达阈值，到达后会自动关闭服务器！"
 				echo "------------------------"
-				echo "1. Enable the current limiting shutdown function 2. Disable the current limiting shutdown function"
+				echo "1. 开启限流关机功能          2. 停用限流关机功能"
 				echo "------------------------"
-				echo "0. Return to the previous menu"
+				echo "0. 返回上一级选单"
 				echo "------------------------"
-				read -e -p "Please enter your choice:" Limiting
+				read -e -p "请输入你的选择: " Limiting
 
 				case "$Limiting" in
 				  1)
-					# Enter new virtual memory size
-					echo "If the actual server only has 100G traffic, you can set the threshold to 95G and shut down in advance to avoid traffic errors or overflows."
-					read -e -p "Please enter the inbound traffic threshold (unit is G, default is 100G):" rx_threshold_gb
+					# 输入新的虚拟内存大小
+					echo "如果实际服务器就100G流量，可设置阈值为95G，提前关机，以免出现流量误差或溢出。"
+					read -e -p "请输入进站流量阈值（单位为G，默认100G）: " rx_threshold_gb
 					rx_threshold_gb=${rx_threshold_gb:-100}
-					read -e -p "Please enter the outbound traffic threshold (unit is G, default is 100G):" tx_threshold_gb
+					read -e -p "请输入出站流量阈值（单位为G，默认100G）: " tx_threshold_gb
 					tx_threshold_gb=${tx_threshold_gb:-100}
-					read -e -p "Please enter the traffic reset date (default resets on the 1st of every month):" cz_day
+					read -e -p "请输入流量重置日期（默认每月1日重置）: " cz_day
 					cz_day=${cz_day:-1}
 
 					cd ~
@@ -20904,15 +20904,15 @@ EOF
 					(crontab -l ; echo "* * * * * ~/Limiting_Shut_down.sh") | crontab - > /dev/null 2>&1
 					crontab -l | grep -v 'reboot' | crontab -
 					(crontab -l ; echo "0 1 $cz_day * * reboot") | crontab - > /dev/null 2>&1
-					echo "Current limiting shutdown has been set"
-					send_stats "Current limiting shutdown has been set"
+					echo "限流关机已设置"
+					send_stats "限流关机已设置"
 					;;
 				  2)
 					check_crontab_installed
 					crontab -l | grep -v '~/Limiting_Shut_down.sh' | crontab -
 					crontab -l | grep -v 'reboot' | crontab -
 					rm ~/Limiting_Shut_down.sh
-					echo "Current limiting shutdown function is turned off"
+					echo "已关闭限流关机功能"
 					;;
 				  *)
 					break
@@ -20928,18 +20928,18 @@ EOF
 
 		  25)
 			  root_use
-			  send_stats "Telegraph warning"
-			  echo "TG-bot monitoring and early warning function"
-			  echo "Video introduction: https://youtu.be/vLL-eb3Z_TY"
+			  send_stats "电报预警"
+			  echo "TG-bot监控预警功能"
+			  echo "视频介绍: https://youtu.be/vLL-eb3Z_TY"
 			  echo "------------------------------------------------"
-			  echo "You need to configure the tg robot API and the user ID to receive alerts to achieve real-time monitoring and alerts of local CPU, memory, hard disk, traffic, and SSH login."
-			  echo "When the threshold is reached, a warning message will be sent to the user."
-			  echo -e "${gl_hui}- Regarding traffic, restarting the server will recalculate -${gl_bai}"
-			  read -e -p "Are you sure you want to continue? (Y/N):" choice
+			  echo "您需要配置tg机器人API和接收预警的用户ID，即可实现本机CPU，内存，硬盘，流量，SSH登录的实时监控预警"
+			  echo "到达阈值后会向用户发预警消息"
+			  echo -e "${gl_hui}-关于流量，重启服务器将重新计算-${gl_bai}"
+			  read -e -p "确定继续吗？(Y/N): " choice
 
 			  case "$choice" in
 				[Yy])
-				  send_stats "Telegram warning enabled"
+				  send_stats "电报预警启用"
 				  cd ~
 				  install nano tmux bc jq
 				  check_crontab_installed
@@ -20961,7 +20961,7 @@ EOF
 				  sed -i "4i$(grep '^CHAT_ID=' ~/TG-check-notify.sh)" TG-SSH-check-notify.sh
 				  chmod +x ~/TG-SSH-check-notify.sh
 
-				  # Add to ~/.profile file
+				  # 添加到 ~/.profile 文件中
 				  if ! grep -q 'bash ~/TG-SSH-check-notify.sh' ~/.profile > /dev/null 2>&1; then
 					  echo 'bash ~/TG-SSH-check-notify.sh' >> ~/.profile
 					  if command -v dnf &>/dev/null || command -v yum &>/dev/null; then
@@ -20972,11 +20972,11 @@ EOF
 				  source ~/.profile
 
 				  clear
-				  echo "TG-bot early warning system has been activated"
+				  echo "TG-bot预警系统已启动"
 				  echo -e "${gl_hui}你还可以将root目录中的TG-check-notify.sh预警文件放到其他机器上直接使用！${gl_bai}"
 				  ;;
 				[Nn])
-				  echo "Canceled"
+				  echo "已取消"
 				  ;;
 				*)
 				  echo "无效的选择，请输入 Y 或 N。"
@@ -20986,7 +20986,7 @@ EOF
 
 		  26)
 			  root_use
-			  send_stats "修复SSH高危漏洞"
+			  send_stats "Fix high-risk SSH vulnerabilities"
 			  cd ~
 			  curl -sS -O ${gh_proxy}raw.githubusercontent.com/KUAILESHANGWEI/kejidalao/main/upgrade_openssh9.8p1.sh
 			  chmod +x ~/upgrade_openssh9.8p1.sh
@@ -21070,7 +21070,7 @@ EOF
 		  61)
 			clear
 			send_stats "留言板"
-			echo "Visit the official message board of Technology Lion. If you have any ideas about the script, please leave a message to exchange!"
+			echo "访问科技lion官方留言板，您对脚本有任何想法欢迎留言交流！"
 			echo "https://board.kejilion.pro"
 			echo "Public password: kejilion.sh"
 			  ;;
@@ -21081,18 +21081,18 @@ EOF
 			  send_stats "一条龙调优"
 			  echo "One-stop system tuning"
 			  echo "------------------------------------------------"
-			  echo "The following content will be operated and optimized"
+			  echo "将对以下内容进行操作与优化"
 			  echo "1. 优化系统更新源，更新系统到最新"
-			  echo "2. Clean up system junk files"
+			  echo "2. 清理系统垃圾文件"
 			  echo -e "3. Set up virtual memory${gl_huang}1G${gl_bai}"
-			  echo -e "4. Set the SSH port number to${gl_huang}5522${gl_bai}"
-			  echo -e "5. Start fail2ban to defend against SSH brute force cracking"
-			  echo -e "6. Open all ports"
+			  echo -e "4. 设置SSH端口号为${gl_huang}5522${gl_bai}"
+			  echo -e "5. 启动fail2ban防御SSH暴力破解"
+			  echo -e "6. 开放所有端口"
 			  echo -e "7. 开启${gl_huang}BBR${gl_bai}加速"
 			  echo -e "8. 设置时区到${gl_huang}Shanghai${gl_bai}"
-			  echo -e "9. Automatically optimize DNS addresses${gl_huang}Overseas: 1.1.1.1 8.8.8.8 Domestic: 223.5.5.5${gl_bai}"
-		  	  echo -e "10. 设置网络为${gl_huang}ipv4优先${gl_bai}"
-			  echo -e "11. Install basic tools${gl_huang}docker wget sudo tar unzip socat btop nano vim${gl_bai}"
+			  echo -e "9. 自动优化DNS地址${gl_huang}海外: 1.1.1.1 8.8.8.8  国内: 223.5.5.5 ${gl_bai}"
+		  	  echo -e "10. Set the network to${gl_huang}IPv4 priority${gl_bai}"
+			  echo -e "11. 安装基础工具${gl_huang}docker wget sudo tar unzip socat btop nano vim${gl_bai}"
 			  echo -e "12. Linux系统内核参数优化${gl_huang}自动根据网络环境调优${gl_bai}"
 			  echo "------------------------------------------------"
 			  read -e -p "确定一键保养吗？(Y/N): " choice
@@ -21124,39 +21124,39 @@ EOF
 				  echo -e "[${gl_lv}OK${gl_bai}] 5/12. 启动fail2ban防御SSH暴力破解"
 
 				  echo "------------------------------------------------"
-				  echo -e "[${gl_lv}OK${gl_bai}] 6/12. 开放所有端口"
+				  echo -e "[${gl_lv}OK${gl_bai}] 6/12. Open all ports"
 
 				  echo "------------------------------------------------"
 				  bbr_on
-				  echo -e "[${gl_lv}OK${gl_bai}] 7/12. 开启${gl_huang}BBR${gl_bai}加速"
+				  echo -e "[${gl_lv}OK${gl_bai}] 7/12. Open${gl_huang}BBR${gl_bai}加速"
 
 				  echo "------------------------------------------------"
 				  set_timedate Asia/Shanghai
-				  echo -e "[${gl_lv}OK${gl_bai}] 8/12. 设置时区到${gl_huang}上海${gl_bai}"
+				  echo -e "[${gl_lv}OK${gl_bai}] 8/12. Set time zone to${gl_huang}Shanghai${gl_bai}"
 
 				  echo "------------------------------------------------"
 				  auto_optimize_dns
-				  echo -e "[${gl_lv}OK${gl_bai}] 9/12. 自动优化DNS地址${gl_huang}${gl_bai}"
+				  echo -e "[${gl_lv}OK${gl_bai}] 9/12. Automatically optimize DNS address${gl_huang}${gl_bai}"
 				  echo "------------------------------------------------"
 				  prefer_ipv4
-				  echo -e "[${gl_lv}OK${gl_bai}] 10/12. 设置网络为${gl_huang}ipv4优先${gl_bai}}"
+				  echo -e "[${gl_lv}OK${gl_bai}] 10/12. 设置网络为${gl_huang}IPv4 priority${gl_bai}}"
 
 				  echo "------------------------------------------------"
 				  install_docker
 				  install wget sudo tar unzip socat btop nano vim
-				  echo -e "[${gl_lv}OK${gl_bai}] 11/12. 安装基础工具${gl_huang}docker wget sudo tar unzip socat btop nano vim${gl_bai}"
+				  echo -e "[${gl_lv}OK${gl_bai}] 11/12. Install basic tools${gl_huang}docker wget sudo tar unzip socat btop nano vim${gl_bai}"
 				  echo "------------------------------------------------"
 
 				  curl -sS ${gh_proxy}raw.githubusercontent.com/KUAILESHANGWEI/kejidalao/main/network-optimize.sh | bash
 				  echo -e "[${gl_lv}OK${gl_bai}] 12/12. Linux系统内核参数优化"
-				  echo -e "${gl_lv}一条龙系统调优已完成${gl_bai}"
+				  echo -e "${gl_lv}One-stop system tuning has been completed${gl_bai}"
 
 				  ;;
 				[Nn])
-				  echo "已取消"
+				  echo "Canceled"
 				  ;;
 				*)
-				  echo "无效的选择，请输入 Y 或 N。"
+				  echo "Invalid selection, please enter Y or N."
 				  ;;
 			  esac
 
@@ -21164,7 +21164,7 @@ EOF
 
 		  99)
 			  clear
-			  send_stats "重启系统"
+			  send_stats "Restart the system"
 			  server_reboot
 			  ;;
 		  100)
@@ -21175,37 +21175,37 @@ EOF
 			  if grep -q '^ENABLE_STATS="true"' /usr/local/bin/k > /dev/null 2>&1; then
 			  	local status_message="${gl_lv}正在采集数据${gl_bai}"
 			  elif grep -q '^ENABLE_STATS="false"' /usr/local/bin/k > /dev/null 2>&1; then
-			  	local status_message="${gl_hui}采集已关闭${gl_bai}"
+			  	local status_message="${gl_hui}Collection is closed${gl_bai}"
 			  else
 			  	local status_message="Uncertain status"
 			  fi
 
-			  echo "隐私与安全"
+			  echo "Privacy and security"
 			  echo "脚本将收集用户使用功能的数据，优化脚本体验，制作更多好玩好用的功能"
-			  echo "将收集脚本版本号，使用的时间，系统版本，CPU架构，机器所属国家和使用的功能的名称，"
+			  echo "The script version number, time of use, system version, CPU architecture, country of the machine and name of the function used will be collected,"
 			  echo "------------------------------------------------"
-			  echo -e "当前状态: $status_message"
+			  echo -e "Current status:$status_message"
 			  echo "--------------------"
-			  echo "1. 开启采集"
-			  echo "2. 关闭采集"
+			  echo "1. Start collection"
+			  echo "2. Close collection"
 			  echo "--------------------"
-			  echo "0. 返回上一级选单"
+			  echo "0. Return to the previous menu"
 			  echo "--------------------"
-			  read -e -p "请输入你的选择: " sub_choice
+			  read -e -p "Please enter your choice:" sub_choice
 			  case $sub_choice in
 				  1)
 					  cd ~
 					  sed -i 's/^ENABLE_STATS="false"/ENABLE_STATS="true"/' /usr/local/bin/k
 					  sed -i 's/^ENABLE_STATS="false"/ENABLE_STATS="true"/' ~/kejilion.sh
-					  echo "已开启采集"
-					  send_stats "隐私与安全已开启采集"
+					  echo "Collection has been started"
+					  send_stats "Privacy and security collection has been turned on"
 					  ;;
 				  2)
 					  cd ~
 					  sed -i 's/^ENABLE_STATS="true"/ENABLE_STATS="false"/' /usr/local/bin/k
 					  sed -i 's/^ENABLE_STATS="true"/ENABLE_STATS="false"/' ~/kejilion.sh
-					  echo "已关闭采集"
-					  send_stats "隐私与安全已关闭采集"
+					  echo "Collection closed"
+					  send_stats "Privacy and security collection has been turned off"
 					  ;;
 				  *)
 					  break
@@ -21221,11 +21221,11 @@ EOF
 
 		  102)
 			  clear
-			  send_stats "卸载科技lion脚本"
-			  echo "卸载科技lion脚本"
+			  send_stats "Uninstall tech lion script"
+			  echo "Uninstall tech lion script"
 			  echo "------------------------------------------------"
-			  echo "将彻底卸载kejilion脚本，不影响你其他功能"
-			  read -e -p "确定继续吗？(Y/N): " choice
+			  echo "The kejilion script will be completely uninstalled without affecting your other functions."
+			  read -e -p "Are you sure you want to continue? (Y/N):" choice
 
 			  case "$choice" in
 				[Yy])
@@ -21233,16 +21233,16 @@ EOF
 				  (crontab -l | grep -v "kejilion.sh") | crontab -
 				  rm -f /usr/local/bin/k
 				  rm ~/kejilion.sh
-				  echo "脚本已卸载，再见！"
+				  echo "The script has been uninstalled, bye!"
 				  break_end
 				  clear
 				  exit
 				  ;;
 				[Nn])
-				  echo "已取消"
+				  echo "Canceled"
 				  ;;
 				*)
-				  echo "无效的选择，请输入 Y 或 N。"
+				  echo "Invalid selection, please enter Y or N."
 				  ;;
 			  esac
 			  ;;
@@ -21252,7 +21252,7 @@ EOF
 
 			  ;;
 		  *)
-			  echo "无效的输入!"
+			  echo "Invalid input!"
 			  ;;
 	  esac
 	  break_end
@@ -21270,157 +21270,157 @@ EOF
 
 linux_file() {
 	root_use
-	send_stats "文件管理器"
+	send_stats "file manager"
 	while true; do
 		clear
-		echo "文件管理器"
+		echo "file manager"
 		echo "------------------------"
-		echo "当前路径"
+		echo "current path"
 		pwd
 		echo "------------------------"
 		ls --color=auto -x
 		echo "------------------------"
-		echo "1.  进入目录           2.  创建目录             3.  修改目录权限         4.  重命名目录"
-		echo "5.  删除目录           6.  返回上一级选单目录"
+		echo "1. Enter the directory 2. Create the directory 3. Modify directory permissions 4. Rename the directory"
+		echo "5. Delete the directory 6. Return to the previous menu directory"
 		echo "------------------------"
-		echo "11. 创建文件           12. 编辑文件             13. 修改文件权限         14. 重命名文件"
-		echo "15. 删除文件"
+		echo "11. Create files 12. Edit files 13. Modify file permissions 14. Rename files"
+		echo "15. Delete files"
 		echo "------------------------"
-		echo "21. 压缩文件目录       22. 解压文件目录         23. 移动文件目录         24. 复制文件目录"
-		echo "25. 传文件至其他服务器"
+		echo "21. Compress file directory 22. Unzip file directory 23. Move file directory 24. Copy file directory"
+		echo "25. Transfer files to other servers"
 		echo "------------------------"
-		echo "0.  返回上一级选单"
+		echo "0. Return to the previous menu"
 		echo "------------------------"
-		read -e -p "请输入你的选择: " Limiting
+		read -e -p "Please enter your choice:" Limiting
 
 		case "$Limiting" in
 			1)  # 进入目录
-				read -e -p "请输入目录名: " dirname
-				cd "$dirname" 2>/dev/null || echo "无法进入目录"
-				send_stats "进入目录"
+				read -e -p "Please enter the directory name:" dirname
+				cd "$dirname" 2>/dev/null || echo "Unable to enter directory"
+				send_stats "Enter directory"
 				;;
 			2)  # 创建目录
-				read -e -p "请输入要创建的目录名: " dirname
-				mkdir -p "$dirname" && echo "目录已创建" || echo "创建失败"
-				send_stats "创建目录"
+				read -e -p "Please enter the directory name to be created:" dirname
+				mkdir -p "$dirname" && echo "Directory created" || echo "Creation failed"
+				send_stats "Create directory"
 				;;
 			3)  # 修改目录权限
-				read -e -p "请输入目录名: " dirname
-				read -e -p "请输入权限 (如 755): " perm
-				chmod "$perm" "$dirname" && echo "权限已修改" || echo "修改失败"
-				send_stats "修改目录权限"
+				read -e -p "Please enter the directory name:" dirname
+				read -e -p "Please enter permissions (e.g. 755):" perm
+				chmod "$perm" "$dirname" && echo "权限已修改" || echo "Modification failed"
+				send_stats "Modify directory permissions"
 				;;
 			4)  # 重命名目录
-				read -e -p "请输入当前目录名: " current_name
+				read -e -p "Please enter the current directory name:" current_name
 				read -e -p "请输入新目录名: " new_name
-				mv "$current_name" "$new_name" && echo "目录已重命名" || echo "重命名失败"
-				send_stats "重命名目录"
+				mv "$current_name" "$new_name" && echo "目录已重命名" || echo "Rename failed"
+				send_stats "Rename directory"
 				;;
 			5)  # 删除目录
-				read -e -p "请输入要删除的目录名: " dirname
+				read -e -p "Please enter the directory name to be deleted:" dirname
 				rm -rf "$dirname" && echo "目录已删除" || echo "删除失败"
-				send_stats "删除目录"
+				send_stats "delete directory"
 				;;
 			6)  # 返回上一级选单目录
 				cd ..
-				send_stats "返回上一级选单目录"
+				send_stats "Return to the previous menu directory"
 				;;
 			11) # 创建文件
-				read -e -p "请输入要创建的文件名: " filename
+				read -e -p "Please enter the file name to be created:" filename
 				touch "$filename" && echo "文件已创建" || echo "创建失败"
 				send_stats "创建文件"
 				;;
 			12) # 编辑文件
-				read -e -p "请输入要编辑的文件名: " filename
+				read -e -p "Please enter the file name to be edited:" filename
 				install nano
 				nano "$filename"
-				send_stats "编辑文件"
+				send_stats "Edit file"
 				;;
 			13) # 修改文件权限
-				read -e -p "请输入文件名: " filename
-				read -e -p "请输入权限 (如 755): " perm
-				chmod "$perm" "$filename" && echo "权限已修改" || echo "修改失败"
-				send_stats "修改文件权限"
+				read -e -p "Please enter a file name:" filename
+				read -e -p "Please enter permissions (e.g. 755):" perm
+				chmod "$perm" "$filename" && echo "Permissions have been modified" || echo "Modification failed"
+				send_stats "Modify file permissions"
 				;;
 			14) # 重命名文件
-				read -e -p "请输入当前文件名: " current_name
-				read -e -p "请输入新文件名: " new_name
-				mv "$current_name" "$new_name" && echo "文件已重命名" || echo "重命名失败"
-				send_stats "重命名文件"
+				read -e -p "Please enter the current file name:" current_name
+				read -e -p "Please enter a new file name:" new_name
+				mv "$current_name" "$new_name" && echo "File has been renamed" || echo "Rename failed"
+				send_stats "Rename file"
 				;;
 			15) # 删除文件
-				read -e -p "请输入要删除的文件名: " filename
-				rm -f "$filename" && echo "文件已删除" || echo "删除失败"
-				send_stats "删除文件"
+				read -e -p "Please enter the file name to be deleted:" filename
+				rm -f "$filename" && echo "File deleted" || echo "删除失败"
+				send_stats "Delete files"
 				;;
 			21) # 压缩文件/目录
-				read -e -p "请输入要压缩的文件/目录名: " name
+				read -e -p "Please enter the file/directory name to be compressed:" name
 				install tar
-				tar -czvf "$name.tar.gz" "$name" && echo "已压缩为 $name.tar.gz" || echo "压缩失败"
-				send_stats "压缩文件/目录"
+				tar -czvf "$name.tar.gz" "$name" && echo "Compressed to$name.tar.gz" || echo "Compression failed"
+				send_stats "Compressed files/directories"
 				;;
 			22) # 解压文件/目录
-				read -e -p "请输入要解压的文件名 (.tar.gz): " filename
+				read -e -p "Please enter the file name to be extracted (.tar.gz):" filename
 				install tar
-				tar -xzvf "$filename" && echo "已解压 $filename" || echo "解压失败"
-				send_stats "解压文件/目录"
+				tar -xzvf "$filename" && echo "Unzipped$filename" || echo "Decompression failed"
+				send_stats "Unzip files/directories"
 				;;
 
 			23) # 移动文件或目录
-				read -e -p "请输入要移动的文件或目录路径: " src_path
+				read -e -p "Please enter the file or directory path to be moved:" src_path
 				if [ ! -e "$src_path" ]; then
-					echo "错误: 文件或目录不存在。"
-					send_stats "移动文件或目录失败: 文件或目录不存在"
+					echo "Error: File or directory does not exist."
+					send_stats "Failed to move file or directory: File or directory does not exist"
 					continue
 				fi
 
-				read -e -p "请输入目标路径 (包括新文件名或目录名): " dest_path
+				read -e -p "Please enter the destination path (including new file or directory name):" dest_path
 				if [ -z "$dest_path" ]; then
 					echo "错误: 请输入目标路径。"
-					send_stats "移动文件或目录失败: 目标路径未指定"
+					send_stats "Failed to move file or directory: Destination path not specified"
 					continue
 				fi
 
-				mv "$src_path" "$dest_path" && echo "文件或目录已移动到 $dest_path" || echo "移动文件或目录失败"
-				send_stats "移动文件或目录"
+				mv "$src_path" "$dest_path" && echo "File or directory moved to$dest_path" || echo "Failed to move file or directory"
+				send_stats "Move a file or directory"
 				;;
 
 
 		   24) # 复制文件目录
-				read -e -p "请输入要复制的文件或目录路径: " src_path
+				read -e -p "Please enter the file or directory path to copy:" src_path
 				if [ ! -e "$src_path" ]; then
-					echo "错误: 文件或目录不存在。"
-					send_stats "复制文件或目录失败: 文件或目录不存在"
+					echo "Error: File or directory does not exist."
+					send_stats "Copying file or directory failed: File or directory does not exist"
 					continue
 				fi
 
 				read -e -p "请输入目标路径 (包括新文件名或目录名): " dest_path
 				if [ -z "$dest_path" ]; then
 					echo "错误: 请输入目标路径。"
-					send_stats "复制文件或目录失败: 目标路径未指定"
+					send_stats "Copying file or directory failed: Destination path not specified"
 					continue
 				fi
 
-				# 使用 -r 选项以递归方式复制目录
-				cp -r "$src_path" "$dest_path" && echo "文件或目录已复制到 $dest_path" || echo "复制文件或目录失败"
+				# Use the -r option to copy directories recursively
+				cp -r "$src_path" "$dest_path" && echo "文件或目录已复制到 $dest_path" || echo "Failed to copy file or directory"
 				send_stats "复制文件或目录"
 				;;
 
 
 			 25) # 传送文件至远端服务器
-				read -e -p "请输入要传送的文件路径: " file_to_transfer
+				read -e -p "Please enter the file path to be transferred:" file_to_transfer
 				if [ ! -f "$file_to_transfer" ]; then
 					echo "错误: 文件不存在。"
 					send_stats "传送文件失败: 文件不存在"
 					continue
 				fi
 
-				kj_ssh_read_host_user_port "请输入远端服务器IP: " "请输入远端服务器用户名 (默认root): " "请输入登录端口 (默认22): " "root" "22"
+				kj_ssh_read_host_user_port "请输入远端服务器IP: " "Please enter the remote server username (default root):" "请输入登录端口 (默认22): " "root" "22"
 				local remote_ip="$KJ_SSH_HOST"
 				local remote_user="$KJ_SSH_USER"
 				local remote_port="$KJ_SSH_PORT"
 
-				kj_ssh_read_password "请输入远端服务器密码: "
+				kj_ssh_read_password "Please enter the remote server password:"
 				local remote_password="$KJ_SSH_PASSWORD"
 
 				# 清除已知主机的旧条目
@@ -21446,12 +21446,12 @@ EOF
 
 
 			0)  # 返回上一级选单
-				send_stats "返回上一级选单菜单"
+				send_stats "Return to the previous menu"
 				break
 				;;
 			*)  # 处理无效输入
-				echo "无效的选择，请重新输入"
-				send_stats "无效选择"
+				echo "Invalid selection, please re-enter"
+				send_stats "Invalid selection"
 				;;
 		esac
 	done
@@ -21477,10 +21477,10 @@ run_commands_on_servers() {
 	local SERVERS_FILE="$HOME/cluster/servers.py"
 	local SERVERS=$(grep -oP '{"name": "\K[^"]+|"hostname": "\K[^"]+|"port": \K[^,]+|"username": "\K[^"]+|"password": "\K[^"]+' "$SERVERS_FILE")
 
-	# 将提取的信息转换为数组
+	# Convert the extracted information into an array
 	IFS=$'\n' read -r -d '' -a SERVER_ARRAY <<< "$SERVERS"
 
-	# 遍历服务器并执行命令
+	# Traverse the server and execute commands
 	for ((i=0; i<${#SERVER_ARRAY[@]}; i+=5)); do
 		local name=${SERVER_ARRAY[i]}
 		local hostname=${SERVER_ARRAY[i+1]}
@@ -21488,7 +21488,7 @@ run_commands_on_servers() {
 		local username=${SERVER_ARRAY[i+3]}
 		local password=${SERVER_ARRAY[i+4]}
 		echo
-		echo -e "${gl_huang}连接到 $name ($hostname)...${gl_bai}"
+		echo -e "${gl_huang}Connect to$name ($hostname)...${gl_bai}"
 		# sshpass -p "$password" ssh -o StrictHostKeyChecking=no "$username@$hostname" -p "$port" "$1"
 		sshpass -p "$password" ssh -t -o StrictHostKeyChecking=no "$username@$hostname" -p "$port" "$1"
 	done
@@ -21510,17 +21510,17 @@ fi
 
 while true; do
 	  clear
-	  send_stats "集群控制中心"
-	  echo "服务器集群控制"
+	  send_stats "Cluster control center"
+	  echo "Server cluster control"
 	  cat ~/cluster/servers.py
 	  echo
 	  echo -e "${gl_kjlan}------------------------${gl_bai}"
-	  echo -e "${gl_kjlan}服务器列表管理${gl_bai}"
-	  echo -e "${gl_kjlan}1.  ${gl_bai}添加服务器               ${gl_kjlan}2.  ${gl_bai}删除服务器            ${gl_kjlan}3.  ${gl_bai}编辑服务器"
+	  echo -e "${gl_kjlan}Server list management${gl_bai}"
+	  echo -e "${gl_kjlan}1.  ${gl_bai}添加服务器               ${gl_kjlan}2.  ${gl_bai}Delete server${gl_kjlan}3.  ${gl_bai}Edit server"
 	  echo -e "${gl_kjlan}4.  ${gl_bai}备份集群                 ${gl_kjlan}5.  ${gl_bai}还原集群"
 	  echo -e "${gl_kjlan}------------------------${gl_bai}"
 	  echo -e "${gl_kjlan}批量执行任务${gl_bai}"
-	  echo -e "${gl_kjlan}11. ${gl_bai}安装科技lion脚本         ${gl_kjlan}12. ${gl_bai}更新系统              ${gl_kjlan}13. ${gl_bai}清理系统"
+	  echo -e "${gl_kjlan}11. ${gl_bai}Install technology lion script${gl_kjlan}12. ${gl_bai}更新系统              ${gl_kjlan}13. ${gl_bai}清理系统"
 	  echo -e "${gl_kjlan}14. ${gl_bai}安装docker               ${gl_kjlan}15. ${gl_bai}安装BBR3              ${gl_kjlan}16. ${gl_bai}设置1G虚拟内存"
 	  echo -e "${gl_kjlan}17. ${gl_bai}设置时区到上海           ${gl_kjlan}18. ${gl_bai}开放所有端口	       ${gl_kjlan}51. ${gl_bai}自定义指令"
 	  echo -e "${gl_kjlan}------------------------${gl_bai}"
@@ -21548,7 +21548,7 @@ while true; do
 			  sed -i "/$rmserver/d" ~/cluster/servers.py
 			  ;;
 		  3)
-			  send_stats "编辑集群服务器"
+			  send_stats "Edit cluster server"
 			  install nano
 			  nano ~/cluster/servers.py
 			  ;;
@@ -21615,7 +21615,7 @@ kejilion_Affiliates() {
 
 clear
 send_stats "广告专栏"
-echo "广告专栏"
+echo "Advertising column"
 echo "------------------------"
 echo "将为用户提供更简单优雅的推广与购买体验！"
 echo ""
@@ -21655,7 +21655,7 @@ echo -e "${gl_kjlan}B站: ${gl_bai}https://b23.tv/2mqnQyh              ${gl_kjla
 echo -e "${gl_kjlan}官网: ${gl_bai}https://kejilion.pro/              ${gl_kjlan}导航: ${gl_bai}https://dh.kejilion.pro/${gl_bai}"
 echo -e "${gl_kjlan}博客: ${gl_bai}https://blog.kejilion.pro/         ${gl_kjlan}软件中心: ${gl_bai}https://app.kejilion.pro/${gl_bai}"
 echo "------------------------"
-echo -e "${gl_kjlan}脚本官网: ${gl_bai}https://github.com/KUAILESHANGWEI/kejidalao            ${gl_kjlan}GitHub address:${gl_bai}${gh_https_url}github.com/KUAILESHANGWEI/kejidalao${gl_bai}"
+echo -e "${gl_kjlan}脚本官网: ${gl_bai}https://github.com/KUAILESHANGWEI/kejidalao            ${gl_kjlan}GitHub地址: ${gl_bai}${gh_https_url}github.com/KUAILESHANGWEI/kejidalao${gl_bai}"
 echo "------------------------"
 echo ""
 }
@@ -21667,22 +21667,22 @@ games_server_tools() {
 
 	while true; do
 	  clear
-	  echo -e "Collection of game server opening scripts"
+	  echo -e "游戏开服脚本合集"
 	  echo -e "${gl_kjlan}------------------------"
-	  echo -e "${gl_kjlan}1. ${gl_bai}Eudemons Parlu server opening script"
-	  echo -e "${gl_kjlan}2. ${gl_bai}Minecraft server opening script"
+	  echo -e "${gl_kjlan}1. ${gl_bai}幻兽帕鲁开服脚本"
+	  echo -e "${gl_kjlan}2. ${gl_bai}我的世界开服脚本"
 	  echo -e "${gl_kjlan}------------------------"
-	  echo -e "${gl_kjlan}0. ${gl_bai}Return to main menu"
+	  echo -e "${gl_kjlan}0. ${gl_bai}返回主菜单"
 	  echo -e "${gl_kjlan}------------------------${gl_bai}"
-	  read -e -p "Please enter your choice:" sub_choice
+	  read -e -p "请输入你的选择: " sub_choice
 
 	  case $sub_choice in
 
-		  1) send_stats "Eudemons Parlu server opening script" ; cd ~
+		  1) send_stats "幻兽帕鲁开服脚本" ; cd ~
 			 curl -sS -O ${gh_proxy}raw.githubusercontent.com/KUAILESHANGWEI/kejidalao/main/palworld.sh ; chmod +x palworld.sh ; ./palworld.sh
 			 exit
 			 ;;
-		  2) send_stats "Minecraft server opening script" ; cd ~
+		  2) send_stats "我的世界开服脚本" ; cd ~
 			 curl -sS -O ${gh_proxy}raw.githubusercontent.com/KUAILESHANGWEI/kejidalao/main/mc.sh ; chmod +x mc.sh ; ./mc.sh
 			 exit
 			 ;;
@@ -21692,7 +21692,7 @@ games_server_tools() {
 			;;
 
 		  *)
-			echo "Invalid input!"
+			echo "无效的输入!"
 			;;
 	  esac
 	  break_end
@@ -21728,23 +21728,23 @@ send_stats "脚本更新"
 cd ~
 while true; do
 	clear
-	echo "Change log"
+	echo "更新日志"
 	echo "------------------------"
 	echo "全部日志: ${gh_proxy}raw.githubusercontent.com/KUAILESHANGWEI/kejidalao/main/kejilion_sh_log.txt"
 	echo "------------------------"
 
 	curl -s --max-time 15 ${gh_proxy}raw.githubusercontent.com/KUAILESHANGWEI/kejidalao/main/kejilion_sh_log.txt | tail -n 30
-	# Only download the first 5 lines to get the version number to avoid downloading the entire script
+	# 只下载前5行获取版本号，避免下载整个脚本
 	local sh_v_new=$(curl -s --max-time 15 -r 0-200 ${gh_proxy}raw.githubusercontent.com/KUAILESHANGWEI/kejidalao/main/kejilion.sh | grep -o 'sh_v="[0-9.]*"' | head -1 | cut -d '"' -f 2)
 
 	if [ -z "$sh_v_new" ]; then
-		echo -e "${gl_hong}Unable to obtain the latest version information, please check the network connection${gl_bai}"
+		echo -e "${gl_hong}无法获取最新版本信息，请检查网络连接${gl_bai}"
 	elif [ "$sh_v" = "$sh_v_new" ]; then
 		echo -e "${gl_lv}你已经是最新版本！${gl_huang}v$sh_v${gl_bai}"
 		send_stats "脚本已经最新了，无需更新"
 	else
 		echo "发现新版本！"
-		echo -e "Current version v$sh_vlatest version${gl_huang}v$sh_v_new${gl_bai}"
+		echo -e "当前版本 v$sh_v        最新版本 ${gl_huang}v$sh_v_new${gl_bai}"
 	fi
 
 
@@ -21753,15 +21753,15 @@ while true; do
 
 	if [ -n "$existing_cron" ]; then
 		echo "------------------------"
-		echo -e "${gl_lv}Automatic updates are turned on, and the script will be automatically updated at 2 a.m. every day!${gl_bai}"
+		echo -e "${gl_lv}自动更新已开启，每天凌晨2点脚本会自动更新！${gl_bai}"
 	fi
 
 	echo "------------------------"
-	echo "1. Update now 2. Turn on automatic updates 3. Turn off automatic updates"
+	echo "1. 现在更新            2. 开启自动更新            3. 关闭自动更新"
 	echo "------------------------"
-	echo "0. Return to main menu"
+	echo "0. 返回主菜单"
 	echo "------------------------"
-	read -e -p "Please enter your choice:" choice
+	read -e -p "请输入你的选择: " choice
 	case "$choice" in
 		1)
 			clear
@@ -21773,10 +21773,10 @@ while true; do
 				download_url="${gh_proxy}raw.githubusercontent.com/KUAILESHANGWEI/kejidalao/main/kejilion.sh"
 			fi
 
-			# Back up current script
+			# 备份当前脚本
 			cp -f ~/kejilion.sh ~/kejilion.sh.bak 2>/dev/null
 
-			# Download to temporary file, verify and then replace
+			# 下载到临时文件，校验后再替换
 			local tmp_file=$(mktemp ~/kejilion_tmp.XXXXXX)
 			if curl -sS --max-time 60 --fail -o "$tmp_file" "$download_url" && \
 			   [ -s "$tmp_file" ] && \
@@ -21788,16 +21788,16 @@ while true; do
 				yinsiyuanquan2
 				cp -f ~/kejilion.sh /usr/local/bin/k > /dev/null 2>&1
 				ln -sf /usr/local/bin/k /usr/bin/k > /dev/null 2>&1
-				echo -e "${gl_lv}The script has been updated to the latest version!${gl_huang}v$sh_v_new${gl_bai}"
-				send_stats "The script is up to date$sh_v_new"
+				echo -e "${gl_lv}脚本已更新到最新版本！${gl_huang}v$sh_v_new${gl_bai}"
+				send_stats "脚本已经最新$sh_v_new"
 			else
 				rm -f "$tmp_file"
-				# Restore backup
+				# 恢复备份
 				if [ -f ~/kejilion.sh.bak ]; then
 					mv -f ~/kejilion.sh.bak ~/kejilion.sh
 				fi
-				echo -e "${gl_hong}Update failed! There was an error in downloading or the file verification failed. The original version has been restored.${gl_bai}"
-				send_stats "Script update failed"
+				echo -e "${gl_hong}更新失败！下载出错或文件校验不通过，已恢复原版本${gl_bai}"
+				send_stats "脚本更新失败"
 			fi
 			break_end
 			~/kejilion.sh
@@ -21819,31 +21819,31 @@ while true; do
 				cron_sed_cmd=""
 			fi
 
-			# Build a robust auto-update command: Download to temporary file → Verify → Backup → Replace → Restore local settings → Deploy
+			# 构建健壮的自动更新命令：下载到临时文件 → 校验 → 备份 → 替换 → 恢复本地设置 → 部署
 			SH_Update_task="cd ~ && tmp=\$(mktemp ~/kejilion_tmp.XXXXXX) && curl -sS --max-time 60 --fail -o \"\$tmp\" ${cron_proxy}raw.githubusercontent.com/KUAILESHANGWEI/kejidalao/main/kejilion.sh && [ -s \"\$tmp\" ] && head -1 \"\$tmp\" | grep -q '^#!/bin/bash' && cp -f ~/kejilion.sh ~/kejilion.sh.bak 2>/dev/null && chmod +x \"\$tmp\" && mv -f \"\$tmp\" ~/kejilion.sh"
-			# Additional settings recovery
+			# 追加设置恢复
 			if [ -n "$cron_sed_cmd" ]; then
 				SH_Update_task="$SH_Update_task && $cron_sed_cmd"
 			fi
-			# Restore permission_granted and ENABLE_STATS settings from old script
+			# 从旧脚本恢复 permission_granted 和 ENABLE_STATS 设置
 			SH_Update_task="$SH_Update_task && grep -q 'permission_granted=\"true\"' ~/kejilion.sh.bak 2>/dev/null && sed -i 's/permission_granted=\"false\"/permission_granted=\"true\"/' ~/kejilion.sh; grep -q 'ENABLE_STATS=\"false\"' ~/kejilion.sh.bak 2>/dev/null && sed -i 's/ENABLE_STATS=\"true\"/ENABLE_STATS=\"false\"/' ~/kejilion.sh"
-			# Deploy to /usr/local/bin/k and /usr/bin/k
+			# 部署到 /usr/local/bin/k 和 /usr/bin/k
 			SH_Update_task="$SH_Update_task; cp -f ~/kejilion.sh /usr/local/bin/k 2>/dev/null; ln -sf /usr/local/bin/k /usr/bin/k 2>/dev/null"
-			# Clean temporary files when download fails
+			# 下载失败时清理临时文件
 			SH_Update_task="$SH_Update_task || rm -f \"\$tmp\" 2>/dev/null"
 
 			check_crontab_installed
 			(crontab -l | grep -v "kejilion.sh") | crontab -
 			(crontab -l 2>/dev/null; echo "$(shuf -i 0-59 -n 1) 2 * * * bash -c '$SH_Update_task'") | crontab -
-			echo -e "${gl_lv}Automatic updates are turned on, and the script will be automatically updated at 2 a.m. every day!${gl_bai}"
-			send_stats "Enable automatic script updates"
+			echo -e "${gl_lv}自动更新已开启，每天凌晨2点脚本会自动更新！${gl_bai}"
+			send_stats "开启脚本自动更新"
 			break_end
 			;;
 		3)
 			clear
 			(crontab -l | grep -v "kejilion.sh") | crontab -
-			echo -e "${gl_lv}Automatic updates are turned off${gl_bai}"
-			send_stats "Turn off automatic script updates"
+			echo -e "${gl_lv}自动更新已关闭${gl_bai}"
+			send_stats "关闭脚本自动更新"
 			break_end
 			;;
 		*)
@@ -21865,40 +21865,40 @@ echo -e "${gl_kjlan}"
 echo "╦╔═╔═╗ ╦╦╦  ╦╔═╗╔╗╔ ╔═╗╦ ╦"
 echo "╠╩╗║╣  ║║║  ║║ ║║║║ ╚═╗╠═╣"
 echo "╩ ╩╚═╝╚╝╩╩═╝╩╚═╝╝╚╝o╚═╝╩ ╩"
-echo -e "Technology lion script toolbox v$sh_v"
-echo -e "Command line input${gl_huang}k${gl_kjlan}Quick start script${gl_bai}"
+echo -e "科技lion脚本工具箱 v$sh_v"
+echo -e "命令行输入${gl_huang}k${gl_kjlan}可快速启动脚本${gl_bai}"
 echo -e "${gl_kjlan}------------------------${gl_bai}"
-echo -e "${gl_kjlan}1.   ${gl_bai}System information query"
-echo -e "${gl_kjlan}2.   ${gl_bai}System update"
-echo -e "${gl_kjlan}3.   ${gl_bai}System cleanup"
-echo -e "${gl_kjlan}4.   ${gl_bai}basic tools"
-echo -e "${gl_kjlan}5.   ${gl_bai}BBR management"
-echo -e "${gl_kjlan}6.   ${gl_bai}Docker management"
-echo -e "${gl_kjlan}7.   ${gl_bai}WARP management"
-echo -e "${gl_kjlan}8.   ${gl_bai}Test script collection"
-echo -e "${gl_kjlan}9.   ${gl_bai}Oracle Cloud Script Collection"
-echo -e "${gl_huang}10.  ${gl_bai}LDNMP website building"
-echo -e "${gl_kjlan}11.  ${gl_bai}application market"
-echo -e "${gl_kjlan}12.  ${gl_bai}Backend workspace"
-echo -e "${gl_kjlan}13.  ${gl_bai}system tools"
-echo -e "${gl_kjlan}14.  ${gl_bai}Server cluster control"
-echo -e "${gl_kjlan}15.  ${gl_bai}Advertising column"
-echo -e "${gl_kjlan}16.  ${gl_bai}Collection of game server opening scripts"
+echo -e "${gl_kjlan}1.   ${gl_bai}系统信息查询"
+echo -e "${gl_kjlan}2.   ${gl_bai}系统更新"
+echo -e "${gl_kjlan}3.   ${gl_bai}系统清理"
+echo -e "${gl_kjlan}4.   ${gl_bai}基础工具"
+echo -e "${gl_kjlan}5.   ${gl_bai}BBR管理"
+echo -e "${gl_kjlan}6.   ${gl_bai}Docker管理"
+echo -e "${gl_kjlan}7.   ${gl_bai}WARP管理"
+echo -e "${gl_kjlan}8.   ${gl_bai}测试脚本合集"
+echo -e "${gl_kjlan}9.   ${gl_bai}甲骨文云脚本合集"
+echo -e "${gl_huang}10.  ${gl_bai}LDNMP建站"
+echo -e "${gl_kjlan}11.  ${gl_bai}应用市场"
+echo -e "${gl_kjlan}12.  ${gl_bai}后台工作区"
+echo -e "${gl_kjlan}13.  ${gl_bai}系统工具"
+echo -e "${gl_kjlan}14.  ${gl_bai}服务器集群控制"
+echo -e "${gl_kjlan}15.  ${gl_bai}广告专栏"
+echo -e "${gl_kjlan}16.  ${gl_bai}游戏开服脚本合集"
 echo -e "${gl_kjlan}------------------------${gl_bai}"
-echo -e "${gl_kjlan}00.  ${gl_bai}Script update"
+echo -e "${gl_kjlan}00.  ${gl_bai}脚本更新"
 echo -e "${gl_kjlan}------------------------${gl_bai}"
-echo -e "${gl_kjlan}0.   ${gl_bai}Exit script"
+echo -e "${gl_kjlan}0.   ${gl_bai}退出脚本"
 echo -e "${gl_kjlan}------------------------${gl_bai}"
-read -e -p "Please enter your choice:" choice
+read -e -p "请输入你的选择: " choice
 
 case $choice in
   1) linux_info ;;
-  2) clear ; send_stats "System update" ; linux_update ;;
-  3) clear ; send_stats "System cleanup" ; linux_clean ;;
+  2) clear ; send_stats "系统更新" ; linux_update ;;
+  3) clear ; send_stats "系统清理" ; linux_clean ;;
   4) linux_tools ;;
   5) linux_bbr ;;
   6) linux_docker ;;
-  7) clear ; send_stats "warp management" ; install wget
+  7) clear ; send_stats "warp管理" ; install wget
 	wget -N https://gitlab.com/fscarmen/warp/-/raw/main/menu.sh ; bash menu.sh [option] [lisence/url/token]
 	;;
   8) linux_test ;;
@@ -21912,7 +21912,7 @@ case $choice in
   16) games_server_tools ;;
   00) kejilion_update ;;
   0) clear ; exit ;;
-  *) echo "Invalid input!" ;;
+  *) echo "无效的输入!" ;;
 esac
 	break_end
 done
@@ -21920,76 +21920,76 @@ done
 
 
 k_info() {
-send_stats "k command reference examples"
+send_stats "k命令参考用例"
 echo "-------------------"
-echo "Video introduction: https://www.bilibili.com/video/BV1ib421E7it?t=0.1"
-echo "The following is a reference use case for the k command:"
-echo "Start script k"
-echo "Install packages k install nano wget | k add nano wget | k install nano wget"
-echo "Uninstall a package k remove nano wget | k del nano wget | k uninstall nano wget | k uninstall nano wget"
-echo "Update system k update | k update"
-echo "Clean system junk k clean | k clean"
-echo "Reinstall the system panel k dd | k reinstall"
-echo "bbr3 control panel k bbr3 | k bbrv3"
-echo "Kernel Tuning Panel k nhyh | k Kernel Optimization"
-echo "Set virtual memory k swap 2048"
-echo "Set virtual time zone k time Asia/Shanghai | k time zone Asia/Shanghai"
-echo "System Recycle Bin k trash | k hsz | k Recycle Bin"
-echo "System backup function k backup | k bf | k backup"
-echo "ssh remote connection tool k ssh | k remote connection"
-echo "rsync remote synchronization tool k rsync | k remote synchronization"
-echo "Hard disk management tool k disk | k hard disk management"
-echo "Intranet penetration (server) k frps"
-echo "Intranet penetration (client) k frpc"
-echo "Software startup k start sshd | k start sshd"
-echo "Software stop k stop sshd | k stop sshd"
-echo "Software restart k restart sshd | k restart sshd"
-echo "Check software status k status sshd | k status sshd"
-echo "k enable docker | k autostart docker | k enable docker when booting the software"
-echo "Domain name certificate application k ssl"
-echo "Domain name certificate expiry query k ssl ps"
-echo "docker management plane k docker"
-echo "docker environment installation k docker install |k docker installation"
-echo "docker container management k docker ps |k docker container"
-echo "docker image management k docker img |k docker image"
-echo "LDNMP site management k web"
-echo "LDNMP cache cleaning k web cache"
-echo "Install WordPress k wp | k wordpress | k wp xxx.com"
-echo "Install reverse proxy k fd |k rp |k reverse proxy |k fd xxx.com"
-echo "Install load balancing k loadbalance |k load balancing"
-echo "Install L4 load balancing k stream |k L4 load balancing"
-echo "firewall panel k fhq |k firewall"
-echo "open port k dkdk 8080 |k open port 8080"
-echo "Close port k gbdk 7800 |k Close port 7800"
-echo "Release IP k fxip 127.0.0.0/8 |k Release IP 127.0.0.0/8"
-echo "Block IP k zzip 177.5.25.36 |k Block IP 177.5.25.36"
-echo "command favorites k fav | k command favorites"
-echo "Application market management k app"
-echo "Quick management of application numbers k app 26 | k app 1panel | k app npm"
-echo "fail2ban management k fail2ban | k f2b"
-echo "Display system information k info"
-echo "ROOT key management k sshkey"
-echo "SSH public key import (URL) k sshkey <url>"
-echo "SSH public key import (GitHub) k sshkey github <user>"
+echo "视频介绍: https://www.bilibili.com/video/BV1ib421E7it?t=0.1"
+echo "以下是k命令参考用例："
+echo "启动脚本            k"
+echo "安装软件包          k install nano wget | k add nano wget | k 安装 nano wget"
+echo "卸载软件包          k remove nano wget | k del nano wget | k uninstall nano wget | k 卸载 nano wget"
+echo "更新系统            k update | k 更新"
+echo "清理系统垃圾        k clean | k 清理"
+echo "重装系统面板        k dd | k 重装"
+echo "bbr3控制面板        k bbr3 | k bbrv3"
+echo "内核调优面板        k nhyh | k 内核优化"
+echo "设置虚拟内存        k swap 2048"
+echo "设置虚拟时区        k time Asia/Shanghai | k 时区 Asia/Shanghai"
+echo "系统回收站          k trash | k hsz | k 回收站"
+echo "系统备份功能        k backup | k bf | k 备份"
+echo "ssh远程连接工具     k ssh | k 远程连接"
+echo "rsync远程同步工具   k rsync | k 远程同步"
+echo "硬盘管理工具        k disk | k 硬盘管理"
+echo "内网穿透（服务端）  k frps"
+echo "内网穿透（客户端）  k frpc"
+echo "软件启动            k start sshd | k 启动 sshd "
+echo "软件停止            k stop sshd | k 停止 sshd "
+echo "软件重启            k restart sshd | k 重启 sshd "
+echo "软件状态查看        k status sshd | k 状态 sshd "
+echo "软件开机启动        k enable docker | k autostart docke | k 开机启动 docker "
+echo "域名证书申请        k ssl"
+echo "域名证书到期查询    k ssl ps"
+echo "docker管理平面      k docker"
+echo "docker环境安装      k docker install |k docker 安装"
+echo "docker容器管理      k docker ps |k docker 容器"
+echo "docker镜像管理      k docker img |k docker 镜像"
+echo "LDNMP站点管理       k web"
+echo "LDNMP缓存清理       k web cache"
+echo "安装WordPress       k wp |k wordpress |k wp xxx.com"
+echo "安装反向代理        k fd |k rp |k 反代 |k fd xxx.com"
+echo "安装负载均衡        k loadbalance |k 负载均衡"
+echo "安装L4负载均衡      k stream |k L4负载均衡"
+echo "防火墙面板          k fhq |k 防火墙"
+echo "开放端口            k dkdk 8080 |k 打开端口 8080"
+echo "关闭端口            k gbdk 7800 |k 关闭端口 7800"
+echo "放行IP              k fxip 127.0.0.0/8 |k 放行IP 127.0.0.0/8"
+echo "阻止IP              k zzip 177.5.25.36 |k 阻止IP 177.5.25.36"
+echo "命令收藏夹          k fav | k 命令收藏夹"
+echo "应用市场管理        k app"
+echo "应用编号快捷管理    k app 26 | k app 1panel | k app npm"
+echo "fail2ban管理        k fail2ban | k f2b"
+echo "显示系统信息        k info"
+echo "ROOT密钥管理        k sshkey"
+echo "SSH公钥导入(URL)    k sshkey <url>"
+echo "SSH公钥导入(GitHub) k sshkey github <user> "
 
 }
 
 
 
 if [ "$#" -eq 0 ]; then
-	# Without arguments, run interactive logic
+	# 如果没有参数，运行交互式逻辑
 	kejilion_sh
 else
-	# If there are parameters, execute the corresponding function
+	# 如果有参数，执行相应函数
 	case $1 in
 		install|add|安装)
 			shift
-			send_stats "Install software"
+			send_stats "安装软件"
 			install "$@"
 			;;
 		remove|del|uninstall|卸载)
 			shift
-			send_stats "Uninstall software"
+			send_stats "卸载软件"
 			remove "$@"
 			;;
 		update|更新)
@@ -22023,7 +22023,7 @@ else
 
 		rsync_run)
 			shift
-			send_stats "Scheduled rsync synchronization"
+			send_stats "定时rsync同步"
 			run_task "$@"
 			;;
 
@@ -22042,7 +22042,7 @@ else
 	  		find_container_by_host_port "$port"
 	  		if [ -z "$docker_name" ]; then
 	  		  close_port "$port"
-			  echo "IP+port has been blocked from accessing the service"
+			  echo "已阻止IP+端口访问该服务"
 	  		else
 			  ip_address
 			  close_port "$port"
@@ -22061,13 +22061,13 @@ else
 
 		swap)
 			shift
-			send_stats "Quickly set up virtual memory"
+			send_stats "快速设置虚拟内存"
 			add_swap "$@"
 			;;
 
 		time|时区)
 			shift
-			send_stats "Quickly set time zone"
+			send_stats "快速设置时区"
 			set_timedate "$@"
 			;;
 
@@ -22115,42 +22115,42 @@ else
 
 		status|状态)
 			shift
-			send_stats "Check software status"
+			send_stats "软件状态查看"
 			status "$@"
 			;;
 		start|启动)
 			shift
-			send_stats "Software startup"
+			send_stats "软件启动"
 			start "$@"
 			;;
 		stop|停止)
 			shift
-			send_stats "software pause"
+			send_stats "软件暂停"
 			stop "$@"
 			;;
 		restart|重启)
 			shift
-			send_stats "Software restart"
+			send_stats "软件重启"
 			restart "$@"
 			;;
 
 		enable|autostart|开机启动)
 			shift
-			send_stats "Software starts automatically when booting"
+			send_stats "软件开机自启"
 			enable "$@"
 			;;
 
 		ssl)
 			shift
 			if [ "$1" = "ps" ]; then
-				send_stats "View certificate status"
+				send_stats "查看证书状态"
 				ssl_ps
 			elif [ -z "$1" ]; then
 				add_ssl
-				send_stats "Apply for a certificate quickly"
+				send_stats "快速申请证书"
 			elif [ -n "$1" ]; then
 				add_ssl "$1"
-				send_stats "Apply for a certificate quickly"
+				send_stats "快速申请证书"
 			else
 				k_info
 			fi
@@ -22160,15 +22160,15 @@ else
 			shift
 			case $1 in
 				install|安装)
-					send_stats "Quickly install docker"
+					send_stats "快捷安装docker"
 					install_docker
 					;;
 				ps|容器)
-					send_stats "Quick container management"
+					send_stats "快捷容器管理"
 					docker_ps
 					;;
 				img|镜像)
-					send_stats "Quick image management"
+					send_stats "快捷镜像管理"
 					docker_image
 					;;
 				*)
@@ -22195,7 +22195,7 @@ else
 
 		app)
 			shift
-			send_stats "Apply$@"
+			send_stats "应用$@"
 			linux_panel "$@"
 			;;
 
@@ -22217,28 +22217,28 @@ else
 			shift
 			case "$1" in
 				"" )
-					# sshkey → interactive menu
-					send_stats "SSHKey interactive menu"
+					# sshkey → 交互菜单
+					send_stats "SSHKey 交互菜单"
 					sshkey_panel
 					;;
 				github )
 					shift
-					send_stats "Import SSH public key from GitHub"
+					send_stats "从 GitHub 导入 SSH 公钥"
 					fetch_github_ssh_keys "$1"
 					;;
 				http://*|https://* )
-					send_stats "Import SSH public key from URL"
+					send_stats "从 URL 导入 SSH 公钥"
 					fetch_remote_ssh_keys "$1"
 					;;
 				ssh-rsa*|ssh-ed25519*|ssh-ecdsa* )
-					send_stats "Directly import the public key"
+					send_stats "公钥直接导入"
 					import_sshkey "$1"
 					;;
 				* )
-					echo "Error: unknown parameter '$1'"
-					echo "usage:"
-					echo "k sshkey enters the interactive menu"
-					echo "k sshkey \"<pubkey>\" Directly import the SSH public key"
+					echo "错误：未知参数 '$1'"
+					echo "用法："
+					echo "  k sshkey                  进入交互菜单"
+					echo "  k sshkey \"<pubkey>\"     直接导入 SSH 公钥"
 					echo "  k sshkey <url>            从 URL 导入 SSH 公钥"
 					echo "  k sshkey github <user>    从 GitHub 导入 SSH 公钥"
 					;;
