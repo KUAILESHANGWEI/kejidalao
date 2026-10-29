@@ -8,46 +8,84 @@
 # CN=true              - 使用中国镜像源（跳过地区检测询问）
 # CN=false             - 强制不使用中国镜像源
 # WITHOUTCDN=TRUE      - 不使用 CDN 加速
+# noninteractive=true  - 统一无交互模式，跳过需要确认的提示并使用默认值
 # FORCE_INSTALL=true   - 跳过系统最低要求检查和所有"是否继续"确认提示
 # USE_PRIVATE_IP=true  - 检测到私有 IPv4 时直接使用该私有 IP 作为 PVE 主 IP
 # USE_PRIVATE_IP=false - 检测到私有 IPv4 时自动通过 API 获取公网 IP
 # USE_MAX_IPV6_SUBNET=true  - SLAAC 场景下使用最大 IPv6 子网范围
 # USE_MAX_IPV6_SUBNET=false - SLAAC 场景下不使用最大 IPv6 子网范围
+# PVE_MAIN_INTERFACE=<iface> - 直接指定 PVE 主桥接物理网口，跳过网口选择确认
 # PVE_HOSTNAME=<name>  - 直接设定 PVE 主机名，跳过交互输入（只能包含英文字母和数字）
+# PVE_INSTALL_CEPH=true - 安装核心包时允许安装推荐依赖（可能包含 ceph 相关组件）
+#                        默认不设置时将使用最小化安装（--no-install-recommends）
+# PVE_REPAIR_EXISTING=true - 检查并修复已有 PVE 安装（保留客体和现有内核）
 #
 # 示例（一键无交互安装）:
-#   CN=true FORCE_INSTALL=true PVE_HOSTNAME=mypve bash install_pve.sh
+#   export noninteractive=true
+#   CN=true PVE_HOSTNAME=mypve bash install_pve.sh
 
 ########## 预设部分输出和部分中间变量
 
 cd /root >/dev/null 2>&1
-_red() { echo -e "\033[31m\033[01m$@\033[0m"; }
-_green() { echo -e "\033[32m\033[01m$@\033[0m"; }
-_yellow() { echo -e "\033[33m\033[01m$@\033[0m"; }
-_blue() { echo -e "\033[36m\033[01m$@\033[0m"; }
-reading() { read -rp "$(_green "$1")" "$2"; }
+_red() { echo -e "\033[31m\033[01m$*\033[0m"; }
+_green() { echo -e "\033[32m\033[01m$*\033[0m"; }
+_yellow() { echo -e "\033[33m\033[01m$*\033[0m"; }
+_blue() { echo -e "\033[36m\033[01m$*\033[0m"; }
+is_noninteractive() {
+    case "${noninteractive:-}" in
+    true | TRUE | True | 1 | yes | YES | Yes | y | Y)
+        return 0
+        ;;
+    esac
+    case "${NONINTERACTIVE:-}" in
+    true | TRUE | True | 1 | yes | YES | Yes | y | Y)
+        return 0
+        ;;
+    esac
+    return 1
+}
+reading() {
+    local prompt="$1"
+    local var_name="$2"
+    local default_value="${3:-}"
+    if is_noninteractive; then
+        printf -v "$var_name" '%s' "$default_value"
+        _yellow "noninteractive=true, using default for ${var_name}: ${default_value:-<empty>}"
+    else
+        read -rp "$(_green "$prompt")" "$var_name"
+    fi
+}
 export DEBIAN_FRONTEND=noninteractive
 utf8_locale=$(locale -a 2>/dev/null | grep -i -m 1 -E "UTF-8|utf8")
 if [[ -z "$utf8_locale" ]]; then
     echo "No UTF-8 locale found"
+    echo "未找到 UTF-8 区域设置"
 else
     export LC_ALL="$utf8_locale"
     export LANG="$utf8_locale"
     export LANGUAGE="$utf8_locale"
     echo "Locale set to $utf8_locale"
+    echo "区域设置已切换为 $utf8_locale"
 fi
 temp_file_apt_fix="/tmp/apt_fix.txt"
 command -v pct &>/dev/null
 pct_status=$?
 command -v qm &>/dev/null
 qm_status=$?
-if [ $pct_status -eq 0 ] && [ $qm_status -eq 0 ]; then
+if [ $pct_status -eq 0 ] && [ $qm_status -eq 0 ] && [[ "${PVE_REPAIR_EXISTING:-false}" != true ]]; then
     _green "Proxmox VE is already installed and does not need to be reinstalled."
     _green "Proxmox VE已经安装，无需重复安装。"
-    exit 1
+    _yellow "To repair an incomplete installation, run with PVE_REPAIR_EXISTING=true."
+    _yellow "如需修复未完成的安装，请使用 PVE_REPAIR_EXISTING=true 重新运行。"
+    exit 0
 fi
 if [ ! -d /usr/local/bin ]; then
     mkdir -p /usr/local/bin
+fi
+if ! command -v python3 >/dev/null 2>&1; then
+    _yellow "Installing Python 3 for safe IPv6 address validation..."
+    _yellow "正在安装 Python 3 以安全校验 IPv6 地址..."
+    apt-get install -y python3 || _yellow "Python 3 installation failed; independent IPv6 allocation will remain disabled"
 fi
 
 ########## 备份配置文件
@@ -104,13 +142,15 @@ fi
 ########## 定义部分需要使用的函数
 
 remove_duplicate_lines() {
-    chattr -i "$1"
-    # 预处理：去除行尾空格和制表符
-    sed -i 's/[ \t]*$//' "$1"
-    # 去除重复行并跳过空行和注释行
-    if [ -f "$1" ]; then
-        awk '{ line = $0; gsub(/^[ \t]+/, "", line); gsub(/[ \t]+/, " ", line); if (!NF || !seen[line]++) print $0 }' "$1" >"$1.tmp" && mv -f "$1.tmp" "$1"
-    fi
+    # Repeated options in different stanzas are required configuration, not
+    # duplicates. Only normalize trailing whitespace without deleting lines.
+    chattr -i "$1" || return 1
+    python3 - "$1" <<'PY' || return 1
+import pathlib
+import sys
+path = pathlib.Path(sys.argv[1])
+path.write_text(''.join(line.rstrip() + '\n' for line in path.read_text().splitlines()))
+PY
     chattr +i "$1"
 }
 
@@ -128,13 +168,7 @@ install_package() {
             if echo "$apt_output" | grep -qE 'DEBIAN_FRONTEND=dialog dpkg --configure grub-pc' &&
                 echo "$apt_output" | grep -qE 'dpkg --configure -a' &&
                 echo "$apt_output" | grep -qE 'dpkg: error processing package grub-pc \(--configure\):'; then
-                # 手动选择
-                # DEBIAN_FRONTEND=dialog dpkg --configure grub-pc
-                # 设置debconf的选择
-                echo "grub-pc grub-pc/install_devices multiselect /dev/sda" | sudo debconf-set-selections
-                # 配置grub-pc并自动选择第一个选项确认
-                sudo DEBIAN_FRONTEND=noninteractive dpkg --configure grub-pc
-                dpkg --configure -a
+                recover_grub_install_state
                 if [ $? -ne 0 ]; then
                     _green "$package_name tried to install but failed, exited the program"
                     _green "$package_name 已尝试安装但失败，退出程序"
@@ -162,8 +196,346 @@ install_package() {
     fi
 }
 
+package_installed() {
+    local package_name="$1"
+    dpkg-query -W -f='${Status}' "$package_name" 2>/dev/null | grep -q "install ok installed"
+}
+
+install_dpkg_packages() {
+    local packages=("$@")
+    local apt_output=""
+    local apt_log=""
+    local apt_exit=0
+    local apt_opts=(-o Dpkg::Options::="--force-confnew" -y)
+
+    prepare_grub_noninteractive
+
+    if [[ "${PVE_INSTALL_CEPH^^}" != "TRUE" ]]; then
+        apt_opts+=(--no-install-recommends)
+        _yellow "Minimal mode enabled for core packages: recommends disabled (Ceph-related recommends will be skipped)"
+        _yellow "核心包启用最小化模式：已关闭推荐依赖（将跳过 Ceph 相关推荐组件）"
+    else
+        _yellow "PVE_INSTALL_CEPH=true, installing core packages with recommends enabled"
+        _yellow "PVE_INSTALL_CEPH=true，核心包将安装推荐依赖"
+    fi
+
+    _yellow "Installing core packages, this may take several minutes depending on mirror speed"
+    _yellow "正在安装核心软件包，按镜像速度可能需要几分钟"
+
+    apt_log=$(mktemp /tmp/pve-core-install.XXXXXX.log)
+    DEBIAN_FRONTEND=noninteractive apt-get install "${apt_opts[@]}" "${packages[@]}" 2>&1 | tee "$apt_log"
+    apt_exit=${PIPESTATUS[0]}
+    if [ -s "$apt_log" ]; then
+        apt_output=$(cat "$apt_log")
+    fi
+    rm -f "$apt_log"
+
+    if [ $apt_exit -eq 0 ]; then
+        return 0
+    fi
+
+    if echo "$apt_output" | grep -qE 'grub-pc|dpkg: error processing package'; then
+        _yellow "Detected grub/dpkg interactive configuration issue, trying noninteractive recovery"
+        _yellow "检测到 grub/dpkg 交互配置问题，正在尝试非交互修复"
+        recover_grub_install_state
+        DEBIAN_FRONTEND=noninteractive apt-get install "${apt_opts[@]}" "${packages[@]}"
+        return $?
+    fi
+
+    return 1
+}
+
+detect_boot_disk() {
+    local boot_source=""
+    local parent_disk=""
+    boot_source=$(findmnt -nro SOURCE /boot 2>/dev/null)
+    if [ -z "$boot_source" ]; then
+        boot_source=$(findmnt -nro SOURCE / 2>/dev/null)
+    fi
+    if [ -n "$boot_source" ]; then
+        parent_disk=$(lsblk -ndo PKNAME "$boot_source" 2>/dev/null | head -n 1)
+        if [ -n "$parent_disk" ]; then
+            echo "/dev/$parent_disk"
+            return 0
+        fi
+        if echo "$boot_source" | grep -qE '^/dev/nvme[0-9]+n[0-9]+p[0-9]+$'; then
+            echo "${boot_source%p*}"
+            return 0
+        fi
+        if echo "$boot_source" | grep -qE '^/dev/[a-z]+[0-9]+$'; then
+            echo "$boot_source" | sed 's/[0-9]*$//'
+            return 0
+        fi
+    fi
+    return 1
+}
+
+recover_grub_install_state() {
+    local boot_disk=""
+    local grub_pc_status=""
+
+    prepare_grub_noninteractive
+
+    if [ -d /sys/firmware/efi ] && [ "$(dpkg --print-architecture 2>/dev/null)" = "amd64" ]; then
+        _yellow "EFI detected, attempting grub-efi-amd64 recovery"
+        _yellow "检测到 EFI，正在尝试 grub-efi-amd64 恢复"
+        DEBIAN_FRONTEND=noninteractive apt-get install -y --reinstall grub-efi-amd64 grub-efi-amd64-bin grub2-common >/dev/null 2>&1 || true
+        DEBIAN_FRONTEND=noninteractive dpkg --configure -a >/dev/null 2>&1 || true
+        grub_pc_status=$(dpkg-query -W -f='${Status}' grub-pc 2>/dev/null || true)
+        if [ -n "$grub_pc_status" ] && ! echo "$grub_pc_status" | grep -q 'install ok installed'; then
+            _yellow "Purging broken grub-pc state on EFI system"
+            _yellow "EFI 系统检测到 grub-pc 半安装状态，正在清理"
+            DEBIAN_FRONTEND=noninteractive apt-get purge -y grub-pc grub-pc-bin >/dev/null 2>&1 || true
+        fi
+    else
+        boot_disk=$(detect_boot_disk || true)
+        if [ -n "$boot_disk" ] && dpkg -s grub-pc >/dev/null 2>&1; then
+            _yellow "BIOS mode detected, setting grub-pc install device: $boot_disk"
+            _yellow "检测到 BIOS 模式，设置 grub-pc 安装设备：$boot_disk"
+            echo "grub-pc grub-pc/install_devices_empty boolean false" | debconf-set-selections || true
+            echo "grub-pc grub-pc/install_devices multiselect $boot_disk" | debconf-set-selections || true
+        fi
+    fi
+
+    DEBIAN_FRONTEND=noninteractive apt-get -f install -y >/dev/null 2>&1 || true
+    DEBIAN_FRONTEND=noninteractive dpkg --configure -a >/dev/null 2>&1 || true
+    return 0
+}
+
+prepare_grub_noninteractive() {
+    # Avoid grub-pc interactive prompts causing dpkg failure in automated installations.
+    local boot_disk=""
+    if dpkg -s grub-pc >/dev/null 2>&1; then
+        boot_disk=$(detect_boot_disk || true)
+        if [ -n "$boot_disk" ]; then
+            echo "grub-pc grub-pc/install_devices_empty boolean false" | debconf-set-selections || true
+            echo "grub-pc grub-pc/install_devices multiselect $boot_disk" | debconf-set-selections || true
+        else
+            echo "grub-pc grub-pc/install_devices_empty boolean true" | debconf-set-selections || true
+            echo "grub-pc grub-pc/install_devices multiselect" | debconf-set-selections || true
+        fi
+        echo "grub-pc grub2/update_nvram boolean true" | debconf-set-selections || true
+    fi
+    if [ -d /sys/firmware/efi ] && [ "$(dpkg --print-architecture 2>/dev/null)" = "amd64" ]; then
+        echo "grub-efi-amd64 grub2/force_efi_extra_removable boolean true" | debconf-set-selections || true
+    fi
+}
+
+rollback_failed_pve_install() {
+    # A failed check is not evidence that installed packages are disposable.
+    # In particular, PVE 8/9 kernels use proxmox-kernel-*; the old name-only
+    # check reached this path after a successful install and autoremove could
+    # then remove the new kernel together with the PVE meta package.
+    _yellow "PVE installation verification failed; installed kernels and packages were preserved"
+    _yellow "PVE 安装校验失败；已保留现有内核和软件包，请修复后重试，暂勿重启"
+    dpkg --audit || true
+}
+
+preserve_boot_kernels() {
+    local package_name
+    local -a kernels=()
+    while read -r package_name; do
+        [ -n "$package_name" ] && kernels+=("$package_name")
+    done < <(dpkg-query -W -f='${db:Status-Abbrev} ${binary:Package}\n' \
+        'linux-image-[0-9]*' 'pve-kernel-[0-9]*' 'proxmox-kernel-[0-9]*' 2>/dev/null |
+        awk '$1 == "ii" {print $2}')
+    if [ "${#kernels[@]}" -gt 0 ]; then
+        apt-mark manual "${kernels[@]}" || return 1
+    fi
+}
+
+installed_pve_kernel_versions() {
+    local status package_name version
+    while read -r status package_name; do
+        [ "$status" = ii ] || continue
+        package_name="${package_name%%:*}"
+        if [[ "$package_name" =~ ^(pve-kernel|proxmox-kernel)-[0-9].*-pve(-signed)?$ ]]; then
+            version="${package_name#*-kernel-}"
+            printf '%s\n' "${version%-signed}"
+        fi
+    done < <(dpkg-query -W -f='${db:Status-Abbrev} ${binary:Package}\n' \
+        'pve-kernel-*' 'proxmox-kernel-*' 2>/dev/null)
+}
+
+verify_pve_kernel_boot_files() {
+    local version
+    local boot_dir="${PVE_BOOT_DIR:-/boot}" modules_dir="${PVE_MODULES_DIR:-/lib/modules}"
+    # GRUB normally boots the newest installed kernel. A working old kernel
+    # must not hide missing initramfs/modules for the newly installed one.
+    version=$(installed_pve_kernel_versions | sort -V | tail -n 1)
+    [ -n "$version" ] || return 1
+    [ -s "$boot_dir/vmlinuz-$version" ] &&
+        [ -s "$boot_dir/initrd.img-$version" ] &&
+        [ -s "$modules_dir/$version/modules.dep" ] || return 1
+    if command -v lsinitramfs >/dev/null 2>&1; then
+        lsinitramfs "$boot_dir/initrd.img-$version" >/dev/null 2>&1 || return 1
+    fi
+    return 0
+}
+
+finalize_pve_kernel_installation() {
+    # /proxmox_install_mode also suppresses the kernel postinst, not just the
+    # ifupdown2 reload. Replay the normal hooks after removing our marker so
+    # an installed kernel cannot be left without its initramfs/boot entries.
+    local version
+    local boot_dir="${PVE_BOOT_DIR:-/boot}" modules_dir="${PVE_MODULES_DIR:-/lib/modules}"
+    if [ -e "${PROXMOX_INSTALL_MODE_FILE:-/proxmox_install_mode}" ]; then
+        _red "An external Proxmox installer still owns the install-mode marker; kernel finalization must wait"
+        _red "外部安装器仍持有安装标记；请等待其完成后重试内核初始化"
+        return 1
+    fi
+    while read -r version; do
+        [ -n "$version" ] || continue
+        [ -s "$boot_dir/vmlinuz-$version" ] && [ -d "$modules_dir/$version" ] || return 1
+        if [ "${1:-}" != replay ] && [ -s "$boot_dir/initrd.img-$version" ] &&
+           lsinitramfs "$boot_dir/initrd.img-$version" >/dev/null 2>&1; then
+            continue
+        fi
+        depmod "$version" || return 1
+        run-parts --verbose --exit-on-error --arg="$version" \
+            --arg="$boot_dir/vmlinuz-$version" /etc/kernel/postinst.d || return 1
+    done < <(installed_pve_kernel_versions | sort -Vu)
+}
+
+verify_pve_installation() {
+    local required_packages=(proxmox-ve pve-manager qemu-server pve-cluster)
+    local required_commands=(pveversion pvesh qm pct)
+    local require_pve_kernel=true
+    local package_name
+    local command_name
+    for package_name in "${required_packages[@]}"; do
+        if ! package_installed "$package_name"; then
+            _red "Required package missing after installation: $package_name"
+            _red "安装完成后缺少必须的软件包：$package_name"
+            return 1
+        fi
+    done
+    for command_name in "${required_commands[@]}"; do
+        if ! command -v "$command_name" >/dev/null 2>&1; then
+            _red "Required command was not found after installation: $command_name"
+            _red "安装完成后未找到必须的命令：$command_name"
+            return 1
+        fi
+    done
+    if [ "$system_arch" = "riscv64" ]; then
+        require_pve_kernel=false
+    fi
+    if [ "$require_pve_kernel" = true ] && ! verify_pve_kernel_boot_files; then
+        _red "No fully installed PVE kernel with a readable image, initramfs and modules was detected"
+        _red "未检测到完整安装的 PVE 内核、可读引导镜像及模块，暂勿重启"
+        return 1
+    fi
+    if [ "$require_pve_kernel" = false ] && ! verify_pve_kernel_boot_files; then
+        _yellow "No pve-kernel package was detected; riscv64 PXVIRT can run in user-space on the distribution kernel"
+        _yellow "未检测到 pve-kernel 软件包；riscv64 的 PXVIRT 可在发行版内核上运行用户态组件"
+    fi
+    return 0
+}
+
+install_optional_pve_packages() {
+    local optional_packages=(postfix open-iscsi)
+    local package_name
+    if [[ "${PVE_INSTALL_RECOMMENDED_PACKAGES^^}" != "TRUE" ]]; then
+        _yellow "Skipping recommended but non-essential packages for a minimal installation: ${optional_packages[*]}"
+        _yellow "为保持最小化安装，跳过推荐但非必需的软件包：${optional_packages[*]}"
+        _yellow "Set PVE_INSTALL_RECOMMENDED_PACKAGES=true if you need mail notifications or iSCSI initiator support"
+        _yellow "如需邮件通知或 iSCSI initiator 支持，请设置 PVE_INSTALL_RECOMMENDED_PACKAGES=true"
+        return 0
+    fi
+    for package_name in "${optional_packages[@]}"; do
+        install_package "$package_name"
+    done
+}
+
+cleanup_ceph_service_packages() {
+    local ceph_service_packages=(
+        ceph
+        ceph-base
+        ceph-mon
+        ceph-osd
+        ceph-mds
+        ceph-mgr
+        ceph-volume
+    )
+    local installed=()
+    local pkg
+    if [[ "${PVE_INSTALL_CEPH^^}" == "TRUE" || "${PVE_REPAIR_EXISTING:-false}" == true ]]; then
+        return 0
+    fi
+    for pkg in "${ceph_service_packages[@]}"; do
+        if package_installed "$pkg"; then
+            installed+=("$pkg")
+        fi
+    done
+    if [ ${#installed[@]} -gt 0 ]; then
+        _yellow "Removing Ceph service packages to keep minimal host install: ${installed[*]}"
+        _yellow "为保持宿主最小化安装，正在移除 Ceph 服务包：${installed[*]}"
+        DEBIAN_FRONTEND=noninteractive apt-get purge -y "${installed[@]}" >/dev/null 2>&1 || true
+    fi
+}
+
+validate_arm_pxvirt_environment() {
+    local version="$1"
+    local os_name=""
+    os_name=$(grep '^NAME=' /etc/os-release 2>/dev/null | cut -d'=' -f2 | tr -d '"')
+    if [[ "$os_name" == *"Ubuntu"* ]]; then
+        _red "PXVIRT official documentation does not support Ubuntu installation on ARM"
+        _red "PXVIRT 官方文档明确说明 ARM 场景下不支持 Ubuntu 安装"
+        if ! confirm_continue "检测到 ARM + Ubuntu，官方不支持该组合，是否仍然强制尝试？"; then
+            exit 1
+        fi
+    fi
+    case "$version" in
+    bookworm)
+        _green "ARM PXVIRT installation matches the primary upstream Debian release: $version"
+        _green "ARM PXVIRT 安装环境符合上游主线 Debian 版本：$version"
+        ;;
+    trixie)
+        _green "ARM PXVIRT repository support is available for Debian release: $version"
+        _green "ARM PXVIRT 已提供该 Debian 版本的仓库支持：$version"
+        _yellow "PXVIRT upstream package patches are currently centered on bookworm, so trixie should be treated as a newer track"
+        _yellow "PXVIRT 上游补丁主线目前仍明显围绕 bookworm，因此 trixie 更适合作为较新的跟进分支"
+        ;;
+    stretch|buster|bullseye)
+        _red "ARM PXVIRT upstream no longer shows active Debian support for: $version"
+        _red "ARM PXVIRT 上游已看不到对该 Debian 版本的现行支持：$version"
+        _yellow "Please upgrade the system to bookworm first, or use trixie only if you know the newer repository track is required"
+        _yellow "建议先升级到 bookworm；若你明确需要较新的仓库线路，再考虑 trixie"
+        exit 1
+        ;;
+    *)
+        _red "ARM PXVIRT official support is limited to Debian/Armbian bookworm or trixie, current release is: $version"
+        _red "ARM PXVIRT 官方支持范围限定在 Debian/Armbian 的 bookworm 或 trixie，当前识别版本为：$version"
+        exit 1
+        ;;
+    esac
+}
+
+validate_riscv_pxvirt_environment() {
+    local version="$1"
+    local os_name=""
+    os_name=$(grep '^NAME=' /etc/os-release 2>/dev/null | cut -d'=' -f2 | tr -d '"')
+    if [[ "$os_name" == *"Ubuntu"* ]]; then
+        _red "PXVIRT official documentation does not support Ubuntu installation on riscv64"
+        _red "PXVIRT 官方文档明确说明 riscv64 场景下不支持 Ubuntu 安装"
+        exit 1
+    fi
+    case "$version" in
+    trixie)
+        _green "riscv64 PXVIRT installation matches the documented Debian 13 trixie track"
+        _green "riscv64 PXVIRT 安装环境符合文档中的 Debian 13 trixie 线路"
+        ;;
+    *)
+        _red "riscv64 PXVIRT currently targets Debian 13 trixie, current release is: $version"
+        _red "riscv64 PXVIRT 当前目标版本为 Debian 13 trixie，当前识别版本为：$version"
+        exit 1
+        ;;
+    esac
+}
+
 check_haveged() {
     _yellow "checking haveged"
+    _yellow "正在检查 haveged"
     if ! command -v haveged >/dev/null 2>&1; then
         apt-get install -o Dpkg::Options::="--force-confnew" -y haveged
     fi
@@ -178,6 +550,7 @@ check_haveged() {
 
 check_time_zone() {
     _yellow "adjusting the time"
+    _yellow "正在校准系统时间"
     systemctl stop ntpd
     service ntpd stop
     if ! command -v chronyd >/dev/null 2>&1; then
@@ -203,12 +576,14 @@ rebuild_cloud_init() {
         else
             sed -E -i 's/preserve_hostname:[[:space:]]*false/preserve_hostname: true/g' "/etc/cloud/cloud.cfg"
             echo "change preserve_hostname to true"
+            echo "已将 preserve_hostname 修改为 true"
         fi
         if grep -q "disable_root: false" "/etc/cloud/cloud.cfg"; then
             :
         else
             sed -E -i 's/disable_root:[[:space:]]*true/disable_root: false/g' "/etc/cloud/cloud.cfg"
             echo "change disable_root to false"
+            echo "已将 disable_root 修改为 false"
         fi
         chattr -i /etc/cloud/cloud.cfg
         content=$(cat /etc/cloud/cloud.cfg)
@@ -226,239 +601,116 @@ rebuild_cloud_init() {
     touch /etc/cloud/cloud-init.disabled
 }
 
-remove_source_input() {
-    # 去除引用
-    if [ -f "/etc/network/interfaces" ]; then
-        chattr -i /etc/network/interfaces
-        if ! grep -q '^#source \/etc\/network\/interfaces\.d\/' "/etc/network/interfaces"; then
-            sed -i '/^source \/etc\/network\/interfaces\.d\// { /^#/! s/^/#/ }' "/etc/network/interfaces"
-        fi
-        if ! grep -q '^#source-directory \/etc\/network\/interfaces\.d' "/etc/network/interfaces"; then
-            sed -i 's/^source-directory \/etc\/network\/interfaces\.d/#source-directory \/etc\/network\/interfaces.d/' "/etc/network/interfaces"
-        fi
-        chattr +i /etc/network/interfaces
-    fi
-    if [ -f "/etc/network/interfaces.new" ]; then
-        chattr -i /etc/network/interfaces.new
-        if ! grep -q '^#source \/etc\/network\/interfaces\.d\/' "/etc/network/interfaces.new"; then
-            sed -i '/^source \/etc\/network\/interfaces\.d\// { /^#/! s/^/#/ }' "/etc/network/interfaces.new"
-        fi
-        if ! grep -q '^#source-directory \/etc\/network\/interfaces\.d' "/etc/network/interfaces.new"; then
-            sed -i 's/^source-directory \/etc\/network\/interfaces\.d/#source-directory \/etc\/network\/interfaces.d/' "/etc/network/interfaces.new"
-        fi
-        chattr +i /etc/network/interfaces.new
-    fi
+# Inspect only active source references; never delete or flatten source files.
+pve_installer_network_topology() {
+    python3 - "${PVE_NETWORK_INTERFACES_FILE:-/etc/network/interfaces}" "$1" "${2:-}" <<'PYCODE'
+import glob
+import pathlib
+import re
+import shlex
+import sys
+root, mode, selected = sys.argv[1:]
+files, stanzas = {}, []
+def visit(name):
+    path = pathlib.Path(name).resolve()
+    if path in files:
+        return
+    if len(files) >= 256:
+        raise ValueError('too many network files')
+    text = path.read_text()
+    files[path] = text
+    current = None
+    for line in text.replace('\\\n', ' ').splitlines():
+        fields = shlex.split(line, comments=True)
+        if not fields:
+            continue
+        key = fields[0]
+        if key in {'source', 'source-directory'}:
+            current = None
+            for pattern in fields[1:]:
+                pattern = pathlib.Path(pattern)
+                if not pattern.is_absolute():
+                    pattern = path.parent / pattern
+                for match in sorted(glob.glob(str(pattern))):
+                    child = pathlib.Path(match)
+                    if key == 'source-directory' and child.is_dir():
+                        for entry in sorted(child.iterdir()):
+                            if entry.is_file() and re.fullmatch(r'[A-Za-z0-9_-]+', entry.name):
+                                visit(entry)
+                    elif key == 'source' and child.is_file():
+                        visit(child)
+        elif key == 'iface' and len(fields) >= 4:
+            current = {'name': fields[1], 'ports': []}
+            stanzas.append(current)
+        elif key in {'auto', 'mapping'} or key.startswith('allow-'):
+            current = None
+        elif current is not None and key in {'bridge_ports', 'bridge-ports'}:
+            current['ports'].extend(fields[1:])
+try:
+    visit(root)
+    if mode == 'files':
+        for path in files:
+            if '\n' in str(path):
+                raise ValueError('invalid network path')
+            print(path)
+    elif mode == 'has-interface':
+        raise SystemExit(0 if any(row['name'] == selected for row in stanzas) else 1)
+    elif mode == 'owns-uplink':
+        raise SystemExit(0 if any(row['name'] == selected or selected in row['ports'] for row in stanzas) else 1)
+    elif mode == 'clean-uplink':
+        for path, text in files.items():
+            result, dropping = [], False
+            for line in text.splitlines(keepends=True):
+                fields = line.split()
+                if fields and not line[0].isspace() and not fields[0].startswith('#'):
+                    dropping = fields[0] == 'iface' and len(fields) > 1 and fields[1] == selected
+                    if fields[0] in {'auto', 'allow-auto', 'allow-hotplug'} and selected in fields[1:]:
+                        names = [name for name in fields[1:] if name != selected]
+                        if names:
+                            result.append(fields[0] + ' ' + ' '.join(names) + '\n')
+                        continue
+                if not dropping:
+                    result.append(line)
+            updated = ''.join(result)
+            if updated != text:
+                path.write_text(updated)
+    else:
+        raise ValueError('unknown network operation')
+except (OSError, ValueError):
+    raise SystemExit(1)
+PYCODE
 }
 
 rebuild_interfaces() {
-    # 修复部分网络加载没实时加载
-    if [[ -f "/etc/network/interfaces.new" && -f "/etc/network/interfaces" ]]; then
-        chattr -i /etc/network/interfaces
-        cp -f /etc/network/interfaces.new /etc/network/interfaces
-        chattr +i /etc/network/interfaces
+    local path="${PVE_NETWORK_INTERFACES_FILE:-/etc/network/interfaces}"
+    if [[ -f "${path}.new" && -f "$path" ]]; then
+        chattr -i "$path" || return 1
+        cp -p "${path}.new" "$path" || return 1
     fi
-    # 检测回环是否存在，不存在则插入文件的第一第二行
-    if ! grep -q "auto lo" "/etc/network/interfaces"; then
-        chattr -i /etc/network/interfaces
-        sed -i '1s/^/auto lo\n/' "/etc/network/interfaces"
-        chattr +i /etc/network/interfaces
-        _blue "Can not find 'auto lo' in /etc/network/interfaces, add it"
+    pve_installer_network_topology files >/dev/null || return 1
+    chattr -i "$path" || return 1
+    if ! pve_installer_network_topology has-interface lo; then
+        printf '\nauto lo\niface lo inet loopback\n' >>"$path" || return 1
     fi
-    if ! grep -q "iface lo inet loopback" "/etc/network/interfaces"; then
-        chattr -i /etc/network/interfaces
-        sed -i '2s/^/iface lo inet loopback\n/' "/etc/network/interfaces"
-        chattr +i /etc/network/interfaces
-        _blue "Can not find 'iface lo inet loopback' in /etc/network/interfaces, add it"
+    # The physical port may already be owned by a pending or active bridge.
+    # Do not add a duplicate L3 stanza in that case.
+    if ! pve_installer_network_topology owns-uplink "$interface"; then
+        {
+            printf '\nauto %s\niface %s inet static\n' "$interface" "$interface"
+            printf '    address %s\n' "$(get_ipv4_address_cidr)"
+            format_ipv4_gateway_config '    ' "$interface"
+        } >>"$path" || return 1
     fi
-    # 检查是否存在网络接口配置
-    interface_configured=false
-    # 检查主接口是否已配置（包括 auto 和 allow-hotplug）
-    if (grep -q "auto ${interface}" /etc/network/interfaces || grep -q "allow-hotplug ${interface}" /etc/network/interfaces) && \
-       (grep -q "iface ${interface} inet static" /etc/network/interfaces || \
-        grep -q "iface ${interface} inet dhcp" /etc/network/interfaces || \
-        grep -q "iface ${interface} inet auto" /etc/network/interfaces); then
-        interface_configured=true
-    fi
-    # 检查interfaces.d目录中是否有配置
-    if [ -d "/etc/network/interfaces.d/" ]; then
-        for file in /etc/network/interfaces.d/*; do
-            if [ -f "$file" ] && (grep -q "auto ${interface}" "$file" || grep -q "allow-hotplug ${interface}" "$file" || grep -q "iface ${interface}" "$file"); then
-                interface_configured=true
-                break
-            fi
-        done
-    fi
-    # 如果没有找到接口配置，说明可能是从NetworkManager切换过来的
-    if [ "$interface_configured" = false ]; then
-        _blue "No network interface configuration found, possibly switched from NetworkManager"
-        _blue "Adding static configuration for interface ${interface}"
-        chattr -i /etc/network/interfaces
-        echo "" >>/etc/network/interfaces
-        echo "# Network interface ${interface}" >>/etc/network/interfaces
-        echo "auto ${interface}" >>/etc/network/interfaces
-        if [[ -z "${CN}" || "${CN}" != true ]]; then
-            echo "iface ${interface} inet static" >>/etc/network/interfaces
-            echo "    address ${ipv4_address}" >>/etc/network/interfaces
-            echo "    netmask ${ipv4_subnet}" >>/etc/network/interfaces
-            echo "    gateway ${ipv4_gateway}" >>/etc/network/interfaces
-            echo "    dns-nameservers 8.8.8.8 8.8.4.4" >>/etc/network/interfaces
-        else
-            echo "iface ${interface} inet static" >>/etc/network/interfaces
-            echo "    address ${ipv4_address}" >>/etc/network/interfaces
-            echo "    netmask ${ipv4_subnet}" >>/etc/network/interfaces
-            echo "    gateway ${ipv4_gateway}" >>/etc/network/interfaces
-            echo "    dns-nameservers 8.8.8.8 223.5.5.5" >>/etc/network/interfaces
-        fi
-        chattr +i /etc/network/interfaces
-        # 标记已配置，跳过后续的接口检查
-        interface_configured=true
-    fi
-    # 只有在接口已配置的情况下才进行后续处理
-    if [ "$interface_configured" = true ]; then
-        chattr -i /etc/network/interfaces
-        echo " " >>/etc/network/interfaces
-        chattr +i /etc/network/interfaces
-        # 合并interfaces.d目录中的文件
-        if [ -d "/etc/network/interfaces.d/" ]; then
-            if [ ! -f "/etc/network/interfaces" ]; then
-                touch /etc/network/interfaces
-            fi
-            if grep -q '^source \/etc\/network\/interfaces\.d\/' "/etc/network/interfaces" || grep -q '^source-directory \/etc\/network\/interfaces\.d' "/etc/network/interfaces"; then
-                chattr -i /etc/network/interfaces
-                for file in /etc/network/interfaces.d/*; do
-                    if [ -f "$file" ]; then
-                        cat "$file" >>/etc/network/interfaces
-                        chattr -i "$file"
-                        rm "$file"
-                    fi
-                done
-                chattr +i /etc/network/interfaces
-            else
-                for file in /etc/network/interfaces.d/*; do
-                    if [ -f "$file" ]; then
-                        chattr -i "$file"
-                        rm "$file"
-                    fi
-                done
-            fi
-        fi
-        # 处理/run/network/interfaces.d/目录
-        if [ -d "/run/network/interfaces.d/" ]; then
-            if [ ! -f "/etc/network/interfaces" ]; then
-                touch /etc/network/interfaces
-            fi
-            if grep -q '^source \/run\/network\/interfaces\.d\/' "/etc/network/interfaces" || grep -q '^source-directory \/run\/network\/interfaces\.d' "/etc/network/interfaces"; then
-                chattr -i /etc/network/interfaces
-                for file in /run/network/interfaces.d/*; do
-                    if [ -f "$file" ]; then
-                        cat "$file" >>/etc/network/interfaces
-                        chattr -i "$file"
-                        rm "$file"
-                    fi
-                done
-                chattr +i /etc/network/interfaces
-            else
-                for file in /run/network/interfaces.d/*; do
-                    if [ -f "$file" ]; then
-                        chattr -i "$file"
-                        rm "$file"
-                    fi
-                done
-            fi
-        fi
-        # 修复部分网络运行部分未空
-        if [ ! -e /run/network/interfaces.d/* ]; then
-            if [ -f "/etc/network/interfaces" ]; then
-                chattr -i /etc/network/interfaces
-                if ! grep -q "^#.*source-directory \/run\/network\/interfaces\.d" /etc/network/interfaces; then
-                    sed -i '/source-directory \/run\/network\/interfaces.d/s/^/#/' /etc/network/interfaces
-                fi
-                chattr +i /etc/network/interfaces
-            fi
-            if [ -f "/etc/network/interfaces.new" ]; then
-                chattr -i /etc/network/interfaces.new
-                if ! grep -q "^#.*source-directory \/run\/network\/interfaces\.d" /etc/network/interfaces.new; then
-                    sed -i '/source-directory \/run\/network\/interfaces.d/s/^/#/' /etc/network/interfaces.new
-                fi
-                chattr +i /etc/network/interfaces.new
-            fi
-        fi
-        # 去除引用
-        remove_source_input
-        # 检查/etc/network/interfaces文件中是否有iface xxxx inet auto行
-        if [ -f "/etc/network/interfaces" ]; then
-            if grep -q "iface $interface inet auto" /etc/network/interfaces; then
-                chattr -i /etc/network/interfaces
-                if [[ -z "${CN}" || "${CN}" != true ]]; then
-                    sed -i "/iface $interface inet auto/c\
-                    iface $interface inet static\n\
-                    address $ipv4_address\n\
-                    netmask $ipv4_subnet\n\
-                    gateway $ipv4_gateway\n\
-                    dns-nameservers 8.8.8.8 8.8.4.4" /etc/network/interfaces
-                else
-                    sed -i "/iface $interface inet auto/c\
-                    iface $interface inet static\n\
-                    address $ipv4_address\n\
-                    netmask $ipv4_subnet\n\
-                    gateway $ipv4_gateway\n\
-                    dns-nameservers 8.8.8.8 223.5.5.5" /etc/network/interfaces
-                fi
-            fi
-            chattr +i /etc/network/interfaces
-        fi
-        # 检查/etc/network/interfaces文件中是否有iface xxxx inet dhcp行
-        if [[ $dmidecode_output == *"Hetzner_vServer"* ]] || [[ $dmidecode_output == *"Microsoft Corporation"* ]]; then
-            if [ -f "/etc/network/interfaces" ]; then
-                if grep -qF "inet dhcp" /etc/network/interfaces; then
-                    inet_dhcp=true
-                else
-                    inet_dhcp=false
-                fi
-                if grep -q "iface $interface inet dhcp" /etc/network/interfaces; then
-                    chattr -i /etc/network/interfaces
-                    if [[ -z "${CN}" || "${CN}" != true ]]; then
-                        sed -i "/iface $interface inet dhcp/c\
-                        iface $interface inet static\n\
-                        address $ipv4_address\n\
-                        netmask $ipv4_subnet\n\
-                        gateway $ipv4_gateway\n\
-                        dns-nameservers 8.8.8.8 8.8.4.4" /etc/network/interfaces
-                    else
-                        sed -i "/iface $interface inet dhcp/c\
-                        iface $interface inet static\n\
-                        address $ipv4_address\n\
-                        netmask $ipv4_subnet\n\
-                        gateway $ipv4_gateway\n\
-                        dns-nameservers 8.8.8.8 223.5.5.5" /etc/network/interfaces
-                    fi
-                fi
-                chattr +i /etc/network/interfaces
-            fi
-        fi
-        # 检测物理接口是否已auto或allow-hotplug链接
-        if ! grep -q "auto ${interface}" /etc/network/interfaces && ! grep -q "allow-hotplug ${interface}" /etc/network/interfaces; then
-            chattr -i /etc/network/interfaces
-            echo "auto ${interface}" >>/etc/network/interfaces
-            chattr +i /etc/network/interfaces
-        fi
-        # 反加载
-        if [[ -f "/etc/network/interfaces.new" && -f "/etc/network/interfaces" ]]; then
-            chattr -i /etc/network/interfaces.new
-            cp -f /etc/network/interfaces /etc/network/interfaces.new
-            chattr +i /etc/network/interfaces.new
-        fi
-    else
-        _red "Warning: No network interface configuration found and unable to create one"
-        _red "Please check if the network interface variables are properly set"
-    fi
+    chattr +i "$path"
 }
 
 fix_interfaces_ipv6_auto_type() {
+    local keyword device family method extra
     chattr -i /etc/network/interfaces
     while IFS= read -r line; do
         # 检测以 "iface" 开头且包含 "inet6 auto" 的行
-        if [[ $line == *"inet6 auto"* ]]; then
+        read -r keyword device family method extra <<<"$line"
+        if [[ "$keyword" = iface && "$device" = "$interface" && "$family" = inet6 && "$method" = auto ]]; then
             modified_line="${line/auto/static}"
             echo "$modified_line"
             # 添加静态IPv6配置信息
@@ -480,15 +732,20 @@ clean_control_alias_blocks() {
     local tmp_file
     tmp_file=$(mktemp)
     local control_alias_total
+    if [ ! -f "$input_file" ]; then
+        rm -f "$tmp_file"
+        return 0
+    fi
     control_alias_total=$(grep -c "^# control-alias" "$input_file")
     if (( control_alias_total <= 2 )); then
+        rm -f "$tmp_file"
         return 0
     fi
     local control_alias_count=0
     local in_control_alias_block=false
     local buffer=""
-    > "$tmp_file"
-    > "$output_file"
+    : > "$tmp_file"
+    : > "$output_file"
     while IFS= read -r line || [[ -n "$line" ]]; do
         if [[ "$line" =~ ^#\ control-alias\ eth0 ]]; then
             in_control_alias_block=true
@@ -515,58 +772,252 @@ clean_control_alias_blocks() {
     chmod 644 "$output_file"
 }
 
+is_public_ipv6() {
+    local address="${1:-}"
+    command -v python3 >/dev/null 2>&1 || return 1
+    python3 - "$address" <<'PY'
+import ipaddress
+import sys
+
+try:
+    address = ipaddress.IPv6Address(sys.argv[1])
+except ValueError:
+    raise SystemExit(1)
+
+global_unicast = ipaddress.IPv6Network("2000::/3")
+non_public = (
+    ipaddress.IPv6Network("2001::/32"),       # Teredo
+    ipaddress.IPv6Network("2001:2::/48"),     # benchmarking
+    ipaddress.IPv6Network("2001:10::/28"),    # ORCHID
+    ipaddress.IPv6Network("2001:20::/28"),    # ORCHIDv2
+    ipaddress.IPv6Network("2001:db8::/32"),   # documentation
+    ipaddress.IPv6Network("2002::/16"),       # 6to4
+    ipaddress.IPv6Network("3fff::/20"),       # documentation
+)
+usable = (
+    address in global_unicast
+    and address.is_global
+    and not address.is_private
+    and not address.is_multicast
+    and not any(address in prefix for prefix in non_public)
+)
+raise SystemExit(0 if usable else 1)
+PY
+}
+
 is_private_ipv6() {
-    local address=$1
-    local temp="0"
-    # 输入为空
-    if [[ ! -n $address ]]; then
-        temp="1"
-    fi
-    # 输入不含:符号
-    if [[ -n $address && $address != *":"* ]]; then
-        temp="2"
-    fi
-    # 检查IPv6地址是否以fe80开头（链接本地地址）
-    if [[ $address == fe80:* ]]; then
-        temp="3"
-    fi
-    # 检查IPv6地址是否以fc00或fd00开头（唯一本地地址）
-    if [[ $address == fc00:* || $address == fd00:* ]]; then
-        temp="4"
-    fi
-    # 检查IPv6地址是否以2001:db8开头（文档前缀）
-    if [[ $address == 2001:db8* ]]; then
-        temp="5"
-    fi
-    # 检查IPv6地址是否以::1开头（环回地址）
-    if [[ $address == ::1 ]]; then
-        temp="6"
-    fi
-    # 检查IPv6地址是否以::ffff:开头（IPv4映射地址）
-    if [[ $address == ::ffff:* ]]; then
-        temp="7"
-    fi
-    # 检查IPv6地址是否以2002:开头（6to4隧道地址）
-    if [[ $address == 2002:* ]]; then
-        temp="8"
-    fi
-    # 检查IPv6地址是否以2001:0:开头（Teredo隧道地址，仅限2001:0::/32）
-    if [[ $address == 2001:0:* ]]; then
-        temp="9"
-    fi
-    if [ "$temp" -gt 0 ]; then
-        # 非公网情况
-        return 0
-    else
-        # 其他情况为公网地址
-        return 1
-    fi
+    ! is_public_ipv6 "${1:-}"
+}
+
+# Keep IPv6 probes tied to iproute2's JSON fields. Human-readable ip,
+# ifconfig, rdisc6 and sipcalc output can be colored or translated, and a
+# router advertisement does not prove that a host /128 owns the whole /64.
+pve_ipv6_json_probe() {
+    local mode="$1" selected_interface="${2:-}" replacement_interface="${3:-}" payload
+    case "$mode" in
+        addresses|address_bindings|reserved_addresses|linklocal)
+            if [ "${PVE_IPV6_ADDRESS_JSON_OVERRIDE+x}" = x ]; then
+                payload="$PVE_IPV6_ADDRESS_JSON_OVERRIDE"
+            else
+                payload=$(LC_ALL=C NO_COLOR=1 ip -j -6 addr show) || return 1
+            fi
+            ;;
+        gateway|default_interface|default_routes_restore)
+            if [ "${PVE_IPV6_ROUTE_JSON_OVERRIDE+x}" = x ]; then
+                payload="$PVE_IPV6_ROUTE_JSON_OVERRIDE"
+            else
+                payload=$(LC_ALL=C NO_COLOR=1 ip -j -6 route show default) || return 1
+            fi
+            ;;
+        interfaces) payload=$(LC_ALL=C NO_COLOR=1 ip -d -j link show) || return 1 ;;
+        *) return 1 ;;
+    esac
+    PVE_IPV6_PROBE_JSON="$payload" python3 - "$mode" "$selected_interface" "$replacement_interface" <<'PY'
+import ipaddress
+import json
+import os
+import re
+import sys
+
+mode, selected, replacement = sys.argv[1:]
+raw = re.sub(r'\x1b\[[0-?]*[ -/]*[@-~]', '', os.environ['PVE_IPV6_PROBE_JSON'])
+interface_pattern = re.compile(r'[A-Za-z0-9_.:-]{1,15}')
+
+def route_hops(row):
+    hops = row.get('nexthops') or row.get('multipath')
+    if hops is None:
+        return [row]
+    if not isinstance(hops, list) or not hops:
+        raise ValueError('invalid default route nexthops')
+    return hops
+
+try:
+    rows = json.loads(raw)
+    if not isinstance(rows, list):
+        raise ValueError('invalid iproute2 JSON')
+    if mode in ('gateway', 'default_interface', 'default_routes_restore'):
+        candidates = [row for row in rows if row.get('dst') in (None, '', 'default')]
+        candidates.sort(key=lambda row: row.get('dev') != selected if selected else False)
+        for row in candidates:
+            if mode == 'default_interface':
+                devices = [row.get('dev', '')]
+                devices.extend(hop.get('dev', '') for hop in route_hops(row))
+                device = next((value for value in devices if interface_pattern.fullmatch(value or '')), '')
+                if device:
+                    print(device)
+                    break
+            elif mode == 'gateway':
+                for hop in route_hops(row):
+                    device = hop.get('dev') or row.get('dev', '')
+                    gateway = hop.get('gateway') or row.get('gateway', '')
+                    if selected and device and device != selected:
+                        continue
+                    if gateway:
+                        print(ipaddress.IPv6Address(gateway))
+                        raise SystemExit(0)
+            else:
+                if row.get('type') not in (None, '', 'unicast'):
+                    continue
+                metric = row.get('metric')
+                if metric is not None and (not isinstance(metric, int) or metric < 0):
+                    raise ValueError('invalid default route metric')
+                hops = route_hops(row)
+                tokens = ['-6', 'route', 'replace', 'default']
+                if len(hops) > 1 and metric is not None:
+                    tokens.extend(['metric', str(metric)])
+                for hop in hops:
+                    device = hop.get('dev') or row.get('dev') or selected
+                    if not interface_pattern.fullmatch(device or ''):
+                        raise ValueError('invalid default route interface')
+                    if device == selected and replacement:
+                        device = replacement
+                    if len(hops) > 1:
+                        tokens.append('nexthop')
+                    gateway = hop.get('gateway') or row.get('gateway', '')
+                    gateway_address = ipaddress.IPv6Address(gateway) if gateway else None
+                    if gateway:
+                        tokens.extend(['via', gateway_address.compressed])
+                    tokens.extend(['dev', device])
+                    flags = hop.get('flags') or row.get('flags') or []
+                    if isinstance(flags, str):
+                        flags = [flags]
+                    if len(hops) > 1:
+                        weight = hop.get('weight', 1)
+                        if not isinstance(weight, int) or not 1 <= weight <= 256:
+                            raise ValueError('invalid default route nexthop weight')
+                        tokens.extend(['weight', str(weight)])
+                    if 'onlink' in flags or (gateway_address and gateway_address.is_link_local):
+                        tokens.append('onlink')
+                if len(hops) == 1 and metric is not None:
+                    tokens.extend(['metric', str(metric)])
+                print(' '.join(tokens))
+    elif mode == 'interfaces':
+        for row in rows:
+            device = row.get('ifname', '')
+            kind = (row.get('linkinfo') or {}).get('info_kind', '')
+            if kind in {'bridge', 'veth', 'dummy', 'macvlan', 'ipvlan', 'sit', 'tun', 'tap'}:
+                continue
+            if device != 'lo' and interface_pattern.fullmatch(device):
+                print(device)
+    else:
+        for row in rows:
+            device = row.get('ifname', '')
+            if selected and device != selected:
+                continue
+            for info in row.get('addr_info', []):
+                if info.get('family') != 'inet6':
+                    continue
+                if mode == 'reserved_addresses':
+                    print(ipaddress.IPv6Address(info['local']))
+                    continue
+                if info.get('tentative') or info.get('dadfailed'):
+                    continue
+                if {'tentative', 'dadfailed'} & set(info.get('flags') or []):
+                    continue
+                address = ipaddress.IPv6Address(info['local'])
+                prefix = info['prefixlen']
+                if not isinstance(prefix, int) or not 0 <= prefix <= 128:
+                    raise ValueError('invalid IPv6 prefix')
+                if mode == 'addresses' and info.get('scope') == 'global' and address.is_global:
+                    print(f'{address}/{prefix}')
+                if mode == 'address_bindings' and info.get('scope') == 'global' and address.is_global:
+                    if not interface_pattern.fullmatch(device):
+                        raise ValueError('invalid interface for global IPv6 address')
+                    print(f'{device}\t{address}/{prefix}')
+                if mode == 'linklocal' and address.is_link_local:
+                    print(f'{address}/{prefix}')
+except (KeyError, TypeError, ValueError, json.JSONDecodeError):
+    raise SystemExit(1)
+PY
+}
+
+# ifupdown2 can temporarily remove the live IPv6 address while a physical NIC
+# is moved under vmbr0. Recover only the exact, validated static configuration
+# for that NIC; never infer a /64 from an address or translated command text.
+pve_configured_ipv6_triplet() {
+    local selected_interface="${1:-}" interfaces_file="${PVE_NETWORK_INTERFACES_FILE:-/etc/network/interfaces}"
+    local interfaces_dir="${PVE_NETWORK_INTERFACES_DIR:-/etc/network/interfaces.d}"
+    validate_interface_value "$selected_interface" || return 1
+    python3 - "$selected_interface" "$interfaces_file" "$interfaces_dir/50-cloud-init" <<'PY'
+import ipaddress
+import pathlib
+import sys
+
+selected = sys.argv[1]
+for filename in sys.argv[2:]:
+    path = pathlib.Path(filename)
+    if not path.is_file():
+        continue
+    active = False
+    address = gateway = prefix = None
+    for raw in list(path.read_text(errors="replace").splitlines()) + ["iface __end__ inet6 manual"]:
+        line = raw.split("#", 1)[0].strip()
+        fields = line.split()
+        if not fields:
+            continue
+        if fields[0] == "iface":
+            if active and address and gateway:
+                try:
+                    candidate = ipaddress.IPv6Interface(address if "/" in address else f"{address}/{prefix}")
+                    next_hop = ipaddress.IPv6Address(gateway)
+                except (ValueError, TypeError):
+                    pass
+                else:
+                    if candidate.ip.is_global and (next_hop.is_global or next_hop.is_link_local):
+                        print(f"{candidate.ip.compressed}\t{candidate.network.prefixlen}\t{next_hop.compressed}")
+                        raise SystemExit(0)
+            active = len(fields) >= 4 and fields[1] == selected and fields[2:4] == ["inet6", "static"]
+            address = gateway = prefix = None
+        elif active and len(fields) == 2:
+            if fields[0] == "address":
+                address = fields[1]
+            elif fields[0] in ("netmask", "prefixlen"):
+                prefix = fields[1]
+            elif fields[0] == "gateway":
+                gateway = fields[1]
+raise SystemExit(1)
+PY
 }
 
 check_ipv6() {
-    IPV6=$(ip -6 addr show | grep global | awk '{print length, $2}' | sort -nr | head -n 1 | awk '{print $2}' | cut -d '/' -f1)
+    local ipv6_list candidate gateway_prefix configured
+    ipv6_list=$(pve_ipv6_json_probe addresses "${interface:-}") || return 1
+    if [ -z "$ipv6_list" ]; then
+        ipv6_list=$(pve_ipv6_json_probe addresses) || return 1
+    fi
+    if [ -z "$ipv6_list" ]; then
+        configured=$(pve_configured_ipv6_triplet "${interface:-}" 2>/dev/null || true)
+        [ -z "$configured" ] || ipv6_list="${configured%%$'\t'*}/$(printf '%s' "$configured" | cut -f2)"
+    fi
+    IPV6=""
+    while IFS= read -r candidate; do
+        candidate=${candidate%/*}
+        if validate_ipv6_value "$candidate" && ! is_private_ipv6 "$candidate"; then
+            IPV6="$candidate"
+            break
+        fi
+    done <<<"$ipv6_list"
     if [ ! -f /usr/local/bin/pve_last_ipv6 ] || [ ! -s /usr/local/bin/pve_last_ipv6 ] || [ "$(sed -e '/^[[:space:]]*$/d' /usr/local/bin/pve_last_ipv6)" = "" ]; then
-        ipv6_list=$(ip -6 addr show | grep global | awk '{print length, $2}' | sort -nr | awk '{print $2}')
         line_count=$(echo "$ipv6_list" | wc -l)
         if [ "$line_count" -ge 2 ]; then
             # 获取最后一行的内容
@@ -574,26 +1025,25 @@ check_ipv6() {
             # 切分最后一个:之前的内容
             last_ipv6_prefix="${last_ipv6%:*}:"
             # 与${ipv6_gateway}比较是否相同
-            if [ "${last_ipv6_prefix}" = "${ipv6_gateway%:*}:" ]; then
+            gateway_prefix="${ipv6_gateway:-}"
+            gateway_prefix="${gateway_prefix%:*}:"
+            if [ "${last_ipv6_prefix}" = "$gateway_prefix" ]; then
                 echo $last_ipv6 >/usr/local/bin/pve_last_ipv6
             fi
             _green "The local machine is bound to more than one IPV6 address"
             _green "本机绑定了不止一个IPV6地址"
         fi
     fi
-    if is_private_ipv6 "$IPV6"; then # 由于是内网IPV6地址，需要通过API获取外网地址
-        IPV6=""
-        API_NET=("ipv6.ip.sb" "https://ipget.net" "ipv6.ping0.cc" "https://api.my-ip.io/ip" "https://ipv6.icanhazip.com")
-        for p in "${API_NET[@]}"; do
-            response=$(curl -sLk6m8 "$p" | tr -d '[:space:]')
-            if [ $? -eq 0 ] && ! (echo "$response" | grep -q "error"); then
-                IPV6="$response"
-                break
-            fi
-            sleep 1
-        done
+    if [ -n "$IPV6" ]; then
+        if ! write_network_state_atomic /usr/local/bin/pve_check_ipv6 "$IPV6" validate_ipv6_value; then
+            _yellow "Ignoring invalid IPv6 detection output: ${IPV6@Q}"
+            _yellow "忽略无效的 IPv6 检测输出：${IPV6@Q}"
+            IPV6=""
+            rm -f /usr/local/bin/pve_check_ipv6
+        fi
+    else
+        rm -f /usr/local/bin/pve_check_ipv6
     fi
-    echo $IPV6 >/usr/local/bin/pve_check_ipv6
 }
 
 check_cdn() {
@@ -613,22 +1063,35 @@ check_cdn_file() {
     if [ "${WITHOUTCDN^^}" = "TRUE" ]; then
         export cdn_success_url=""
         _yellow "WITHOUTCDN=TRUE, skip CDN acceleration"
+        _yellow "WITHOUTCDN=TRUE，跳过 CDN 加速"
         return
     fi
     check_cdn "https://raw.githubusercontent.com/KUAILESHANGWEI/kejidalao/main/vendor/github/spiritLHLS/ecs/back/test"
     if [ -n "$cdn_success_url" ]; then
         _yellow "CDN available, using CDN"
+        _yellow "检测到可用 CDN，使用 CDN 加速"
     else
         _yellow "No CDN available, no use CDN"
+        _yellow "未检测到可用 CDN，不使用 CDN 加速"
+    fi
+}
+
+# Download auxiliary units atomically.  A failed wget may still leave a
+# truncated target; treating that file as installed on the next run can leave
+# a node with a broken boot service and no retry path.
+download_required_file() {
+    local url="$1" target="$2" mode="${3:-644}" tmp
+    tmp=$(mktemp "${target}.tmp.XXXXXX") || return 1
+    if ! wget "$url" -O "$tmp" || [ ! -s "$tmp" ] || ! chmod "$mode" "$tmp" || ! mv -f -- "$tmp" "$target"; then
+        rm -f -- "$tmp"
+        return 1
     fi
 }
 
 prebuild_ifupdown2() {
     if [ ! -f "/usr/local/bin/ifupdown2_installed.txt" ]; then
-        wget ${cdn_success_url}https://raw.githubusercontent.com/KUAILESHANGWEI/kejidalao/main/vendor/github/oneclickvirt/pve/extra_scripts/install_ifupdown2.sh -O /usr/local/bin/install_ifupdown2.sh
-        wget ${cdn_success_url}https://raw.githubusercontent.com/KUAILESHANGWEI/kejidalao/main/vendor/github/oneclickvirt/pve/extra_scripts/ifupdown2-install.service -O /etc/systemd/system/ifupdown2-install.service
-        chmod 777 /usr/local/bin/install_ifupdown2.sh
-        chmod 777 /etc/systemd/system/ifupdown2-install.service
+        download_required_file "${cdn_success_url}https://raw.githubusercontent.com/KUAILESHANGWEI/kejidalao/main/vendor/github/oneclickvirt/pve/extra_scripts/install_ifupdown2.sh" /usr/local/bin/install_ifupdown2.sh 755 || return 1
+        download_required_file "${cdn_success_url}https://raw.githubusercontent.com/KUAILESHANGWEI/kejidalao/main/vendor/github/oneclickvirt/pve/extra_scripts/ifupdown2-install.service" /etc/systemd/system/ifupdown2-install.service 644 || return 1
         if [ -f "/usr/local/bin/install_ifupdown2.sh" ]; then
             # _green "This script will automatically reboot the system after 5 seconds, please wait a few minutes to log into SSH and execute this script again"
             # _green "本脚本将在5秒后自动重启系统，请待几分钟后退出SSH再次执行本脚本"
@@ -642,12 +1105,21 @@ prebuild_ifupdown2() {
 }
 
 is_private_ipv4() {
-    local ip_address=$1
+    local ip_address=${1:-}
     local ip_parts
+    local part
     if [[ -z $ip_address ]]; then
-        echo "0" # 输入为空
+        return 0 # 输入为空
+    fi
+    if ! [[ "$ip_address" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
+        return 0 # 非法 IPv4 不应当作为公网地址使用
     fi
     IFS='.' read -r -a ip_parts <<<"$ip_address"
+    for part in "${ip_parts[@]}"; do
+        if [ "$part" -gt 255 ]; then
+            return 0
+        fi
+    done
     # 检查IP地址是否符合内网IP地址的范围
     # 去除 回环，RFC 1918，多播，RFC 6598 地址
     if [[ ${ip_parts[0]} -eq 10 ]] ||
@@ -655,9 +1127,10 @@ is_private_ipv4() {
         [[ ${ip_parts[0]} -eq 192 && ${ip_parts[1]} -eq 168 ]] ||
         [[ ${ip_parts[0]} -eq 127 ]] ||
         [[ ${ip_parts[0]} -eq 0 ]] ||
+        [[ ${ip_parts[0]} -eq 169 && ${ip_parts[1]} -eq 254 ]] ||
         [[ ${ip_parts[0]} -eq 100 && ${ip_parts[1]} -ge 64 && ${ip_parts[1]} -le 127 ]] ||
         [[ ${ip_parts[0]} -ge 224 ]]; then
-        echo "0" # 是内网IP地址
+        return 0 # 是内网IP地址
     else
         return 1 # 不是内网IP地址
     fi
@@ -666,19 +1139,49 @@ is_private_ipv4() {
 check_ipv4() {
     IPV4=$(ip -4 addr show | grep global | awk '{print $2}' | cut -d '/' -f1 | head -n 1)
     if is_private_ipv4 "$IPV4"; then # 由于是内网IPV4地址，需要通过API获取外网地址
-        IPV4=""
-        local API_NET=("ipv4.ip.sb" "ipget.net" "ip.ping0.cc" "https://ip4.seeip.org" "https://api.my-ip.io/ip" "https://ipv4.icanhazip.com" "api.ipify.org")
-        for p in "${API_NET[@]}"; do
-            response=$(curl -s4m8 "$p")
-            sleep 1
-            if [ $? -eq 0 ] && ! echo "$response" | grep -q "error"; then
-                IP_API="$p"
-                IPV4="$response"
-                break
-            fi
-        done
+        get_public_ipv4_candidates
+        IPV4="$(echo "$PUBLIC_IPV4_CANDIDATES" | sed -n '1p')"
+        IP_API="$(echo "$PUBLIC_IPV4_SOURCES" | sed -n '1p')"
     fi
     export IPV4
+}
+
+is_valid_ipv4() {
+    local ip_address="$1"
+    if ! [[ "$ip_address" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
+        return 1
+    fi
+    IFS='.' read -r -a ip_parts <<<"$ip_address"
+    for part in "${ip_parts[@]}"; do
+        if [ "$part" -lt 0 ] || [ "$part" -gt 255 ]; then
+            return 1
+        fi
+    done
+    return 0
+}
+
+get_public_ipv4_candidates() {
+    PUBLIC_IPV4_CANDIDATES=""
+    PUBLIC_IPV4_SOURCES=""
+    local api_list=("ipv4.ip.sb" "ipget.net" "ip.ping0.cc" "https://ip4.seeip.org" "https://api.my-ip.io/ip" "https://ipv4.icanhazip.com" "api.ipify.org")
+    local candidate_ip
+    local response
+    for endpoint in "${api_list[@]}"; do
+        response=$(curl -s4m8 "$endpoint" | tr -d '[:space:]')
+        if [ $? -ne 0 ] || echo "$response" | grep -qi "error"; then
+            sleep 1
+            continue
+        fi
+        candidate_ip=$(echo "$response" | grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}' | head -n 1)
+        if is_valid_ipv4 "$candidate_ip" && ! is_private_ipv4 "$candidate_ip"; then
+            if ! echo "$PUBLIC_IPV4_CANDIDATES" | grep -qx "$candidate_ip"; then
+                PUBLIC_IPV4_CANDIDATES=$(printf "%s\n%s" "$PUBLIC_IPV4_CANDIDATES" "$candidate_ip" | sed '/^$/d')
+                PUBLIC_IPV4_SOURCES=$(printf "%s\n%s" "$PUBLIC_IPV4_SOURCES" "$endpoint" | sed '/^$/d')
+            fi
+        fi
+        sleep 1
+    done
+    export PUBLIC_IPV4_CANDIDATES PUBLIC_IPV4_SOURCES
 }
 
 statistics_of_run_times() {
@@ -701,6 +1204,9 @@ get_system_arch() {
     "armv7l" | "armv8" | "armv8l" | "aarch64")
         system_arch="arm"
         ;;
+    "riscv64")
+        system_arch="riscv64"
+        ;;
     *)
         system_arch=""
         ;;
@@ -709,10 +1215,16 @@ get_system_arch() {
 
 check_china() {
     _yellow "IP area being detected ......"
+    _yellow "正在检测 IP 所属地区......"
     if [[ -z "${CN}" ]]; then
         if [[ $(curl -m 6 -s https://ipapi.co/json | grep 'China') != "" ]]; then
             _yellow "根据ipapi.co提供的信息，当前IP可能在中国"
-            read -e -r -p "是否选用中国镜像完成相关组件安装? ([y]/n) " input
+            if is_noninteractive; then
+                input="${CN_DEFAULT:-y}"
+                _yellow "noninteractive=true, 使用中国镜像选择默认值: $input"
+            else
+                read -e -r -p "是否选用中国镜像完成相关组件安装? ([y]/n) " input
+            fi
             case $input in
             [yY][eE][sS] | [yY])
                 echo "使用中国镜像"
@@ -759,7 +1271,7 @@ check_interface() {
             interface=${interface_2}
             return
         else
-            interfaces_list=$(ip addr show | awk '/^[0-9]+: [^lo]/ {print $2}' | cut -d ':' -f 1)
+            interfaces_list=$(pve_ipv6_json_probe interfaces) || return 1
             interface=""
             for iface in $interfaces_list; do
                 if [[ "$iface" = "$interface_1" || "$iface" = "$interface_2" ]]; then
@@ -801,11 +1313,13 @@ run_preliminary_checks() {
 check_and_configure_environment() {
     if [ "$(id -u)" != "0" ]; then
         _red "This script must be run as root"
+        _red "本脚本必须以 root 用户运行"
         exit 1
     fi
     get_system_arch
     if [ -z "${system_arch}" ] || [ ! -v system_arch ]; then
-        _red "This script can only run on machines under x86_64 or arm architecture."
+        _red "This script can only run on machines under x86_64, arm64, or riscv64 architecture."
+        _red "本脚本仅支持在 x86_64、arm64 或 riscv64 架构机器上运行。"
         exit 1
     fi
     if systemctl list-unit-files | grep -q '^NetworkManager\.service'; then
@@ -818,10 +1332,8 @@ check_and_configure_environment() {
 # 设置DNS检查服务
 setup_dns_check_service() {
     if [ ! -f "/usr/local/bin/check-dns.sh" ]; then
-        wget ${cdn_success_url}https://raw.githubusercontent.com/KUAILESHANGWEI/kejidalao/main/vendor/github/oneclickvirt/pve/extra_scripts/check-dns.sh -O /usr/local/bin/check-dns.sh
-        wget ${cdn_success_url}https://raw.githubusercontent.com/KUAILESHANGWEI/kejidalao/main/vendor/github/oneclickvirt/pve/extra_scripts/check-dns.service -O /etc/systemd/system/check-dns.service
-        chmod +x /usr/local/bin/check-dns.sh
-        chmod +x /etc/systemd/system/check-dns.service
+        download_required_file "${cdn_success_url}https://raw.githubusercontent.com/KUAILESHANGWEI/kejidalao/main/vendor/github/oneclickvirt/pve/extra_scripts/check-dns.sh" /usr/local/bin/check-dns.sh 755 || return 1
+        download_required_file "${cdn_success_url}https://raw.githubusercontent.com/KUAILESHANGWEI/kejidalao/main/vendor/github/oneclickvirt/pve/extra_scripts/check-dns.service" /etc/systemd/system/check-dns.service 644 || return 1
         systemctl daemon-reload
         systemctl enable check-dns.service
         systemctl start check-dns.service
@@ -829,33 +1341,34 @@ setup_dns_check_service() {
 }
 
 # 修复APT源问题
-fix_apt_issues1() {
-    # 确保apt没有问题
-    /usr/local/bin/check-dns.sh
-    apt-get update -y
-    apt-get full-upgrade -y
-    if [ $? -ne 0 ]; then
-        apt-get install debian-keyring debian-archive-keyring -y
-        apt-get update -y && apt-get full-upgrade -y
-    fi
-    # 处理缺失的公钥
-    apt_update_output=$(apt-get update 2>&1)
-    echo "$apt_update_output" >"$temp_file_apt_fix"
-    if grep -q 'NO_PUBKEY' "$temp_file_apt_fix"; then
-        public_keys=$(grep -oE 'NO_PUBKEY [0-9A-F]+' "$temp_file_apt_fix" | awk '{ print $2 }')
-        joined_keys=$(echo "$public_keys" | paste -sd " ")
-        _yellow "No Public Keys: ${joined_keys}"
-        apt-key adv --keyserver keyserver.ubuntu.com --recv-keys ${joined_keys}
-        apt-get update
-        if [ $? -eq 0 ]; then
-            _green "Fixed"
+disable_pve_enterprise_sources() {
+    # This installer selects pve-no-subscription. PVE 9 installs its enterprise
+    # source during the package transaction; a retry must disable it before
+    # the first apt update, while retaining a restorable copy.
+    local directory="${PVE_APT_SOURCES_DIR:-/etc/apt/sources.list.d}" file
+    for file in pve-enterprise.list pve-enterprise.sources ceph.list ceph.sources; do
+        file="$directory/$file"
+        [ -f "$file" ] || continue
+        grep -q 'enterprise\.proxmox\.com' "$file" || continue
+        # Do not disable a file that also contains a custom/public repository.
+        if grep -E '^[[:space:]]*(deb |URIs:)' "$file" | grep -v 'enterprise\.proxmox\.com' | grep -q '[^[:space:]]'; then
+            _red "Mixed enterprise/custom APT source requires manual separation: $file"
+            return 1
         fi
+        mv -- "$file" "${file}.ocv-disabled" || return 1
+    done
+    return 0
+}
+
+fix_apt_issues1() {
+    disable_pve_enterprise_sources || return 1
+    preserve_boot_kernels || return 1
+    if ! apt-get update -o APT::Update::Error-Mode=any -o Acquire::Retries=3; then
+        _red "APT metadata verification failed; repair the signed repository before retrying"
+        _red "APT 仓库元数据校验失败；请修复签名或网络后重试"
+        return 1
     fi
-    rm "$temp_file_apt_fix"
-    apt-get update -y
-    if [ $? -ne 0 ]; then
-        switch_mirrors
-    fi
+    apt-get full-upgrade -y || return 1
     systemctl daemon-reload
 }
 
@@ -863,11 +1376,11 @@ fix_apt_issues1() {
 switch_mirrors() {
     if [[ -z "${CN}" || "${CN}" != true ]]; then
         curl -lk https://raw.githubusercontent.com/SuperManito/LinuxMirrors/main/ChangeMirrors.sh -o ChangeMirrors.sh
-        chmod 777 ChangeMirrors.sh
+        chmod 755 ChangeMirrors.sh
         ./ChangeMirrors.sh --use-official-source --web-protocol http --intranet false --backup true --updata-software false --clean-cache false --ignore-backup-tips > /dev/null
     else
         curl -lk https://gitee.com/SuperManito/LinuxMirrors/raw/main/ChangeMirrors.sh -o ChangeMirrors.sh
-        chmod 777 ChangeMirrors.sh
+        chmod 755 ChangeMirrors.sh
         ./ChangeMirrors.sh --source mirrors.tuna.tsinghua.edu.cn --web-protocol http --intranet false --backup true --updata-software false --clean-cache false --ignore-backup-tips > /dev/null
     fi
     rm -rf ChangeMirrors.sh
@@ -875,7 +1388,7 @@ switch_mirrors() {
     # 如果仍然报错，切换到阿里云镜像源
     if [ $? -ne 0 ]; then
         curl -lk https://gitee.com/SuperManito/LinuxMirrors/raw/main/ChangeMirrors.sh -o ChangeMirrors.sh
-        chmod 777 ChangeMirrors.sh
+        chmod 755 ChangeMirrors.sh
         ./ChangeMirrors.sh --source mirrors.aliyun.com --web-protocol http --intranet false --backup true --updata-software false --clean-cache false --ignore-backup-tips > /dev/null
         rm -rf ChangeMirrors.sh
         apt-get update -y
@@ -950,8 +1463,8 @@ check_system_requirements() {
         echo $?
     ) -ne 0 ]; then
         _red "Error: This system does not meet the minimum requirements for Proxmox VE installation."
-        if [[ "${FORCE_INSTALL^^}" == "TRUE" ]]; then
-            _yellow "FORCE_INSTALL=true, 跳过最低要求检查，强制继续安装"
+        if [[ "${FORCE_INSTALL^^}" == "TRUE" ]] || is_noninteractive; then
+            _yellow "FORCE_INSTALL=true 或 noninteractive=true，跳过最低要求检查，强制继续安装"
         else
             _yellow "Do you want to continue the installation? (Enter to not continue the installation by default) (y/[n])"
             reading "是否要继续安装？(回车则默认不继续安装) (y/[n]) " confirm
@@ -999,10 +1512,8 @@ restart_network_service() {
 # 设置接口路由缓存清理
 setup_interface_route_cache_cleaner() {
     if [ ! -f "/usr/local/bin/clear_interface_route_cache.sh" ]; then
-        wget ${cdn_success_url}https://raw.githubusercontent.com/KUAILESHANGWEI/kejidalao/main/vendor/github/oneclickvirt/pve/extra_scripts/clear_interface_route_cache.sh -O /usr/local/bin/clear_interface_route_cache.sh
-        wget ${cdn_success_url}https://raw.githubusercontent.com/KUAILESHANGWEI/kejidalao/main/vendor/github/oneclickvirt/pve/extra_scripts/clear_interface_route_cache.service -O /etc/systemd/system/clear_interface_route_cache.service
-        chmod +x /usr/local/bin/clear_interface_route_cache.sh
-        chmod +x /etc/systemd/system/clear_interface_route_cache.service
+        download_required_file "${cdn_success_url}https://raw.githubusercontent.com/KUAILESHANGWEI/kejidalao/main/vendor/github/oneclickvirt/pve/extra_scripts/clear_interface_route_cache.sh" /usr/local/bin/clear_interface_route_cache.sh 755 || return 1
+        download_required_file "${cdn_success_url}https://raw.githubusercontent.com/KUAILESHANGWEI/kejidalao/main/vendor/github/oneclickvirt/pve/extra_scripts/clear_interface_route_cache.service" /etc/systemd/system/clear_interface_route_cache.service 644 || return 1
         systemctl daemon-reload
         systemctl enable clear_interface_route_cache.service
         _green "An anomaly was detected with the routing conflict, perform a reboot to reboot the machine to start the repaired daemon and try the installation again."
@@ -1011,47 +1522,208 @@ setup_interface_route_cache_cleaner() {
     fi
 }
 
+# Persistent network state must be exactly one validated scalar. This prevents
+# colored status messages or multiline command output from becoming part of a
+# later interface, address, gateway, or prefix value.
+is_single_network_value() {
+    local value="${1-}"
+    [[ -n "$value" && "$value" != *$'\n'* && "$value" != *$'\r'* && "$value" != *$'\033'* ]]
+}
+
+validate_prefixlen_value() {
+    local value="${1-}"
+    local maximum="${2:-128}"
+    is_single_network_value "$value" && [[ "$value" =~ ^[0-9]+$ ]] &&
+        [ "$value" -ge 0 ] && [ "$value" -le "$maximum" ]
+}
+
+validate_ipv6_prefixlen_value() {
+    validate_prefixlen_value "${1-}" 128
+}
+
+validate_interface_value() {
+    local value="${1-}"
+    is_single_network_value "$value" && [ "${#value}" -le 15 ] && [[ "$value" =~ ^[A-Za-z0-9_.-]+$ ]]
+}
+
+validate_ipv4_value() {
+    local value="${1-}"
+    local address="$value"
+    local prefix=""
+    local first second third fourth extra octet
+    is_single_network_value "$value" || return 1
+    if [[ "$value" == */* ]]; then
+        address="${value%%/*}"
+        prefix="${value#*/}"
+        [[ "$prefix" != */* ]] && validate_prefixlen_value "$prefix" 32 || return 1
+    fi
+    IFS=. read -r first second third fourth extra <<<"$address"
+    [ -z "$extra" ] && [ -n "$fourth" ] || return 1
+    for octet in "$first" "$second" "$third" "$fourth"; do
+        [[ "$octet" =~ ^[0-9]{1,3}$ ]] && [ "$((10#$octet))" -le 255 ] || return 1
+    done
+}
+
+validate_ipv4_network24_value() {
+    local value="${1-}"
+    validate_ipv4_value "$value" && [[ "$value" =~ ^([0-9]{1,3}\.){3}0/24$ ]]
+}
+
+validate_ipv6_value() {
+    local value="${1-}"
+    local address="$value"
+    local prefix=""
+    local remainder part
+    local count=0
+    local compressed=false
+    local -a ipv6_parts
+    is_single_network_value "$value" || return 1
+    if [[ "$value" == */* ]]; then
+        address="${value%%/*}"
+        prefix="${value#*/}"
+        [[ "$prefix" != */* ]] && validate_prefixlen_value "$prefix" 128 || return 1
+    fi
+    [[ "$address" == *:* && "$address" =~ ^[0-9A-Fa-f:]+$ && "$address" != *:::* ]] || return 1
+    if [[ "$address" == *::* ]]; then
+        compressed=true
+        remainder="${address#*::}"
+        [[ "$remainder" != *::* ]] || return 1
+    else
+        [[ "$address" != :* && "$address" != *: ]] || return 1
+    fi
+    IFS=: read -ra ipv6_parts <<<"$address"
+    for part in "${ipv6_parts[@]}"; do
+        [ -z "$part" ] && continue
+        [[ "$part" =~ ^[0-9A-Fa-f]{1,4}$ ]] || return 1
+        count=$((count + 1))
+    done
+    if [ "$compressed" = true ]; then
+        [ "$count" -lt 8 ]
+    else
+        [ "$count" -eq 8 ]
+    fi
+}
+
+write_network_state_atomic() {
+    local path="$1"
+    local value="$2"
+    local validator="$3"
+    local tmp_file
+    "$validator" "$value" || return 1
+    mkdir -p -- "$(dirname "$path")" || return 1
+    tmp_file=$(mktemp "${path}.tmp.XXXXXX") || return 1
+    if [ -e "$path" ]; then
+        chmod --reference="$path" "$tmp_file" 2>/dev/null || chmod 0644 "$tmp_file"
+    else
+        chmod 0644 "$tmp_file"
+    fi
+    if ! printf '%s\n' "$value" >"$tmp_file" || ! mv -f -- "$tmp_file" "$path"; then
+        rm -f -- "$tmp_file"
+        return 1
+    fi
+}
+
+read_network_state() {
+    local path="$1"
+    local validator="$2"
+    local value
+    [ -s "$path" ] || return 1
+    value=$(cat -- "$path")
+    "$validator" "$value" || return 1
+    printf '%s\n' "$value"
+}
+
 # 收集IP地址信息
 collect_ip_info() {
     # 收集主IPV4地址
     if [ ! -f /usr/local/bin/pve_main_ipv4 ]; then
         main_ipv4=$(ip -4 addr show | grep global | awk '{print $2}' | cut -d '/' -f1 | head -n 1)
+        selected_ip_mode="public"
         if is_private_ipv4 "$main_ipv4"; then
             _green "Detected that the main IP is a private IPv4 address: $main_ipv4"
             _green "检测到主 IP 是私有 IPv4 地址：$main_ipv4"
             echo
-            _green "The detected IP is private. If your host is a cloud VPS/cloud dedicated server, please use a public IPv4 address as the main PVE IP."
-            _green "If your host is a local physical machine without a fixed public IP, you can use the current private IP."
-            _green "当前检测到的是私有地址。如果你的宿主机是云服务器/云独立服务器，请选择公网 IPv4 作为 PVE 的主 IP。"
-            _green "如果你的宿主机是本地物理机，且没有固定公网 IPv4，可以使用当前私有地址。"
+            check_ipv4
+            if [ -n "$PUBLIC_IPV4_CANDIDATES" ]; then
+                _green "Detected candidate public IPv4 addresses for this host:"
+                _green "检测到该宿主机可用的候选公网 IPv4 地址："
+                local candidate_index=1
+                while IFS= read -r candidate_ip; do
+                    [ -z "$candidate_ip" ] && continue
+                    candidate_source=$(echo "$PUBLIC_IPV4_SOURCES" | sed -n "${candidate_index}p")
+                    _yellow "${candidate_index}. ${candidate_ip} (source: ${candidate_source})"
+                    candidate_index=$((candidate_index + 1))
+                done <<EOF
+$PUBLIC_IPV4_CANDIDATES
+EOF
+            else
+                _yellow "No reliable public IPv4 candidate was detected from the network APIs."
+                _yellow "暂未从网络 API 中检测到可靠的公网 IPv4 候选地址。"
+            fi
+            echo
+            _green "If you need to access PVE directly from the Internet, it is recommended to choose a public IPv4 only when that public IPv4 is fixed and bound to this host."
+            _green "If the public IPv4 is dynamic, only used for outbound NAT, or may change after reboot/rebuild, selecting it may cause hosts, certificates, and the 8006 web entry address to mismatch."
+            _green "如果你需要直接通过公网访问 PVE，建议仅在该公网 IPv4 是固定的、且确实绑定在当前宿主机上时才选择公网模式。"
+            _green "如果公网 IPv4 是动态的、仅作为出口 NAT 使用、或重启/重装后可能变化，选错后可能导致 hosts、证书和 8006 面板访问地址不一致。"
+            _green "If the machine is a local physical host, or only has an intranet address available to the system, choose private mode."
+            _green "如果机器是本地物理机，或者系统实际只能拿到内网地址，请选择内网模式。"
             echo
             if [[ -n "${USE_PRIVATE_IP}" ]]; then
                 if [[ "${USE_PRIVATE_IP^^}" == "TRUE" ]]; then
-                    use_private="y"
+                    ip_mode="private"
                     _yellow "USE_PRIVATE_IP=true, 使用私有 IP：$main_ipv4"
                 else
-                    use_private="n"
+                    ip_mode="public"
                     _yellow "USE_PRIVATE_IP=false, 自动获取公网 IP"
                 fi
             else
-                reading "Use the current private IPv4 address as the main PVE IP? (y/n) [Default: n]: " use_private
-                _green "是否使用当前私有 IPv4 地址作为 PVE 的主 IP？(y/n) [默认: n]: "
-                use_private=${use_private:-n}
+                if [ -n "$PUBLIC_IPV4_CANDIDATES" ]; then
+                    reading "Select main PVE IP mode: private/public [Default: public]: " ip_mode "public"
+                    _green "请选择 PVE 主 IP 模式：内网(private)/公网(public) [默认: public]："
+                    ip_mode=${ip_mode:-public}
+                else
+                    reading "No public IPv4 candidate detected, use private IPv4 mode? (y/n) [Default: n]: " use_private "n"
+                    _green "未检测到公网 IPv4 候选地址，是否使用内网 IPv4 模式？(y/n) [默认: n]："
+                    use_private=${use_private:-n}
+                    if [[ "$use_private" =~ ^[Yy]$ ]]; then
+                        ip_mode="private"
+                    else
+                        ip_mode="public"
+                    fi
+                fi
             fi
-            if [[ "$use_private" =~ ^[Yy]$ ]]; then
+            if [[ "${ip_mode,,}" == "private" ]] || [[ "$use_private" =~ ^[Yy]$ ]]; then
+                selected_ip_mode="private"
                 _green "Using private IP: $main_ipv4"
                 _green "使用私有 IP：$main_ipv4"
             else
-                check_ipv4
+                if [ -z "$IPV4" ]; then
+                    _red "No usable public IPv4 was detected, unable to continue with public IP mode."
+                    _red "未检测到可用的公网 IPv4，无法继续使用公网模式。"
+                    exit 1
+                fi
+                selected_ip_mode="public"
                 main_ipv4="$IPV4"
                 _green "Using public IP: $main_ipv4"
                 _green "使用公网 IP：$main_ipv4"
+                if [ -n "$IP_API" ]; then
+                    _yellow "Public IP source: $IP_API"
+                    _yellow "公网 IP 来源：$IP_API"
+                fi
             fi
         fi
         echo "$main_ipv4" >/usr/local/bin/pve_main_ipv4
+        echo "$selected_ip_mode" >/usr/local/bin/pve_main_ipv4_mode
     fi
     # 提取主IPV4地址
     main_ipv4=$(cat /usr/local/bin/pve_main_ipv4)
+    if [ -f /usr/local/bin/pve_main_ipv4_mode ]; then
+        selected_ip_mode=$(cat /usr/local/bin/pve_main_ipv4_mode)
+    elif is_private_ipv4 "$main_ipv4"; then
+        selected_ip_mode="private"
+    else
+        selected_ip_mode="public"
+    fi
     # 收集IPV4地址(含子网长度)
     if [ ! -f /usr/local/bin/pve_ipv4_address ]; then
         ipv4_address=$(ip addr show | awk '/inet .*global/ && !/inet6/ {print $2}' | sed -n '1p')
@@ -1075,16 +1747,504 @@ collect_ip_info() {
     ipv4_subnet=$(cat /usr/local/bin/pve_ipv4_subnet)
 }
 
+validate_interface_name() {
+    local iface="$1"
+    validate_interface_value "$iface" && [ -d "/sys/class/net/$iface" ]
+}
+
+get_interface_mac() {
+    local iface="$1" sysfs_root="${2:-/sys/class/net}" mac
+    if [ -r "$sysfs_root/$iface/address" ]; then
+        mac=$(cat "$sysfs_root/$iface/address")
+    else
+        mac=$(LC_ALL=C ip -o link show dev "$iface" 2>/dev/null | awk '
+            {
+                for (i = 1; i < NF; i++) {
+                    if ($i == "link/ether") {
+                        print $(i + 1)
+                        exit
+                    }
+                }
+            }
+        ')
+    fi
+    printf '%s\n' "$mac"
+}
+
+get_interface_state() {
+    local iface="$1" sysfs_root="${2:-/sys/class/net}" state
+    if [ -r "$sysfs_root/$iface/operstate" ]; then
+        state=$(cat "$sysfs_root/$iface/operstate")
+    else
+        state=$(LC_ALL=C ip -o link show dev "$iface" 2>/dev/null | awk '
+            {
+                for (i = 1; i < NF; i++) {
+                    if ($i == "state") {
+                        print tolower($(i + 1))
+                        exit
+                    }
+                }
+                if (match($0, /<[^>]+>/)) {
+                    flags = substr($0, RSTART + 1, RLENGTH - 2)
+                    count = split(flags, values, ",")
+                    for (i = 1; i <= count; i++) {
+                        if (values[i] == "UP" || values[i] == "DOWN" || values[i] == "UNKNOWN") {
+                            print tolower(values[i])
+                            exit
+                        }
+                    }
+                }
+            }
+        ')
+    fi
+    printf '%s\n' "$state"
+}
+
+get_interface_ipv4_addresses() {
+    local iface="$1"
+    ip -o -4 addr show dev "$iface" scope global 2>/dev/null | awk '{print $4}' | paste -sd "," -
+}
+
+get_interface_primary_ipv4() {
+    local iface="$1"
+    ip -o -4 addr show dev "$iface" scope global 2>/dev/null | awk '{print $4}' | head -n 1
+}
+
+get_interface_gateway() {
+    local iface="$1"
+    ip -4 route show default dev "$iface" 2>/dev/null | awk '/default/ {print $3; exit}'
+}
+
+get_ipv4_prefixlen() {
+    if [[ "$ipv4_address" == */* ]]; then
+        echo "${ipv4_address#*/}"
+        return
+    fi
+    ipcalc -p "${ipv4_address}" "${ipv4_subnet}" 2>/dev/null | awk -F= '/PREFIX/ {print $2; exit}'
+}
+
+get_ipv4_address_plain() {
+    echo "${ipv4_address%%/*}"
+}
+
+get_ipv4_address_cidr() {
+    local address_plain
+    local prefix
+
+    address_plain="$(get_ipv4_address_plain)"
+    prefix="$(get_ipv4_prefixlen)"
+    if [[ -z "$address_plain" || ! "$prefix" =~ ^[0-9]+$ || "$prefix" -lt 0 || "$prefix" -gt 32 ]]; then
+        _red "Unable to determine a valid IPv4 CIDR for the PVE bridge: address=${ipv4_address:-empty} netmask=${ipv4_subnet:-empty}"
+        _red "无法为 PVE 网桥确定有效的 IPv4 CIDR：地址=${ipv4_address:-空} 掩码=${ipv4_subnet:-空}"
+        return 1
+    fi
+
+    echo "${address_plain}/${prefix}"
+}
+
+ensure_selected_interface_ipv4_config() {
+    local address_plain
+    local config_file=""
+    local candidate
+    local interfaces_file="${PVE_NETWORK_INTERFACES_FILE:-/etc/network/interfaces}"
+    local interfaces_dir="${PVE_NETWORK_INTERFACES_DIR:-/etc/network/interfaces.d}"
+    local tmp_file
+    local immutable_before=false
+    local file_attributes=""
+
+    address_plain="$(get_ipv4_address_plain)"
+    if [[ -z "$interface" || -z "$address_plain" || -z "$ipv4_subnet" ]]; then
+        _red "Cannot persist the selected PVE interface IPv4 configuration"
+        _red "无法持久化所选 PVE 网口的 IPv4 配置"
+        return 1
+    fi
+
+    for candidate in "$interfaces_file" "$interfaces_dir"/*; do
+        [ -f "$candidate" ] || continue
+        if awk -v target="$interface" '$1 == "iface" && $2 == target && $3 == "inet" && $4 == "static" { found = 1; exit } END { exit found ? 0 : 1 }' "$candidate"; then
+            config_file="$candidate"
+            break
+        fi
+    done
+    # DHCP/auto interfaces are converted later by rebuild_interfaces().
+    [ -n "$config_file" ] || return 0
+
+    tmp_file=$(mktemp /tmp/pve-selected-interface.XXXXXX)
+    if ! awk -v target="$interface" -v address="$address_plain" -v netmask="$ipv4_subnet" '
+        function finish_target() {
+            if (!in_target) return
+            if (!saw_address) print "    address " address
+            if (!saw_netmask) print "    netmask " netmask
+            in_target = 0
+        }
+        /^[[:space:]]*(auto|allow-hotplug|iface)[[:space:]]+/ {
+            finish_target()
+        }
+        {
+            if ($1 == "iface" && $2 == target && $3 == "inet" && $4 == "static") {
+                in_target = 1
+                saw_address = 0
+                saw_netmask = 0
+                found_target = 1
+                print
+                next
+            }
+            if (in_target && $1 == "address") {
+                if (!saw_address) {
+                    print "    address " address
+                    print "    netmask " netmask
+                    saw_address = 1
+                    saw_netmask = 1
+                }
+                next
+            }
+            if (in_target && $1 == "netmask") {
+                # The normalized netmask is emitted immediately after address.
+                next
+            }
+            print
+        }
+        END {
+            finish_target()
+            if (!found_target) exit 42
+        }
+    ' "$config_file" >"$tmp_file"; then
+        rm -f "$tmp_file"
+        _red "Failed to normalize the selected interface ${interface} in ${config_file}"
+        _red "无法在 ${config_file} 中规范化所选网口 ${interface}"
+        return 1
+    fi
+
+    if command -v lsattr >/dev/null 2>&1; then
+        file_attributes=$(lsattr -d "$config_file" 2>/dev/null | awk '{print $1}')
+        [[ "$file_attributes" == *i* ]] && immutable_before=true
+    fi
+    if [ "$immutable_before" = true ]; then
+        chattr -i "$config_file" 2>/dev/null || true
+    fi
+    if ! cat "$tmp_file" >"$config_file"; then
+        rm -f "$tmp_file"
+        if [ "$immutable_before" = true ]; then
+            chattr +i "$config_file" 2>/dev/null || true
+        fi
+        _red "Failed to write normalized interface configuration to ${config_file}"
+        _red "无法将规范化网口配置写入 ${config_file}"
+        return 1
+    fi
+    rm -f "$tmp_file"
+    if [ "$immutable_before" = true ]; then
+        chattr +i "$config_file" 2>/dev/null || true
+    fi
+}
+
+choose_persisted_ipv4_address() {
+    local detected="$1"
+    local persisted="$2"
+    local persisted_prefix=""
+    local detected_prefix=""
+
+    if [[ -n "$detected" && "$persisted" == */* && "${persisted%%/*}" == "${detected%%/*}" ]]; then
+        persisted_prefix="${persisted#*/}"
+        detected_prefix="${detected#*/}"
+        if [[ "$persisted_prefix" =~ ^[0-9]+$ && "$persisted_prefix" -ge 0 && "$persisted_prefix" -le 32 &&
+              "$detected_prefix" =~ ^[0-9]+$ && "$detected_prefix" -ge 0 && "$detected_prefix" -le 32 &&
+              "$persisted_prefix" != "$detected_prefix" ]]; then
+            printf '%s\n' "$persisted"
+            return
+        fi
+    fi
+    printf '%s\n' "$detected"
+}
+
+ipv4_gateway_needs_pointopoint() {
+    local prefix
+    local address_plain
+    local address_network
+    local gateway_network
+
+    [ -z "$ipv4_address" ] && return 1
+    [ -z "$ipv4_gateway" ] && return 1
+
+    prefix=$(get_ipv4_prefixlen)
+    [ -z "$prefix" ] && return 1
+
+    address_plain="$(get_ipv4_address_plain)"
+    address_network=$(ipcalc -n "${address_plain}/${prefix}" 2>/dev/null | awk '/Network:/ {print $2; exit}' | cut -d/ -f1)
+    gateway_network=$(ipcalc -n "${ipv4_gateway}/${prefix}" 2>/dev/null | awk '/Network:/ {print $2; exit}' | cut -d/ -f1)
+
+    [ -n "$address_network" ] && [ -n "$gateway_network" ] && [ "$address_network" != "$gateway_network" ]
+}
+
+format_ipv4_gateway_config() {
+    local indent="${1:-    }"
+    local route_dev="${2:-}"
+
+    [ -z "$ipv4_gateway" ] && return
+
+    if ipv4_gateway_needs_pointopoint; then
+        echo "${indent}pointopoint ${ipv4_gateway}"
+        if [ -n "$route_dev" ]; then
+            echo "${indent}pre-up ip route replace ${ipv4_gateway}/32 dev ${route_dev} scope link || true"
+            echo "${indent}post-up ip route replace ${ipv4_gateway}/32 dev ${route_dev} scope link || true"
+            echo "${indent}post-up ip route replace default via ${ipv4_gateway} dev ${route_dev} onlink || true"
+            echo "${indent}pre-down ip route del default via ${ipv4_gateway} dev ${route_dev} 2>/dev/null || true"
+            echo "${indent}pre-down ip route del ${ipv4_gateway}/32 dev ${route_dev} 2>/dev/null || true"
+        fi
+    fi
+    echo "${indent}gateway ${ipv4_gateway}"
+}
+
+replace_interface_mode_with_static() {
+    local mode="$1"
+    local dns_servers="$2"
+    local tmp_file
+
+    tmp_file=$(mktemp /tmp/pve-iface-static.XXXXXX)
+    {
+        echo "iface ${interface} inet static"
+        echo "    address $(get_ipv4_address_plain)"
+        echo "    netmask ${ipv4_subnet}"
+        format_ipv4_gateway_config "    " "${interface}"
+        echo "    dns-nameservers ${dns_servers}"
+    } >"$tmp_file"
+
+    sed -i -e "/iface ${interface} inet ${mode}/r ${tmp_file}" -e "/iface ${interface} inet ${mode}/d" /etc/network/interfaces
+    rm -f "$tmp_file"
+}
+
+interface_has_default_route() {
+    local iface="$1"
+    ip -4 route show default 2>/dev/null | awk -v iface="$iface" '{
+        for (i = 1; i <= NF; i++) {
+            if ($i == "dev" && $(i + 1) == iface) {
+                found = 1
+            }
+        }
+    } END { exit found ? 0 : 1 }'
+}
+
+add_interface_candidate() {
+    local iface="$1"
+    local existing
+    iface="${iface%%@*}"
+    if ! validate_interface_name "$iface" || [ "$iface" = "lo" ]; then
+        return
+    fi
+    for existing in "${interface_candidates[@]}"; do
+        if [ "$existing" = "$iface" ]; then
+            return
+        fi
+    done
+    interface_candidates+=("$iface")
+}
+
+build_interface_candidates() {
+    local iface
+    interface_candidates=()
+    add_interface_candidate "$interface"
+    add_interface_candidate "$interface_1"
+    add_interface_candidate "$interface_2"
+    while IFS= read -r iface; do
+        add_interface_candidate "$iface"
+    done < <(pve_ipv6_json_probe interfaces 2>/dev/null)
+}
+
+sync_selected_network_info() {
+    local detected_ipv4=""
+    local persisted_ipv4="${ipv4_address:-}"
+    local selected_ipv4=""
+    local selected_ipv4_plain=""
+    local selected_gateway=""
+    local selected_subnet=""
+
+    if ! validate_interface_name "$interface" || ! write_network_state_atomic /usr/local/bin/pve_main_interface "$interface" validate_interface_value; then
+        _red "Refusing to persist invalid PVE main interface output"
+        _red "拒绝持久化无效的 PVE 主网口输出"
+        return 1
+    fi
+
+    mac_address=$(get_interface_mac "$interface")
+    if [ -n "$mac_address" ]; then
+        echo "$mac_address" >/usr/local/bin/pve_mac_address
+    fi
+
+    detected_ipv4=$(get_interface_primary_ipv4 "$interface")
+    selected_ipv4=$(choose_persisted_ipv4_address "$detected_ipv4" "$persisted_ipv4")
+    if [[ -n "$detected_ipv4" && "$selected_ipv4" == "$persisted_ipv4" && "$selected_ipv4" != "$detected_ipv4" ]]; then
+        _yellow "Keeping previously captured IPv4 prefix ${persisted_ipv4}; live interface reported ${detected_ipv4} after reboot"
+        _yellow "保留先前捕获的 IPv4 前缀 ${persisted_ipv4}；重启后当前网口报告为 ${detected_ipv4}"
+    fi
+    if [ -n "$selected_ipv4" ]; then
+        if ! validate_ipv4_value "$selected_ipv4"; then
+            _red "Detected IPv4 output is not a single valid address: ${selected_ipv4@Q}"
+            _red "检测到的 IPv4 输出不是单个有效地址：${selected_ipv4@Q}"
+            return 1
+        fi
+        ipv4_address="$selected_ipv4"
+        write_network_state_atomic /usr/local/bin/pve_ipv4_address "$ipv4_address" validate_ipv4_value || return 1
+        selected_ipv4_plain="${selected_ipv4%%/*}"
+        if ! is_private_ipv4 "$selected_ipv4_plain"; then
+            main_ipv4="$selected_ipv4_plain"
+            selected_ip_mode="public"
+            write_network_state_atomic /usr/local/bin/pve_main_ipv4 "$main_ipv4" validate_ipv4_value || return 1
+            echo "$selected_ip_mode" >/usr/local/bin/pve_main_ipv4_mode
+        elif [ "${selected_ip_mode:-private}" = "private" ] || [ -z "$main_ipv4" ] || is_private_ipv4 "$main_ipv4"; then
+            main_ipv4="$selected_ipv4_plain"
+            selected_ip_mode="private"
+            write_network_state_atomic /usr/local/bin/pve_main_ipv4 "$main_ipv4" validate_ipv4_value || return 1
+            echo "$selected_ip_mode" >/usr/local/bin/pve_main_ipv4_mode
+        else
+            _yellow "Keeping public main PVE IP: ${main_ipv4}; bridge IPv4 uses ${ipv4_address}"
+            _yellow "保留公网 PVE 主 IP：${main_ipv4}；桥接 IPv4 使用 ${ipv4_address}"
+        fi
+    else
+        _yellow "Selected interface ${interface} has no global IPv4 address, keeping detected IPv4: ${ipv4_address}"
+        _yellow "所选网口 ${interface} 未检测到全局 IPv4，保留已检测 IPv4：${ipv4_address}"
+    fi
+
+    selected_gateway=$(get_interface_gateway "$interface")
+    if [ -n "$selected_gateway" ]; then
+        if ! validate_ipv4_value "$selected_gateway" || [[ "$selected_gateway" == */* ]]; then
+            _red "Detected IPv4 gateway output is invalid: ${selected_gateway@Q}"
+            _red "检测到的 IPv4 网关输出无效：${selected_gateway@Q}"
+            return 1
+        fi
+        ipv4_gateway="$selected_gateway"
+        write_network_state_atomic /usr/local/bin/pve_ipv4_gateway "$ipv4_gateway" validate_ipv4_value || return 1
+    else
+        _yellow "Selected interface ${interface} has no IPv4 default gateway, keeping detected gateway: ${ipv4_gateway}"
+        _yellow "所选网口 ${interface} 未检测到 IPv4 默认网关，保留已检测网关：${ipv4_gateway}"
+    fi
+
+    if [ -n "$ipv4_address" ]; then
+        selected_subnet=$(ipcalc -n "$ipv4_address" 2>/dev/null | grep -oP 'Netmask:\s+\K.*' | awk '{print $1}')
+        if [ -n "$selected_subnet" ]; then
+            if ! validate_ipv4_value "$selected_subnet" || [[ "$selected_subnet" == */* ]]; then
+                _red "Detected IPv4 netmask output is invalid: ${selected_subnet@Q}"
+                _red "检测到的 IPv4 子网掩码输出无效：${selected_subnet@Q}"
+                return 1
+            fi
+            ipv4_subnet="$selected_subnet"
+            write_network_state_atomic /usr/local/bin/pve_ipv4_subnet "$ipv4_subnet" validate_ipv4_value || return 1
+        fi
+    fi
+}
+
+confirm_main_network_interface() {
+    local saved_interface=""
+    local selected_interface=""
+    local selected_index=""
+    local selection_source="auto"
+    local iface
+    local idx
+    local state
+    local mac
+    local iface_ipv4
+    local iface_gateway
+    local default_flag
+
+    if [[ -n "${PVE_MAIN_INTERFACE}" ]]; then
+        if validate_interface_name "$PVE_MAIN_INTERFACE"; then
+            interface="$PVE_MAIN_INTERFACE"
+            selection_source="env"
+            _yellow "PVE_MAIN_INTERFACE=${PVE_MAIN_INTERFACE}, using this interface as main bridge port"
+            _yellow "PVE_MAIN_INTERFACE=${PVE_MAIN_INTERFACE}，使用该网口作为主桥接网口"
+        else
+            _red "PVE_MAIN_INTERFACE=${PVE_MAIN_INTERFACE} is not a valid local network interface"
+            _red "PVE_MAIN_INTERFACE=${PVE_MAIN_INTERFACE} 不是当前系统有效网口"
+            exit 1
+        fi
+    elif saved_interface=$(read_network_state /usr/local/bin/pve_main_interface validate_interface_value 2>/dev/null); then
+        if validate_interface_name "$saved_interface"; then
+            interface="$saved_interface"
+            selection_source="saved"
+        fi
+    fi
+
+    build_interface_candidates
+
+    if [ "${selection_source}" != "env" ] && ! is_noninteractive; then
+        _green "Current detected PVE network configuration:"
+        _green "当前检测到的 PVE 网络配置："
+        _yellow "  main interface / 主网口: ${interface}"
+        _yellow "  bridge IPv4 / 桥接 IPv4: ${ipv4_address:-<empty>}"
+        _yellow "  IPv4 gateway / IPv4 网关: ${ipv4_gateway:-<empty>}"
+        _yellow "  main PVE IP / PVE 主 IP: ${main_ipv4:-<empty>} (${selected_ip_mode:-unknown})"
+        _green "Available network interfaces:"
+        _green "可选网口："
+
+        idx=1
+        for iface in "${interface_candidates[@]}"; do
+            state=$(get_interface_state "$iface")
+            mac=$(get_interface_mac "$iface")
+            iface_ipv4=$(get_interface_ipv4_addresses "$iface")
+            iface_gateway=$(get_interface_gateway "$iface")
+            default_flag=""
+            if interface_has_default_route "$iface"; then
+                default_flag=" default-route"
+            fi
+            _yellow "  ${idx}) ${iface} state=${state:-unknown} mac=${mac:-unknown} ipv4=${iface_ipv4:-none} gateway=${iface_gateway:-none}${default_flag}"
+            idx=$((idx + 1))
+        done
+
+        reading "Select the main PVE bridge interface by number (Enter keeps current: ${interface}): " selected_index ""
+        echo ""
+        if [ -n "$selected_index" ]; then
+            if [[ "$selected_index" =~ ^[0-9]+$ ]] && [ "$selected_index" -ge 1 ] && [ "$selected_index" -le "${#interface_candidates[@]}" ]; then
+                selected_interface="${interface_candidates[$((selected_index - 1))]}"
+                interface="$selected_interface"
+                selection_source="interactive"
+                _green "Selected main network interface: ${interface}"
+                _green "已选择主网口：${interface}"
+            else
+                _yellow "Invalid selection, keeping current detected interface: ${interface}"
+                _yellow "输入序号无效，保留当前检测网口：${interface}"
+            fi
+        fi
+    elif is_noninteractive && [ "${selection_source}" = "auto" ]; then
+        _yellow "noninteractive=true, using detected main network interface: ${interface}"
+        _yellow "noninteractive=true，使用自动检测主网口：${interface}"
+    fi
+
+    sync_selected_network_info || exit 1
+
+    # Some cloud images (including LightNode multi-NIC images) assign the
+    # correct prefix to the live interface but omit the netmask from the
+    # generated ifupdown stanza.  Without persisting it, the first reboot falls
+    # back to classful addressing (/8, /16, ...), changing routes before PVE is
+    # installed.  Normalize the selected static stanza while the original live
+    # prefix is still authoritative.
+    ensure_selected_interface_ipv4_config || exit 1
+
+    _green "Final PVE main interface: ${interface}"
+    _green "最终 PVE 主网口：${interface}"
+    _green "Final bridge IPv4/gateway: ${ipv4_address:-<empty>} / ${ipv4_gateway:-<empty>}"
+    _green "最终桥接 IPv4/网关：${ipv4_address:-<empty>} / ${ipv4_gateway:-<empty>}"
+}
+
 # 检测网络接口和MAC地址
 detect_network_interfaces() {
-    # 检测物理接口
-    interface_1=$(lshw -C network | awk '/logical name:/{print $3}' | sed -n '1p')
-    interface_2=$(lshw -C network | awk '/logical name:/{print $3}' | sed -n '2p')
+    # iproute2 JSON does not depend on lshw's display language or ANSI color.
+    local detected_interfaces preferred_interface candidate
+    detected_interfaces=$(pve_ipv6_json_probe interfaces) || return 1
+    preferred_interface=$(pve_ipv6_json_probe default_interface 2>/dev/null || true)
+    if [ -n "$preferred_interface" ] && ! grep -Fxq "$preferred_interface" <<<"$detected_interfaces"; then
+        preferred_interface=""
+    fi
+    interface_1="${preferred_interface:-$(printf '%s\n' "$detected_interfaces" | head -n 1)}"
+    interface_2=""
+    while IFS= read -r candidate; do
+        if [ -n "$candidate" ] && [ "$candidate" != "$interface_1" ]; then
+            interface_2="$candidate"
+            break
+        fi
+    done <<<"$detected_interfaces"
     check_interface
+    confirm_main_network_interface
 
     # 收集MAC地址
     if [ ! -f /usr/local/bin/pve_mac_address ] || [ ! -s /usr/local/bin/pve_mac_address ] || [ "$(sed -e '/^[[:space:]]*$/d' /usr/local/bin/pve_mac_address)" = "" ]; then
-        mac_address=$(ip -o link show dev ${interface} | awk '{print $17}')
+        mac_address=$(get_interface_mac "$interface")
         echo "$mac_address" >/usr/local/bin/pve_mac_address
     fi
     mac_address=$(cat /usr/local/bin/pve_mac_address)
@@ -1096,85 +2256,68 @@ detect_network_interfaces() {
 # 设置持久化网络接口名称
 setup_persistent_network_interface() {
     if [ ! -f /etc/systemd/network/10-persistent-net.link ]; then
-        echo '[Match]' >/etc/systemd/network/10-persistent-net.link
-        echo "MACAddress=${mac_address}" >>/etc/systemd/network/10-persistent-net.link
-        echo "" >>/etc/systemd/network/10-persistent-net.link
-        echo '[Link]' >>/etc/systemd/network/10-persistent-net.link
-        echo "Name=${interface}" >>/etc/systemd/network/10-persistent-net.link
-        /etc/init.d/udev force-reload
+        mkdir -p /etc/systemd/network || return 1
+        printf '[Match]\nMACAddress=%s\n\n[Link]\nName=%s\n' "$mac_address" "$interface" \
+            >/etc/systemd/network/10-persistent-net.link || return 1
+        # Debian 13 no longer ships the SysV /etc/init.d/udev script.
+        # Reload rules without retriggering or renaming the live SSH uplink.
+        if command -v udevadm >/dev/null 2>&1; then
+            udevadm control --reload || _yellow "udev reload unavailable; persistent interface naming will apply on the next boot"
+        elif [ -x /etc/init.d/udev ]; then
+            /etc/init.d/udev force-reload >/dev/null 2>&1 || true
+        fi
     fi
+    return 0
 }
 
 # 获取IPV6网关信息
 get_ipv6_gateway() {
-    if [ ! -f /usr/local/bin/pve_ipv6_gateway ] || [ ! -s /usr/local/bin/pve_ipv6_gateway ] || [ "$(sed -e '/^[[:space:]]*$/d' /usr/local/bin/pve_ipv6_gateway)" = "" ]; then
-        ipv6_gateway=$(ip -6 route show | awk '/default via/{print $3}' | head -n1)
-        echo "$ipv6_gateway" >/usr/local/bin/pve_ipv6_gateway
+    local configured
+    if ! ipv6_gateway=$(read_network_state /usr/local/bin/pve_ipv6_gateway validate_ipv6_value 2>/dev/null) || [[ "$ipv6_gateway" == */* ]]; then
+        ipv6_gateway=$(pve_ipv6_json_probe gateway "${interface:-}") || return 1
+        if [ -z "$ipv6_gateway" ]; then
+            configured=$(pve_configured_ipv6_triplet "${interface:-}" 2>/dev/null || true)
+            [ -z "$configured" ] || ipv6_gateway="${configured##*$'\t'}"
+        fi
+        if [ -n "$ipv6_gateway" ] && validate_ipv6_value "$ipv6_gateway" && [[ "$ipv6_gateway" != */* ]]; then
+            write_network_state_atomic /usr/local/bin/pve_ipv6_gateway "$ipv6_gateway" validate_ipv6_value || return 1
+        else
+            ipv6_gateway=""
+            rm -f /usr/local/bin/pve_ipv6_gateway
+        fi
     fi
-    ipv6_gateway=$(cat /usr/local/bin/pve_ipv6_gateway)
 }
 
 # 获取fe80地址
 get_fe80_address() {
-    if [ ! -f /usr/local/bin/pve_fe80_address ] || [ ! -s /usr/local/bin/pve_fe80_address ] || [ "$(sed -e '/^[[:space:]]*$/d' /usr/local/bin/pve_fe80_address)" = "" ]; then
-        fe80_address=$(ip -6 addr show dev $interface | awk '/inet6 fe80/ {print $2}')
-        echo "$fe80_address" >/usr/local/bin/pve_fe80_address
+    if ! fe80_address=$(read_network_state /usr/local/bin/pve_fe80_address validate_ipv6_value 2>/dev/null); then
+        fe80_address=$(pve_ipv6_json_probe linklocal "$interface" | head -n 1) || return 1
+        if [ -n "$fe80_address" ] && validate_ipv6_value "$fe80_address"; then
+            write_network_state_atomic /usr/local/bin/pve_fe80_address "$fe80_address" validate_ipv6_value || return 1
+        else
+            fe80_address=""
+            rm -f /usr/local/bin/pve_fe80_address
+        fi
     fi
-    fe80_address=$(cat /usr/local/bin/pve_fe80_address)
 }
 
 # 获取IPV6前缀长度
 get_ipv6_prefixlen() {
-    if [ ! -f /usr/local/bin/pve_ipv6_prefixlen ] || [ ! -s /usr/local/bin/pve_ipv6_prefixlen ] || [ "$(sed -e '/^[[:space:]]*$/d' /usr/local/bin/pve_ipv6_prefixlen)" = "" ]; then
-        ipv6_prefixlen=""
-        output=$(ifconfig ${interface} | grep -oP 'inet6 (?!fe80:).*prefixlen \K\d+')
-        num_lines=$(echo "$output" | wc -l)
-        if [ $num_lines -ge 2 ]; then
-            ipv6_prefixlen=$(echo "$output" | sort -n | head -n 1)
-        else
-            ipv6_prefixlen=$(echo "$output" | head -n 1)
+    local addresses configured configured_address configured_prefix configured_gateway
+    addresses=$(pve_ipv6_json_probe addresses "${interface:-}") || return 1
+    ipv6_prefixlen=$(printf '%s\n' "$addresses" | awk -F/ -v selected="${ipv6_address:-}" 'NF == 2 && $1 == selected {print $2; exit}')
+    if [ -z "$ipv6_prefixlen" ]; then
+        configured=$(pve_configured_ipv6_triplet "${interface:-}" 2>/dev/null || true)
+        IFS=$'\t' read -r configured_address configured_prefix configured_gateway <<<"$configured"
+        if [ -n "$configured_address" ] && [ "$configured_address" = "${ipv6_address:-}" ]; then
+            ipv6_prefixlen="$configured_prefix"
         fi
-        if command -v rdisc6 >/dev/null 2>&1 && [ ! -f /usr/local/bin/pve_ipv6_real_prefixlen ]; then
-            _blue "Attempting to get real IPv6 prefix from router advertisement..."
-            _green "尝试从路由器通告中获取真实的 IPv6 前缀..."
-            _blue "Using network interface: ${interface}"
-            _green "正在使用网络接口: ${interface}"
-            rdisc6_output=$(timeout 10 rdisc6 ${interface} 2>/dev/null)
-            if [ -n "$rdisc6_output" ]; then
-                real_prefixlen=$(echo "$rdisc6_output" | grep -i "Prefix" | grep -oP '[:：]\s*[0-9a-fA-F:]+/\K\d+' | head -n 1)
-                if [ -n "$real_prefixlen" ] && [ "$real_prefixlen" -gt 0 ] && [ "$real_prefixlen" -le 128 ]; then
-                    _green "Found real IPv6 prefix length from router advertisement: /$real_prefixlen"
-                    _green "从路由器通告中发现真实的 IPv6 前缀长度: /$real_prefixlen"
-                    if [ -n "$ipv6_prefixlen" ] && [ "$ipv6_prefixlen" -gt "$real_prefixlen" ]; then
-                        _yellow "Warning: Current interface prefix /$ipv6_prefixlen is smaller than router advertised /$real_prefixlen"
-                        _yellow "警告: 当前接口前缀 /$ipv6_prefixlen 小于路由器通告的 /$real_prefixlen"
-                        _blue "Using the larger prefix /$real_prefixlen from router advertisement"
-                        _green "将使用路由器通告的更大前缀 /$real_prefixlen"
-                        ipv6_prefixlen="$real_prefixlen"
-                    elif [ -z "$ipv6_prefixlen" ]; then
-                        ipv6_prefixlen="$real_prefixlen"
-                    fi
-                    echo "$real_prefixlen" >/usr/local/bin/pve_ipv6_real_prefixlen
-                else
-                    _yellow "Could not parse IPv6 prefix length on interface ${interface}"
-                    _yellow "无法从接口 ${interface} 中解析 IPv6 前缀长度"
-                fi
-            else
-                _yellow "Could not get router advertisement response on interface ${interface} (timeout or no response)"
-                _yellow "无法在接口 ${interface} 获取路由器通告响应(超时或无响应)"
-            fi
-        fi
-        
-        echo "$ipv6_prefixlen" >/usr/local/bin/pve_ipv6_prefixlen
     fi
-    if [ -f /usr/local/bin/pve_ipv6_real_prefixlen ] && [ -s /usr/local/bin/pve_ipv6_real_prefixlen ]; then
-        real_prefixlen=$(cat /usr/local/bin/pve_ipv6_real_prefixlen)
-        ipv6_prefixlen="$real_prefixlen"
-        _blue "Using real IPv6 prefix length: /$ipv6_prefixlen"
-        _green "检测到的真实 IPv6 前缀长度: /$ipv6_prefixlen"
-        echo "$ipv6_prefixlen" >/usr/local/bin/pve_ipv6_prefixlen
+    if [ -n "$ipv6_prefixlen" ]; then
+        validate_ipv6_prefixlen_value "$ipv6_prefixlen" || return 1
+        write_network_state_atomic /usr/local/bin/pve_ipv6_prefixlen "$ipv6_prefixlen" validate_ipv6_prefixlen_value || return 1
     else
-        ipv6_prefixlen=$(cat /usr/local/bin/pve_ipv6_prefixlen)
+        rm -f /usr/local/bin/pve_ipv6_prefixlen /usr/local/bin/pve_ipv6_real_prefixlen
     fi
 }
 
@@ -1222,7 +2365,7 @@ ask_maximum_subnet() {
             fi
         else
             _blue "Is the maximum subnet range feasible with IPV6 used?([n]/y)"
-            reading "是否使用IPV6可行的最大子网范围？([n]/y)" select_maximum_subset
+            reading "是否使用IPV6可行的最大子网范围？([n]/y)" select_maximum_subset "n"
         fi
         if [ "$select_maximum_subset" = "y" ] || [ "$select_maximum_subset" = "Y" ]; then
             echo "true" >/usr/local/bin/pve_maximum_subset
@@ -1235,28 +2378,9 @@ ask_maximum_subnet() {
 
 # 重构IPV6地址
 rebuild_ipv6_address() {
-    if [ ! -f /usr/local/bin/pve_maximum_subset ] || [ $(cat /usr/local/bin/pve_maximum_subset) = true ]; then
-        ipv6_address_without_last_segment="${ipv6_address%:*}:"
-        if [[ $ipv6_address != *:: && $ipv6_address_without_last_segment != *:: ]]; then
-            ipv6_address=$(sipcalc -i ${ipv6_address}/${ipv6_prefixlen} | grep "Subnet prefix (masked)" | cut -d ' ' -f 4 | cut -d '/' -f 1 | sed 's/:0:0:0:0:/::/' | sed 's/:0:0:0:/::/')
-            ipv6_address="${ipv6_address%:*}:1"
-            if [ "$ipv6_address" == "$ipv6_gateway" ]; then
-                ipv6_address="${ipv6_address%:*}:2"
-            fi
-            ipv6_address_without_last_segment="${ipv6_address%:*}:"
-            if ping -c 1 -6 -W 3 $ipv6_address >/dev/null 2>&1; then
-                check_ipv6
-                ipv6_address=$(cat /usr/local/bin/pve_check_ipv6)
-                echo "${ipv6_address}" >/usr/local/bin/pve_check_ipv6
-            fi
-        elif [[ $ipv6_address == *:: ]]; then
-            ipv6_address="${ipv6_address}1"
-            if [ "$ipv6_address" == "$ipv6_gateway" ]; then
-                ipv6_address="${ipv6_address%:*}:2"
-            fi
-            echo "${ipv6_address}" >/usr/local/bin/pve_check_ipv6
-        fi
-    fi
+    # Preserve the exact public address assigned to the host. The subnet's
+    # ::1 may belong to another machine, regardless of prefix length.
+    validate_ipv6_value "$ipv6_address"
 }
 
 # 检查并配置cloud-init
@@ -1279,9 +2403,9 @@ create_network_interfaces() {
         echo "auto lo" >>/etc/network/interfaces
         echo "iface lo inet loopback" >>/etc/network/interfaces
         echo "iface $interface inet static" >>/etc/network/interfaces
-        echo "    address $ipv4_address" >>/etc/network/interfaces
+        echo "    address $(get_ipv4_address_plain)" >>/etc/network/interfaces
         echo "    netmask $ipv4_subnet" >>/etc/network/interfaces
-        echo "    gateway $ipv4_gateway" >>/etc/network/interfaces
+        format_ipv4_gateway_config "    " "${interface}" >>/etc/network/interfaces
         if [[ -z "${CN}" || "${CN}" != true ]]; then
             echo "    dns-nameservers 8.8.8.8 8.8.4.4" >>/etc/network/interfaces
         else
@@ -1334,14 +2458,21 @@ clean_manual_ipv6() {
     fi
 }
 
-# 配置fe80地址白名单
+# 保留 NDP 必需的链路本地地址，清理旧版本生成的删除钩子。
 configure_fe80_whitelist() {
-    if [[ "${ipv6_gateway_fe80}" == "N" ]]; then
-        chattr -i /etc/network/interfaces
-        echo "        up ip addr del $fe80_address dev $interface" >>/etc/network/interfaces
-        remove_duplicate_lines "/etc/network/interfaces"
-        chattr +i /etc/network/interfaces
-    fi
+    [ -n "${fe80_address:-}" ] || return 0
+    chattr -i /etc/network/interfaces || return 1
+    python3 - "$fe80_address" "$interface" <<'PY'
+import pathlib
+import sys
+path = pathlib.Path('/etc/network/interfaces')
+legacy = ['up', 'ip', 'addr', 'del', sys.argv[1], 'dev', sys.argv[2]]
+lines = path.read_text().splitlines(keepends=True)
+path.write_text(''.join(line for line in lines if line.split() != legacy))
+PY
+    local result=$?
+    chattr +i /etc/network/interfaces
+    return "$result"
 }
 
 # 系统重启检查
@@ -1358,7 +2489,7 @@ check_reboot_status() {
         _green "Please execute reboot to reboot the system and then execute this script again"
         _green "Please wait for at least 20 seconds without automatically rebooting the system before executing this script."
         _green "请执行 reboot 重启系统后再次执行本脚本，再次使用SSH登录后请等待至少20秒未自动重启系统再执行本脚本"
-        exit 1
+        exit 0
     fi
 }
 
@@ -1366,43 +2497,43 @@ configure_network_priority
 run_preliminary_checks
 check_and_configure_environment
 setup_dns_check_service
-fix_apt_issues1
+fix_apt_issues1 || exit 1
 ensure_system_paths
 install_base_packages
 handle_special_environments
 check_system_requirements
 detect_system_info
-detect_network_interfaces
-get_ipv6_gateway
-if [ ! -f /usr/local/bin/pve_check_ipv6 ] || [ ! -s /usr/local/bin/pve_check_ipv6 ] || [ "$(sed -e '/^[[:space:]]*$/d' /usr/local/bin/pve_check_ipv6)" = "" ]; then
-    check_ipv6
+detect_network_interfaces || exit 1
+get_ipv6_gateway || exit 1
+if ! ipv6_address=$(read_network_state /usr/local/bin/pve_check_ipv6 validate_ipv6_value 2>/dev/null); then
+    check_ipv6 || exit 1
+    ipv6_address=$(read_network_state /usr/local/bin/pve_check_ipv6 validate_ipv6_value 2>/dev/null || true)
 fi
-get_fe80_address
+get_fe80_address || exit 1
 if [[ $ipv6_gateway == fe80* ]]; then
     ipv6_gateway_fe80="Y"
 else
     ipv6_gateway_fe80="N"
 fi
-ipv6_address=$(cat /usr/local/bin/pve_check_ipv6)
-get_ipv6_prefixlen
-ipv6_address=$(cat /usr/local/bin/pve_check_ipv6)
-ipv6_gateway=$(cat /usr/local/bin/pve_ipv6_gateway)
+get_ipv6_prefixlen || exit 1
+ipv6_address=$(read_network_state /usr/local/bin/pve_check_ipv6 validate_ipv6_value 2>/dev/null || true)
+ipv6_gateway=$(read_network_state /usr/local/bin/pve_ipv6_gateway validate_ipv6_value 2>/dev/null || true)
 if [ -z "$ipv6_address" ] || [ -z "$ipv6_prefixlen" ] || [ -z "$ipv6_gateway" ]; then
     echo "" >/usr/local/bin/pve_slaac_status
     echo "" >/usr/local/bin/fix_interfaces_ipv6_auto_type
 else
     check_slaac_status
     ask_maximum_subnet
-    rebuild_ipv6_address
+    rebuild_ipv6_address || exit 1
 fi
 configure_cloud_init
 create_network_interfaces
-rebuild_interfaces
+rebuild_interfaces || exit 1
 remove_duplicate_lines "/etc/network/interfaces"
 if [ -f "/etc/network/interfaces.new" ]; then
     remove_duplicate_lines "/etc/network/interfaces.new"
 fi
-clean_dns_config
+# DNS settings on distinct interfaces are intentionally preserved.
 clean_manual_ipv6
 rebuild_cloud_init
 fix_interfaces_ipv6_auto_type
@@ -1434,7 +2565,7 @@ setup_hostname() {
     else
         while true; do
             _green "Please enter a new host name (can only contain English letters and numbers, not pure numbers or special characters, enter the default pve):"
-            reading "请输入新的主机名(只能包含英文字母和数字,不能是纯数字或特殊字符,回车默认为pve):" new_hostname
+            reading "请输入新的主机名(只能包含英文字母和数字,不能是纯数字或特殊字符,回车默认为pve):" new_hostname "pve"
             if [ -z "$new_hostname" ]; then
                 new_hostname="pve"
                 break
@@ -1522,39 +2653,76 @@ update_hostname() {
 }
 
 # 添加PVE GPG密钥
+download_pve_key_with_fallback() {
+    local keyfile="$1"
+    shift
+    local key_url
+    for key_url in "$@"; do
+        rm -f "$keyfile"
+        if wget -q "$key_url" -O "$keyfile" && [ -s "$keyfile" ]; then
+            chmod 0644 "$keyfile" || return 1
+            return 0
+        fi
+    done
+    rm -f "$keyfile"
+    return 1
+}
+
+ensure_pve_key() {
+    local keyfile="$1"
+    shift
+    if [ -s "$keyfile" ]; then
+        chmod 0644 "$keyfile"
+        return $?
+    fi
+    download_pve_key_with_fallback "$keyfile" "$@" || true
+}
+
 add_pve_gpg_key() {
     local version="$1"
     local keyfile
     case $version in
     stretch)
         keyfile="/etc/apt/trusted.gpg.d/proxmox-ve-release-4.x.gpg"
-        [ ! -f "$keyfile" ] && wget -q http://download.proxmox.com/debian/proxmox-ve-release-4.x.gpg -O "$keyfile" && chmod +r "$keyfile"
+        ensure_pve_key "$keyfile" \
+            "http://download.proxmox.com/debian/proxmox-ve-release-4.x.gpg" \
+            "http://archive.proxmox.com/debian/proxmox-ve-release-4.x.gpg"
         keyfile="/etc/apt/trusted.gpg.d/proxmox-ve-release-5.x.gpg"
-        [ ! -f "$keyfile" ] && wget -q http://download.proxmox.com/debian/proxmox-ve-release-5.x.gpg -O "$keyfile" && chmod +r "$keyfile"
+        ensure_pve_key "$keyfile" \
+            "http://download.proxmox.com/debian/proxmox-ve-release-5.x.gpg" \
+            "http://archive.proxmox.com/debian/proxmox-ve-release-5.x.gpg"
         ;;
     buster)
         keyfile="/etc/apt/trusted.gpg.d/proxmox-ve-release-5.x.gpg"
-        [ ! -f "$keyfile" ] && wget -q http://download.proxmox.com/debian/proxmox-ve-release-5.x.gpg -O "$keyfile" && chmod +r "$keyfile"
+        ensure_pve_key "$keyfile" \
+            "http://download.proxmox.com/debian/proxmox-ve-release-5.x.gpg" \
+            "http://archive.proxmox.com/debian/proxmox-ve-release-5.x.gpg"
         keyfile="/etc/apt/trusted.gpg.d/proxmox-ve-release-6.x.gpg"
-        [ ! -f "$keyfile" ] && wget -q http://download.proxmox.com/debian/proxmox-ve-release-6.x.gpg -O "$keyfile" && chmod +r "$keyfile"
+        ensure_pve_key "$keyfile" \
+            "http://download.proxmox.com/debian/proxmox-ve-release-6.x.gpg" \
+            "http://archive.proxmox.com/debian/proxmox-ve-release-6.x.gpg"
         ;;
     bullseye)
         keyfile="/etc/apt/trusted.gpg.d/proxmox-release-bullseye.gpg"
-        [ ! -f "$keyfile" ] && wget -q http://download.proxmox.com/debian/proxmox-release-bullseye.gpg -O "$keyfile" && chmod +r "$keyfile"
+        ensure_pve_key "$keyfile" "http://download.proxmox.com/debian/proxmox-release-bullseye.gpg"
         ;;
     bookworm)
         keyfile="/etc/apt/trusted.gpg.d/proxmox-release-bookworm.gpg"
-        [ ! -f "$keyfile" ] && wget -q http://download.proxmox.com/debian/proxmox-release-bookworm.gpg -O "$keyfile" && chmod +r "$keyfile"
+        ensure_pve_key "$keyfile" "http://download.proxmox.com/debian/proxmox-release-bookworm.gpg"
         ;;
     trixie)
         keyfile="/etc/apt/trusted.gpg.d/proxmox-release-trixie.gpg"
-        [ ! -f "$keyfile" ] && wget -q https://enterprise.proxmox.com/debian/proxmox-archive-keyring-trixie.gpg -O "$keyfile" && chmod +r "$keyfile"
+        ensure_pve_key "$keyfile" "https://enterprise.proxmox.com/debian/proxmox-archive-keyring-trixie.gpg"
         ;;
     *)
         echo "Unsupported Debian version: $version"
         return 1
         ;;
     esac
+    if [ ! -s "$keyfile" ]; then
+        echo "Failed to download required Proxmox GPG key for $version"
+        return 1
+    fi
     echo "$keyfile"
 }
 
@@ -1566,7 +2734,10 @@ setup_x86_pve_repo() {
     keyfile=$(add_pve_gpg_key "$version") || return 1
     # 根据Debian版本选择仓库URL
     case $version in
-    stretch|buster|bullseye|bookworm|trixie)
+    stretch|buster)
+        repo_url="http://archive.proxmox.com/debian/pve"
+        ;;
+    bullseye|bookworm|trixie)
         repo_url="http://download.proxmox.com/debian/pve"
         ;;
     *)
@@ -1576,23 +2747,22 @@ setup_x86_pve_repo() {
         ;;
     esac
     # 判断是否需要使用CN镜像
-    if [[ "${CN}" == true ]]; then
+    if [[ "${CN}" == true && "$version" != "stretch" && "$version" != "buster" ]]; then
         repo_url="https://mirrors.tuna.tsinghua.edu.cn/proxmox/debian/pve"
     fi
     # Debian13及以上版本的系统使用 .sources 文件
     if [[ "$version" == "trixie" ]]; then
         yes Y | apt modernize-sources
         local sources_file="/etc/apt/sources.list.d/proxmox-trixie.sources"
-        if [ ! -f "$sources_file" ]; then
-            cat >"$sources_file" <<EOF
+        cat >"$sources_file" <<EOF
 Types: deb
 URIs: $repo_url
 Suites: $version
-Components: pve-test
+Components: pve-no-subscription
 Signed-By: $keyfile
 EOF
-            echo "Proxmox $version source written to $sources_file"
-        fi
+        chmod 0644 "$sources_file" || return 1
+        echo "Proxmox $version source written to $sources_file"
     else
         # 老系统直接写入 sources.list 无需转换
         if ! grep -q "^deb.*pve-no-subscription" /etc/apt/sources.list; then
@@ -1609,11 +2779,17 @@ test_and_switch_mirrors() {
     if ! apt-get update >/dev/null 2>&1; then
         _yellow "当前镜像源连接失败，将尝试切换其他镜像源..."
         # 定义备选镜像源数组
-        mirrors=(
-            "https://mirrors.bfsu.edu.cn/proxmox/debian/pve"          # 北京外国语大学镜像源
-            "https://mirrors.nju.edu.cn/proxmox/debian/pve"           # 南京大学镜像源
-            "https://mirrors.tuna.tsinghua.edu.cn/proxmox/debian/pve" # 清华大学镜像源
-        )
+        if [[ "$version" == "stretch" || "$version" == "buster" ]]; then
+            mirrors=(
+                "http://archive.proxmox.com/debian/pve" # 官方归档源（PVE 1-6）
+            )
+        else
+            mirrors=(
+                "https://mirrors.bfsu.edu.cn/proxmox/debian/pve"          # 北京外国语大学镜像源
+                "https://mirrors.nju.edu.cn/proxmox/debian/pve"           # 南京大学镜像源
+                "https://mirrors.tuna.tsinghua.edu.cn/proxmox/debian/pve" # 清华大学镜像源
+            )
+        fi
         # 标记是否找到可用镜像源
         success=false
         # 遍历所有备选镜像源进行测试
@@ -1640,40 +2816,175 @@ test_and_switch_mirrors() {
     fi
 }
 
+install_arm_pxvirt_repo_key() {
+    local key_targets=(
+        "https://mirrors.lierfang.com/pxcloud/pxvirt/pveport.gpg|/etc/apt/trusted.gpg.d/pveport.gpg"
+        "https://mirrors.lierfang.com/pxcloud/lierfang.gpg|/etc/apt/trusted.gpg.d/lierfang.gpg"
+    )
+    local entry=""
+    local key_url=""
+    local key_path=""
+    for entry in "${key_targets[@]}"; do
+        key_url="${entry%%|*}"
+        key_path="${entry#*|}"
+        if [[ -z "$key_url" || -z "$key_path" ]]; then
+            continue
+        fi
+        if [[ "$key_url" != http*://* || "$key_path" != /* ]]; then
+            continue
+        fi
+        if curl -fsSL --connect-timeout 10 --max-time 30 "$key_url" -o "$key_path"; then
+            chmod 0644 "$key_path" || return 1
+            _green "PXVIRT repository signing key installed: $key_path"
+            _green "PXVIRT 仓库签名密钥已安装：$key_path"
+            echo "$key_path"
+            return 0
+        fi
+    done
+    _red "Failed to download the PXVIRT repository signing key"
+    _red "下载 PXVIRT 仓库签名密钥失败"
+    return 1
+}
+
+setup_pxvirt_repo_with_fallback() {
+    local suite="$1"
+    local repo_file="/etc/apt/sources.list.d/pxvirt-sources.list"
+    local selected_repo_file="/usr/local/bin/pve_pxvirt_repo_selected"
+    local mirrors=(
+        "https://mirrors.lierfang.com/pxcloud/pxvirt"
+        "https://us.mirrors.lierfang.com/pxcloud/pxvirt"
+        "https://jp.mirrors.lierfang.com/pxcloud/pxvirt"
+        "https://apt.dedi.zone/pxcloud/pxvirt"
+        "https://mirrors.homelabproject.cc/pxcloud/pxvirt"
+    )
+    local mirror=""
+    local apt_output=""
+    for mirror in "${mirrors[@]}"; do
+        echo "deb ${mirror} ${suite} main" >"$repo_file"
+        chmod 0644 "$repo_file" || return 1
+        apt_output=$(apt-get update -o Dir::Etc::sourcelist="$repo_file" -o Dir::Etc::sourceparts='-' -o APT::Get::List-Cleanup=0 2>&1)
+        if [ $? -eq 0 ]; then
+            _green "PXVIRT repository selected: ${mirror} (${suite})"
+            _green "PXVIRT 仓库已选择：${mirror} (${suite})"
+            echo "${mirror} ${suite}" >"$selected_repo_file"
+            return 0
+        fi
+    done
+    _red "All PXVIRT mirrors failed for suite ${suite}"
+    _red "所有 PXVIRT 镜像在 ${suite} 版本上均不可用"
+    return 1
+}
+
 # 设置ARM架构的PVE源
 setup_arm_pve_repo() {
     local version="$1"
+    local repo_suite=""
     case $version in
-    stretch)
-        # https://gitlab.com/minkebox/pimox
-        curl https://gitlab.com/minkebox/pimox/-/raw/master/dev/KEY.gpg | apt-key add -
-        curl https://gitlab.com/minkebox/pimox/-/raw/master/dev/pimox.list >/etc/apt/sources.list.d/pimox.list
+    bookworm|trixie)
+        repo_suite="$version"
         ;;
-    buster|bullseye|bookworm)
-        echo "deb  https://mirrors.lierfang.com/pxcloud/pxvirt bookworm main">/etc/apt/sources.list.d/pxvirt-sources.list
-        curl -L https://mirrors.lierfang.com/pxcloud/lierfang.gpg -o /etc/apt/trusted.gpg.d/lierfang.gpg
-        ;;
-    trixie)
-        echo "deb  https://mirrors.lierfang.com/pxcloud/pxvirt trixie main">/etc/apt/sources.list.d/pxvirt-sources.list
-        curl -L https://mirrors.lierfang.com/pxcloud/lierfang.gpg -o /etc/apt/trusted.gpg.d/lierfang.gpg
+    stretch|buster|bullseye)
+        _red "PXVIRT ARM repository is not mapped for Debian release: $version"
+        _red "PXVIRT ARM 仓库未为该 Debian 版本提供匹配映射：$version"
+        return 1
         ;;
     *)
-        _red "Error: Unsupported Debian version"
-        if ! confirm_continue "是否要继续安装(识别到不是Debian9~Debian13的范围)？"; then
-            exit 1
-        fi
-        echo "deb  https://mirrors.lierfang.com/pxcloud/pxvirt trixie main">/etc/apt/sources.list.d/pxvirt-sources.list
-        curl -L https://mirrors.lierfang.com/pxcloud/lierfang.gpg -o /etc/apt/trusted.gpg.d/lierfang.gpg
+        _red "Error: Unsupported Debian version for PXVIRT ARM repository"
+        _red "错误：当前 Debian 版本没有对应的 PXVIRT ARM 仓库"
+        return 1
         ;;
     esac
+
+    if [ -n "$repo_suite" ]; then
+        install_arm_pxvirt_repo_key >/dev/null || return 1
+        setup_pxvirt_repo_with_fallback "$repo_suite" || return 1
+    fi
+}
+
+setup_riscv_pve_repo() {
+    local version="$1"
+    if [ "$version" != "trixie" ]; then
+        _red "PXVIRT riscv64 repository is currently only mapped for Debian trixie"
+        _red "PXVIRT riscv64 仓库当前仅支持 Debian trixie"
+        return 1
+    fi
+    install_arm_pxvirt_repo_key >/dev/null || return 1
+    setup_pxvirt_repo_with_fallback "trixie" || return 1
+}
+
+select_arm_compatible_qemu_server_version() {
+    local candidate=""
+    local dep_line=""
+
+    while read -r candidate; do
+        if [ -z "$candidate" ]; then
+            continue
+        fi
+        dep_line=$(apt-cache show "qemu-server=$candidate" 2>/dev/null | awk '/^Depends:/{print; exit}')
+        if [ -z "$dep_line" ]; then
+            continue
+        fi
+        if echo "$dep_line" | grep -q 'python3-virt-firmware'; then
+            continue
+        fi
+        echo "$candidate"
+        return 0
+    done < <(apt-cache madison qemu-server 2>/dev/null | awk '{print $3}')
+
+    return 1
+}
+
+ensure_arm_qemu_server_installable() {
+    local dep_line=""
+    local compat_version=""
+    local pin_file="/etc/apt/preferences.d/pve-arm-qemu-server-compat.pref"
+
+    if [ "$system_arch" != "arm" ]; then
+        return 0
+    fi
+
+    dep_line=$(apt-cache show qemu-server 2>/dev/null | awk '/^Depends:/{print; exit}')
+    if [ -z "$dep_line" ] || ! echo "$dep_line" | grep -q 'python3-virt-firmware'; then
+        return 0
+    fi
+
+    if apt-cache show python3-virt-firmware >/dev/null 2>&1; then
+        _green "qemu-server requires python3-virt-firmware and the package is available"
+        _green "qemu-server 依赖 python3-virt-firmware，且该依赖包可用"
+        return 0
+    fi
+
+    _yellow "Detected qemu-server dependency python3-virt-firmware is unavailable on current repositories"
+    _yellow "检测到 qemu-server 依赖 python3-virt-firmware，但当前仓库无法提供该包"
+
+    compat_version=$(select_arm_compatible_qemu_server_version)
+    if [ -z "$compat_version" ]; then
+        _red "Cannot find a compatible qemu-server version in current APT metadata"
+        _red "在当前 APT 元数据中未找到可兼容的 qemu-server 版本"
+        return 1
+    fi
+
+    cat >"$pin_file" <<EOF
+Package: qemu-server
+Pin: version ${compat_version}
+Pin-Priority: 1001
+EOF
+
+    _yellow "Pinned qemu-server to compatible version: ${compat_version}"
+    _yellow "已将 qemu-server 固定到可兼容版本：${compat_version}"
+    _yellow "A compatibility pin file was generated at ${pin_file}"
+    _yellow "已生成兼容性 pin 文件：${pin_file}"
+
+    apt-get update -y >/dev/null 2>&1 || true
+    return 0
 }
 
 # 用户确认是否继续
 confirm_continue() {
     local prompt_text="$1"
     local confirm=""
-    if [[ "${FORCE_INSTALL^^}" == "TRUE" ]]; then
-        _yellow "FORCE_INSTALL=true, 跳过确认提示，强制继续"
+    if [[ "${FORCE_INSTALL^^}" == "TRUE" ]] || is_noninteractive; then
+        _yellow "FORCE_INSTALL=true 或 noninteractive=true，跳过确认提示，强制继续"
         return 0
     fi
     _yellow "Do you want to continue the installation? (Enter to not continue the installation by default) (y/[n])"
@@ -1684,35 +2995,20 @@ confirm_continue() {
 
 # 修复APT问题函数
 fix_apt_issues2() {
-    apt-get update -y && apt-get full-upgrade -y
-    if [ $? -ne 0 ]; then
-        apt-get install debian-keyring debian-archive-keyring -y
-        apt-get update -y && apt-get full-upgrade -y
+    # APT may otherwise exit successfully after using stale indexes. Never
+    # continue to the kernel transaction after a signing or transport failure.
+    if ! apt-get update -o APT::Update::Error-Mode=any -o Acquire::Retries=3; then
+        _red "APT metadata verification failed; fix the signed repository before continuing"
+        _red "APT 仓库元数据校验失败；请修复签名或网络后重试，尚未开始 PVE 安装"
+        return 1
     fi
-    apt_update_output=$(apt-get update 2>&1)
-    echo "$apt_update_output" >"$temp_file_apt_fix"
-    if grep -q 'NO_PUBKEY' "$temp_file_apt_fix"; then
-        public_keys=$(grep -oE 'NO_PUBKEY [0-9A-F]+' "$temp_file_apt_fix" | awk '{ print $2 }')
-        joined_keys=$(echo "$public_keys" | paste -sd " ")
-        _yellow "No Public Keys: ${joined_keys}"
-        apt-key adv --keyserver keyserver.ubuntu.com --recv-keys ${joined_keys}
-        apt-get update
-        if [ $? -eq 0 ]; then
-            _green "Fixed"
-        fi
-    fi
-    rm "$temp_file_apt_fix"
-    output=$(apt-get update 2>&1)
-    if echo $output | grep -q "NO_PUBKEY"; then
-        _yellow "try sudo apt-key adv --keyserver keyserver.ubuntu.com --recvrebuild_interface-keys missing key"
-        exit 1
-    fi
+    apt-get full-upgrade -y
 }
 
 # 修复网络接口配置
 fix_network_configs() {
     # 修复网卡可能存在的auto类型
-    rebuild_interfaces
+    rebuild_interfaces || exit 1
     fix_interfaces_ipv6_auto_type
     # 特殊处理Hetzner和Azure的情况
     if [[ $dmidecode_output == *"Hetzner_vServer"* ]] || [[ $dmidecode_output == *"Microsoft Corporation"* ]] || [[ $dmidecode_output == *"Exoscale Compute Platform"* ]]; then
@@ -1740,6 +3036,13 @@ fix_ipv6_configs() {
 
 # 安装必需包
 install_proxmox_packages() {
+    local pve_packages=(proxmox-ve pve-manager qemu-server pve-cluster)
+    local install_mode_created=false
+    local kernel_finalize_mode=""
+    local install_mode_file="${PROXMOX_INSTALL_MODE_FILE:-/proxmox_install_mode}"
+    local install_exit=0
+    # Keep the distribution's working kernel available as a recovery entry.
+    preserve_boot_kernels || exit 1
     # 部分机器中途service丢失了，尝试修复
     install_package service
     # esxi 开设的部分机器中含有冲突组件 firmware-ath9k-htc ，需要预先卸载
@@ -1748,17 +3051,64 @@ install_proxmox_packages() {
         apt --fix-broken install
         dpkg --configure -a
     fi
-    # 正式安装PVE
-    install_package proxmox-ve
-    install_package postfix
-    install_package open-iscsi
-    rebuild_interfaces
+    if ! ensure_arm_qemu_server_installable; then
+        _red "ARM qemu-server dependency precheck failed"
+        _red "ARM qemu-server 依赖预检查失败"
+        rollback_failed_pve_install
+        exit 1
+    fi
+    # 按 PXVIRT 官方 Debian 安装文档显式安装核心组件，避免只装 meta 包后静默失败。
+    # Proxmox's ifupdown2 package hot-reloads /etc/network/interfaces on its
+    # first installation.  On remote multi-NIC hosts that can replace the
+    # working public route before vmbr0 has been built and permanently cut the
+    # SSH session.  /proxmox_install_mode is the package's supported guard for
+    # suppressing that first-install reload; the completed bridge is applied by
+    # the network setup stage below.
+    if [ ! -e "$install_mode_file" ]; then
+        touch "$install_mode_file"
+        install_mode_created=true
+    fi
+    if [ "$install_mode_created" = true ]; then
+        # Run the package transaction in a subshell whose EXIT trap owns the
+        # marker. This also cleans it on HUP/INT/TERM, so an interrupted remote
+        # install cannot leave future package upgrades stuck in install mode.
+        (
+            trap 'rm -f -- "$install_mode_file"' EXIT
+            trap 'exit 129' HUP
+            trap 'exit 130' INT
+            trap 'exit 143' TERM
+            install_dpkg_packages "${pve_packages[@]}"
+        ) || install_exit=$?
+    else
+        install_dpkg_packages "${pve_packages[@]}" || install_exit=$?
+    fi
+    if [ "$install_exit" -ne 0 ]; then
+        _red "PVE core package installation failed"
+        _red "PVE 核心软件包安装失败"
+        rollback_failed_pve_install
+        exit 1
+    fi
+    [ "$install_mode_created" != true ] || kernel_finalize_mode=replay
+    if ! finalize_pve_kernel_installation "$kernel_finalize_mode"; then
+        rollback_failed_pve_install
+        exit 1
+    fi
+    preserve_boot_kernels || exit 1
+    if ! verify_pve_installation; then
+        rollback_failed_pve_install
+        exit 1
+    fi
+    cleanup_ceph_service_packages
+    install_optional_pve_packages
+    rebuild_interfaces || exit 1
 }
 
 # 配置vmbr0桥接接口
 configure_vmbr0_bridge() {
+    local bridge_ipv4
+    bridge_ipv4="$(get_ipv4_address_cidr)" || exit 1
     chattr -i /etc/network/interfaces
-    if grep -q "vmbr0" "/etc/network/interfaces"; then
+    if pve_installer_network_topology has-interface vmbr0; then
         _blue "vmbr0 already exists in /etc/network/interfaces"
         _blue "vmbr0 已存在在 /etc/network/interfaces"
     else
@@ -1767,22 +3117,22 @@ configure_vmbr0_bridge() {
             cat <<EOF | sudo tee -a /etc/network/interfaces
 auto vmbr0
 iface vmbr0 inet static
-    address $ipv4_address
-    gateway $ipv4_gateway
+    address ${bridge_ipv4}
+$(format_ipv4_gateway_config "    " "vmbr0")
     bridge_ports $interface
     bridge_stp off
-    bridge_fd 0
+    bridge_fd 2
 EOF
         # 有IPV6地址，只有一个IPV6地址，且后续仅使用一个IPV6地址，存在slaac机制
         elif [ -f /usr/local/bin/pve_slaac_status ] && [ $(cat /usr/local/bin/pve_maximum_subset) = false ] && [ ! -f /usr/local/bin/pve_last_ipv6 ]; then
             cat <<EOF | sudo tee -a /etc/network/interfaces
 auto vmbr0
 iface vmbr0 inet static
-    address $ipv4_address
-    gateway $ipv4_gateway
+    address ${bridge_ipv4}
+$(format_ipv4_gateway_config "    " "vmbr0")
     bridge_ports $interface
     bridge_stp off
-    bridge_fd 0
+    bridge_fd 2
 
 iface vmbr0 inet6 auto
     bridge_ports $interface
@@ -1793,11 +3143,11 @@ EOF
             cat <<EOF | sudo tee -a /etc/network/interfaces
 auto vmbr0
 iface vmbr0 inet static
-    address $ipv4_address
-    gateway $ipv4_gateway
+    address ${bridge_ipv4}
+$(format_ipv4_gateway_config "    " "vmbr0")
     bridge_ports $interface
     bridge_stp off
-    bridge_fd 0
+    bridge_fd 2
 
 iface vmbr0 inet6 static
     address ${last_ipv6}
@@ -1811,14 +3161,14 @@ EOF
             cat <<EOF | sudo tee -a /etc/network/interfaces
 auto vmbr0
 iface vmbr0 inet static
-    address $ipv4_address
-    gateway $ipv4_gateway
+    address ${bridge_ipv4}
+$(format_ipv4_gateway_config "    " "vmbr0")
     bridge_ports $interface
     bridge_stp off
-    bridge_fd 0
+    bridge_fd 2
 
 iface vmbr0 inet6 static
-    address ${ipv6_address}/128
+    address ${ipv6_address}/${ipv6_prefixlen}
     gateway ${ipv6_gateway}
 EOF
         fi
@@ -1836,11 +3186,7 @@ configure_pve_sources() {
             sed -i 's|http://mirrors.ustc.edu.cn/proxmox|https://mirrors.tuna.tsinghua.edu.cn/proxmox|g' /usr/share/perl5/PVE/APLInfo.pm
         fi
     fi
-    # 删除apt源中的无效订阅
-    [ -f "/etc/apt/sources.list.d/pve-enterprise.list" ] && rm -f "/etc/apt/sources.list.d/pve-enterprise.list"
-    [ -f "/etc/apt/sources.list.d/ceph.list" ] && rm -f "/etc/apt/sources.list.d/ceph.list"
-    [ -f "/etc/apt/sources.list.d/pve-enterprise.sources" ] && rm -f "/etc/apt/sources.list.d/pve-enterprise.sources"
-    [ -f "/etc/apt/sources.list.d/ceph.sources" ] && rm -f "/etc/apt/sources.list.d/ceph.sources"
+    disable_pve_enterprise_sources
 }
 
 # 确保DNS配置有效
@@ -1866,26 +3212,27 @@ configure_dns() {
 
 # 清理原有网卡配置
 clean_network_interfaces() {
-    cp /etc/network/interfaces /etc/network/interfaces_nat.bak
-    chattr -i /etc/network/interfaces
-    input_file="/etc/network/interfaces"
-    output_file="/etc/network/interfaces.tmp"
-    start_pattern="iface lo inet loopback"
-    end_pattern="auto vmbr0"
-    delete_lines=0
-    while IFS= read -r line; do
-        if [[ $line == *"$start_pattern"* ]]; then
-            delete_lines=1
-        fi
-        if [ $delete_lines -eq 0 ] || [[ $line == *"$start_pattern"* ]] || [[ $line == *"$end_pattern"* ]]; then
-            echo "$line" >>"$output_file"
-        fi
-        if [[ $line == *"$end_pattern"* ]]; then
-            delete_lines=0
-        fi
-    done <"$input_file"
-    mv "$output_file" "$input_file"
-    chattr +i /etc/network/interfaces
+    local file root="${PVE_INSTALL_NETWORK_BACKUP_ROOT:-/var/lib/oneclickvirt/installer-network-backups}" snapshot
+    pve_installer_network_topology has-interface vmbr0 || return 1
+    install -d -m 700 "$root" || return 1
+    snapshot=$(mktemp -d "$root/change.XXXXXXXX") || return 1
+    pve_installer_network_topology files >"$snapshot/files" || return 1
+    if tar --help 2>&1 | grep -q -- '--verbatim-files-from'; then
+        tar -cPf "$snapshot/interfaces.tar" --verbatim-files-from -T "$snapshot/files" || return 1
+    else
+        tar -cPf "$snapshot/interfaces.tar" -T "$snapshot/files" || return 1
+    fi
+    while IFS= read -r file; do
+        chattr -i "$file" || return 1
+    done <"$snapshot/files"
+    if ! pve_installer_network_topology clean-uplink "$interface"; then
+        # An included file may become unwritable midway through cleanup.
+        # Restore every source file before any network reload can occur.
+        tar -xPf "$snapshot/interfaces.tar" || return 1
+        chattr +i "${PVE_NETWORK_INTERFACES_FILE:-/etc/network/interfaces}" || true
+        return 1
+    fi
+    chattr +i "${PVE_NETWORK_INTERFACES_FILE:-/etc/network/interfaces}"
 }
 
 # 安装额外软件包
@@ -1914,47 +3261,231 @@ install_additional_packages() {
 }
 
 # 配置防火墙和PVE代理
+nft_backend_ready() {
+    command -v nft >/dev/null 2>&1 && nft list tables >/dev/null 2>&1
+}
+
+allow_tcp_port() {
+    local port="$1"
+    if nft_backend_ready; then
+        nft add table inet filter 2>/dev/null || true
+        nft 'add chain inet filter input { type filter hook input priority 0; policy accept; }' 2>/dev/null || true
+        if ! nft list chain inet filter input 2>/dev/null | grep -q "tcp dport ${port} accept"; then
+            nft add rule inet filter input tcp dport "$port" accept 2>/dev/null || true
+        fi
+    else
+        iptables -C INPUT -p tcp --dport "$port" -j ACCEPT 2>/dev/null || iptables -I INPUT -p tcp --dport "$port" -j ACCEPT
+    fi
+}
+
+allow_nat_forwarding() {
+    if nft_backend_ready; then
+        nft add table inet filter 2>/dev/null || true
+        nft 'add chain inet filter forward { type filter hook forward priority 0; policy accept; }' 2>/dev/null || true
+        if ! nft list chain inet filter forward 2>/dev/null | grep -q "ct state established,related accept"; then
+            nft add rule inet filter forward ct state established,related accept 2>/dev/null || true
+        fi
+        if ! nft list chain inet filter forward 2>/dev/null | grep -q 'iifname "vmbr1" oifname "vmbr0" accept'; then
+            nft add rule inet filter forward iifname "vmbr1" oifname "vmbr0" accept 2>/dev/null || true
+        fi
+        if ! nft list chain inet filter forward 2>/dev/null | grep -q 'iifname "vmbr0" oifname "vmbr1" ct state established,related accept'; then
+            nft add rule inet filter forward iifname "vmbr0" oifname "vmbr1" ct state established,related accept 2>/dev/null || true
+        fi
+    else
+        iptables -C FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || iptables -I FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+        iptables -C FORWARD -i vmbr1 -o vmbr0 -j ACCEPT 2>/dev/null || iptables -I FORWARD -i vmbr1 -o vmbr0 -j ACCEPT
+        iptables -C FORWARD -i vmbr0 -o vmbr1 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || iptables -I FORWARD -i vmbr0 -o vmbr1 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+    fi
+}
+
+persist_firewall_rules() {
+    if nft_backend_ready; then
+        printf '#!/usr/sbin/nft -f\nflush ruleset\n' > /etc/nftables.conf
+        nft list ruleset >> /etc/nftables.conf
+        systemctl enable nftables 2>/dev/null || true
+    else
+        install_package iptables-persistent
+        if command -v iptables-save >/dev/null 2>&1; then
+            mkdir -p /etc/iptables
+            iptables-save > /etc/iptables/rules.v4
+        fi
+        if command -v ip6tables-save >/dev/null 2>&1; then
+            ip6tables-save > /etc/iptables/rules.v6 2>/dev/null || true
+        fi
+        service netfilter-persistent restart 2>/dev/null || true
+    fi
+}
+
+ensure_firewall_access() {
+    # Keep host access and PVE UI reachable even when image default policy is DROP.
+    allow_tcp_port 22
+    allow_tcp_port 8006
+    allow_tcp_port 3128
+    allow_nat_forwarding
+    persist_firewall_rules
+}
+
 configure_firewall_and_proxy() {
     install_package ufw
     ufw disable
     echo LISTEN_IP="0.0.0.0" >/etc/default/pveproxy
+    ensure_firewall_access
+}
+
+# /proxmox_install_mode deliberately suppresses pve-manager.postinst while the
+# core packages are installed so ifupdown2 cannot reload an incomplete bridge
+# and cut off a remote installation.  That also suppresses the postinst step
+# which creates the local pmxcfs node tree and certificates.  Complete those
+# steps explicitly after the final network and proxy configuration is ready.
+initialize_pve_runtime() {
+    local node_name
+    node_name="$(hostname -s)"
+
+    if ! systemctl enable --now pve-cluster >/dev/null 2>&1; then
+        _red "Unable to start the PVE cluster filesystem"
+        _red "无法启动 PVE 集群文件系统"
+        return 1
+    fi
+
+    if ! mountpoint -q /etc/pve; then
+        _red "The PVE cluster filesystem is not mounted at /etc/pve"
+        _red "PVE 集群文件系统未挂载到 /etc/pve"
+        return 1
+    fi
+
+    if ! pvecm updatecerts --force; then
+        _red "Unable to initialize the local PVE node and certificates"
+        _red "无法初始化本地 PVE 节点和证书"
+        return 1
+    fi
+
+    if [ ! -d "/etc/pve/nodes/${node_name}/lxc" ] || [ ! -d "/etc/pve/nodes/${node_name}/qemu-server" ]; then
+        _red "The local PVE node tree is incomplete: /etc/pve/nodes/${node_name}"
+        _red "本地 PVE 节点目录不完整：/etc/pve/nodes/${node_name}"
+        return 1
+    fi
+
+    if ! systemctl enable --now pvedaemon pveproxy pvestatd pvescheduler >/dev/null 2>&1; then
+        _red "Unable to start required PVE services"
+        _red "无法启动必需的 PVE 服务"
+        return 1
+    fi
+}
+
+is_8006_ready() {
+    if ss -lnt 2>/dev/null | grep -q ':8006 '; then
+        if curl -ksS --connect-timeout 3 --max-time 6 https://127.0.0.1:8006/api2/json/version >/dev/null 2>&1; then
+            return 0
+        fi
+    fi
+    return 1
+}
+
+wait_for_8006_ready() {
+    local total_wait=60
+    local interval=5
+    local elapsed=0
+
+    while [ "$elapsed" -lt "$total_wait" ]; do
+        if is_8006_ready; then
+            _green "PVE web service on 8006 is ready"
+            _green "PVE 的 8006 Web 服务已就绪"
+            return 0
+        fi
+        _yellow "Waiting for 8006 web service... ${elapsed}/${total_wait}s"
+        _yellow "等待 8006 Web 服务就绪... ${elapsed}/${total_wait}s"
+        sleep "$interval"
+        elapsed=$((elapsed + interval))
+    done
+
+    if is_8006_ready; then
+        _green "PVE web service on 8006 is ready"
+        _green "PVE 的 8006 Web 服务已就绪"
+        return 0
+    fi
+
+    _red "8006 web service did not become ready within ${total_wait}s"
+    _red "8006 Web 服务在 ${total_wait} 秒内未就绪"
+    _yellow "Please check: systemctl status pveproxy pvedaemon pve-cluster --no-pager -l"
+    _yellow "请检查：systemctl status pveproxy pvedaemon pve-cluster --no-pager -l"
+    return 1
 }
 
 setup_cn_dns
 rebuild_cloud_init
 setup_hostname
 version=$(lsb_release -cs)
-if [ "$system_arch" = "x86" ] || [ "$system_arch" = "x86_64" ]; then
-    setup_x86_pve_repo "$version"
-elif [ "$system_arch" = "arm" ]; then
-    setup_arm_pve_repo "$version"
+if [ "$system_arch" = "arm" ]; then
+    validate_arm_pxvirt_environment "$version"
+elif [ "$system_arch" = "riscv64" ]; then
+    validate_riscv_pxvirt_environment "$version"
 fi
-rebuild_interfaces
-fix_apt_issues2
+if [ "$system_arch" = "x86" ] || [ "$system_arch" = "x86_64" ]; then
+    setup_x86_pve_repo "$version" || exit 1
+elif [ "$system_arch" = "arm" ]; then
+    setup_arm_pve_repo "$version" || exit 1
+elif [ "$system_arch" = "riscv64" ]; then
+    setup_riscv_pve_repo "$version" || exit 1
+fi
+rebuild_interfaces || exit 1
+fix_apt_issues2 || exit 1
 fix_network_configs
 fix_ipv6_configs
 configure_dns
 install_proxmox_packages
 configure_vmbr0_bridge
 configure_pve_sources
-clean_network_interfaces
+clean_network_interfaces || exit 1
 install_additional_packages
 configure_firewall_and_proxy
+if ! initialize_pve_runtime; then
+    exit 1
+fi
+if ! verify_pve_installation; then
+    rollback_failed_pve_install
+    exit 1
+fi
+if command -v update-grub >/dev/null 2>&1 && ! update-grub; then
+    _red "Unable to update the boot menu; installed kernels were preserved, do not reboot yet"
+    _red "引导菜单更新失败；已保留现有内核，请修复引导后再重启"
+    exit 1
+fi
+if ! wait_for_8006_ready; then
+    exit 1
+fi
 
 ########## 打印安装成功的信息
 
 # 打印安装后的信息
 url="https://${main_ipv4}:8006/"
+if [ -f /usr/local/bin/pve_main_ipv4_mode ]; then
+    selected_ip_mode=$(cat /usr/local/bin/pve_main_ipv4_mode)
+elif is_private_ipv4 "$main_ipv4"; then
+    selected_ip_mode="private"
+else
+    selected_ip_mode="public"
+fi
 
 # 打印内核
 running_kernel=$(uname -r)
 _green "Running kernel: $(pveversion)"
-installed_kernels=($(dpkg -l 'pve-kernel-*' | awk '/^ii/ {print $2}' | cut -d'-' -f3- | sort -V))
+mapfile -t installed_kernels < <(installed_pve_kernel_versions | sort -Vu)
 if [ ${#installed_kernels[@]} -gt 0 ]; then
     latest_kernel=${installed_kernels[-1]}
     _green "PVE latest kernel: $latest_kernel"
 fi
 
+if [ "$selected_ip_mode" = "private" ]; then
+    _green "Selected main IP mode: private IPv4"
+    _green "当前选择的主 IP 模式：内网 IPv4"
+else
+    _green "Selected main IP mode: public IPv4"
+    _green "当前选择的主 IP 模式：公网 IPv4"
+fi
+if [ -f /usr/local/bin/pve_pxvirt_repo_selected ]; then
+    _green "PXVIRT repository in use: $(cat /usr/local/bin/pve_pxvirt_repo_selected)"
+    _green "当前使用的 PXVIRT 仓库：$(cat /usr/local/bin/pve_pxvirt_repo_selected)"
+fi
 _green "Installation complete, please open HTTPS web page $url"
 _green "The username and password are the username and password used by the server (e.g. root and root user's password)"
 _green "If the login is correct please do not rush to reboot the system, go to execute the commands of the pre-configured environment and then reboot the system"

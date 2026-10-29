@@ -103,7 +103,30 @@ bash <(curl -sL https://raw.githubusercontent.com/KUAILESHANGWEI/kejidalao/main/
 
 ## 5. 入驻流程
 
-1.  **本地自测**：在自己的 VPS 上完整运行安装、更新、卸载流程，确保无报错。
+1.  **本地自测**：把 `[应用名].conf` 放到 VPS 的 `~/apps-local/` 目录（见第 6 节），在自己的 VPS 上完整运行安装、更新、卸载流程，确保无报错。
 2.  **路径审计**：检查 `/home/docker/` 目录下是否正确生成了应用文件夹，且没有文件“溢出”到其他地方。
 3.  **提交申请**：将您的 `[应用名].conf` 文件通过 **Pull Request** 提交至本仓库的 `sh/apps/` 目录。
 4.  **审核发布**：维护者审核逻辑安全后，您的应用将正式上线 `kejilion.sh` 菜单。
+
+
+---
+
+
+## 6. 本地应用（仅本机使用 / 提交前自测）
+
+不想公开、或还在调试的应用，可以只放在自己的服务器上，无需提交 PR：
+
+1. 按第 2 节模板写好配置，保存为 `~/apps-local/[应用名].conf`（root 用户即 `/root/apps-local/`）。
+2. 收紧权限：文件必须属于当前用户，且不能被其他用户写入，软链接会被忽略：
+   ```bash
+   chown root:root /root/apps-local/myapp.conf && chmod 644 /root/apps-local/myapp.conf
+   ```
+3. 打开 `kejilion.sh` 应用市场，应用出现在 **“本地应用列表”** 中；KPanel 应用市场点击“刷新状态”后出现在 **“本地应用”** 分类，两边读的是同一个目录。
+4. 安装、更新、卸载与正式应用完全一致，也可直接运行：`bash <(curl -sL https://raw.githubusercontent.com/KUAILESHANGWEI/kejidalao/main/kejilion.sh) app [文件名]`。
+
+注意事项：
+
+* **官方优先**：与本仓库中的应用同名时以官方配置为准，本地配置会被忽略，请换一个文件名。
+* **安全自负**：本地应用未经审核，会以 root 身份执行，请只使用自己编写或信任的配置。
+* **版本要求**：需要支持 `~/apps-local` 的新版 `kejilion.sh`；KPanel 检测到旧脚本时会禁用本地应用的安装与管理按钮。
+* 自测通过后，把同一个 `.conf` 按第 5 节提交 PR，即可上架给所有用户。
