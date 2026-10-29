@@ -33,6 +33,7 @@ jobs:
             rm -rf "vendor/kejilion/${repo}/.git"
           done
           mkdir -p vendor/missuo
+          rm -rf vendor/missuo/OpenAI-Checker
           git clone --depth 1 "https://github.com/missuo/OpenAI-Checker.git" "vendor/missuo/OpenAI-Checker"
           rm -rf "vendor/missuo/OpenAI-Checker/.git"
           github_repos=(
