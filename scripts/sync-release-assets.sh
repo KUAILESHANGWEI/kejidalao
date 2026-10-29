@@ -80,7 +80,13 @@ mirror_upstream_latest_release
 
 mirror_named_latest_asset "yt-dlp/yt-dlp" "yt-dlp"
 mirror_named_latest_asset "Yohann0617/oci-helper" "sh_oci-helper_install.sh"
-mirror_fixed_asset "https://github.com/assimon/dujiaoka/releases/download/2.0.6/2.0.6-antibody.tar.gz" "2.0.6-antibody.tar.gz"
+# The original upstream release is unavailable; retain the existing fixed-version mirror.
+if gh release view "$THIRD_PARTY_TAG" --repo "$TARGET_REPO" --json assets | jq -e '.assets | any(.name == "2.0.6-antibody.tar.gz")' >/dev/null; then
+  echo "Keeping existing 2.0.6-antibody.tar.gz mirror (upstream unavailable)."
+else
+  echo "Required 2.0.6-antibody.tar.gz mirror is missing." >&2
+  exit 1
+fi
 mirror_fixed_asset "https://github.com/kalcaddle/kodbox/archive/refs/tags/1.50.02.zip" "kodbox-1.50.02.zip"
 mirror_named_latest_asset "typecho/typecho" "typecho.zip"
 mirror_named_latest_asset "linkstackorg/linkstack" "linkstack.zip"
