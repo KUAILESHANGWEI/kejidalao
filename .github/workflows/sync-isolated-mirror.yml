@@ -95,6 +95,9 @@ jobs:
           mkdir -p vendor
           mv "$keep" vendor/github
 
+      - name: Install ripgrep
+        run: sudo apt-get update && sudo apt-get install -y ripgrep
+
       - name: Apply localization rewrite
         run: node scripts/localize-repo.js "$GITHUB_WORKSPACE"
 
