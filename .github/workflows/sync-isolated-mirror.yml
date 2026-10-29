@@ -57,6 +57,7 @@ jobs:
             magicblack/maccms_down
           )
           for repo in "${github_repos[@]}"; do
+            rm -rf "vendor/github/${repo}"
             git clone --depth 1 "https://github.com/${repo}.git" "vendor/github/${repo}"
             rm -rf "vendor/github/${repo}/.git"
           done
