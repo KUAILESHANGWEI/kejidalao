@@ -49,6 +49,22 @@ python3 -B configure.py status
 
 ## 通用请求语义兼容
 
+共享管理器根据完整 `nginx -T` 能力图为纯文件站点自动生成通用静态资源例外，不依赖 `profile` 或站点名称。仅 GET/HEAD、规范字面路径及受限资源扩展名可排除 932260 的路径目标；查询、其他规则、认证与限流继续执行。发现代理、PHP、脚本处理器、动态 root、未知指令或无法证明的回退时保持原检查。配置改变后先执行受管 apply/刷新，再检查 doctor；原始 Nginx reload 不会重新计算能力。
+
+代码正文使用站点策略中的 `sourceText` 语义声明，例如：
+
+```json
+"sourceText": [{"method":"POST","path":"/api/source-note","fields":["content"]}]
+```
+
+声明与应用类型无关，只适用于管理员确认作为代码或富文本处理的 JSON 字段。要求指定方法、精确路径、单个 JSON 媒体头、无压缩和方法覆盖、无 `json.*` 查询参数；指定字段在 phase 2 恰好出现一次时才排除该字段的代码注入目标及重复的原始正文检查，其他 JSON 字段继续扫描。应用仍负责身份、CSRF、内容渲染和存储安全。每站最多 16 个端点、每端点 8 个字面字段，未知键/模式/重复字段拒绝。
+
+`status`/`doctor` 的 `requestSemantics` 回读静态例外的证明或保守拒绝原因、正文声明数量和同步状态；配置漂移令 doctor 失败。删除声明并 apply 可撤销正文例外，静态处理能力消失后受管刷新也会撤销例外。旧 profile 和精确 exclusions 仍兼容，不自动把任意正文识别为安全内容。
+
+2026-10-30，最终功能候选 `1000ad1` 通过同正式服镜像的隔离应用矩阵 164 项、引擎集成 181 项及相关单测；专项包含 10 项能力/声明测试和 38 项配置管理检查。完整单测中的两项封禁检查在未修改基线上也失败，未将其记为通过；本轮未改封禁逻辑。独立静态复核已完成，发现的公共模板遗漏、方法参数覆盖、默认未登记站点及首次迁移能力图问题均已修复并回归。复核环境没有 Python，执行测试由独立的 Linux 容器环境承担，不能声称复核者独立运行了测试。
+
+已授权 108 试点撤下两条具体图标路径的例外，由通用文件能力规则接替；图标、论坛读取 API、博客分类和另一个静态站均返回 200。doctor 同步、再次 plan 无改动；未以真实账号提交论坛帖子，线上正文仍使用已有应用声明，未自动对所有站点启用正文例外。原始隔离记录位于试点主机 `/tmp/waf-semantics-final-contract`、`/tmp/waf-semantics-final-integration`。配置恢复点为 `/home/web/backups/waf-managed/20261030T030117434239Z-policy`，脚本/策略基线为 `/home/web/backups/waf-semantics-20261030-release`；回滚配置包时也须恢复对应脚本固定引用。公共新包继续以提交和文件摘要分发；已有用户需通过受管 WAF 应用/刷新取得并生成新规则，只更新镜像不会迁移策略。版本号保持 1.1.0。
+
 共享修复 `eb58fe4` 将方法覆盖按协议行为统一处理，不绑定 Flarum、域名或 `/api` 路径。仅原始 POST、单个 `X-HTTP-Method-Override` / `X-HTTP-Method` / `X-Method-Override` 头、明确的 PUT/PATCH/DELETE 且完整匹配既有允许方法时，才可进入兼容处理。请求方法及正文不改写，SQLi/XSS 等攻击检查继续执行；重复、冲突、危险值、覆盖头与顶层 query/body `_method` 混用仍由协议守卫按原评分基线拦截。参数 `_method` 单独使用仍遵循原有 PL1/PL2 行为，此开关不替代框架授权或 CSRF 防护。
 
 默认策略为 `methodOverride: guarded`，但只有管理工具核对完整 `nginx -T` 能力图后才激活。遇到 `limit_except`、按原始方法派生的权限条件、认证子请求、脚本认证或方法头改写等不确定语义时，对相应作用域保持 strict。覆盖请求不继承 WordPress、KPanel、Git 及自定义参数的业务排除，避免把原 POST 的特例错误用于另一种方法。也可明确设置全局或站点 `methodOverride: strict`；原有 WAF Off/Detect/On 和 CDN 模式独立保留。
