@@ -1118,8 +1118,13 @@ def migration_status(root):
                 'legacyReconcilerStopped':False}
 
 
-def query_tickets(source):
+def query_tickets(source, allow_missing=False):
     process=__import__('subprocess').run(['fail2ban-client','get',source_jail(source),'banip'],capture_output=True,text=True,timeout=5)
+    # An explicitly absent jail has no live tickets. Only cleanup may accept
+    # this reply; socket failures and incomplete reads must still stop cleanup.
+    if (allow_missing and process.returncode and
+        process.stdout.strip()==f"Sorry but the jail '{source_jail(source)}' does not exist"):
+        return set()
     if process.returncode or len(process.stdout)>policy.MAX_STATE_BYTES:
         raise ValueError('Cannot read complete Fail2Ban tickets')
     tickets=set(process.stdout.split())
@@ -1497,14 +1502,14 @@ def set_cron(text):
         raise RuntimeError('Failed to update ban expiry schedule')
 
 
-def clear(root):
+def clear(root, allow_missing=False):
     # Remove Fail2Ban's tickets/database records as well as our projection, so
     # a later reload cannot resurrect a manually cleared ban.
     # Callbacks persist their source removal and immediately defer a busy
     # configuration lock. Thus one final reload replaces per-ticket reloads.
     with manage.locked(root/'config/waf/install.lock',timeout=10):
         for source in configured_sources(root):
-            tickets=sorted(query_tickets(source))
+            tickets=sorted(query_tickets(source,allow_missing=allow_missing))
             for offset in range(0,len(tickets),100):
                 manage.execute('fail2ban-client','set',source_jail(source),'unbanip',*tickets[offset:offset+100])
         change(root,'clear',lock_held=True)
@@ -1516,7 +1521,7 @@ def remove(root):
     if initial.get('banBackend')=='none' and not state(root)['records'] and cf=={'mode':'local'}:
         return {'updated':False}
     configure_cf(root,disable=True)
-    clear(root)
+    clear(root,allow_missing=True)
     with manage.locked(root/'config/waf/install.lock',timeout=10):
         jail=F2B/'jail.d/zz-waf-managed.local'
         if not jail.exists() or managed_jail_marker(manage.read_config(jail))!='current':
