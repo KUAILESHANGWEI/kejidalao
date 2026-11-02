@@ -321,9 +321,13 @@ def _kpanel_rules(sites, first_id):
     route(['PUT'], '/api/v1/files/transfer/sessions', binary_controls, media='application/octet-stream')
     route(['PUT'], r'/api/v1/desktop/shortcuts/[a-f0-9]{32}/icon', binary_controls, media='image/(?:png|jpeg|webp)')
 
-    # The fixed manage action is a word in the Unix command dictionary. Do not
+    # The builtin app prefix also matches the Unix command dictionary during
+    # the read-only install-port preflight. Keep every query/body target active.
+    route(['GET'], r'/api/v1/apps/(?:builtin|thirdparty|local)-[A-Za-z0-9][A-Za-z0-9_-]{0,63}/install-port',
+          ['ctl:ruleRemoveTargetById=932260;REQUEST_FILENAME'])
+    # Builtin IDs and fixed actions match the Unix command dictionary. Do not
     # exempt arbitrary app suffixes or any query/body target from this rule.
-    route(['POST'], r'/api/v1/apps/(?:builtin|thirdparty|local)-[A-Za-z0-9][A-Za-z0-9_-]{0,63}/manage',
+    route(['POST'], r'/api/v1/apps/(?:builtin|thirdparty|local)-[A-Za-z0-9][A-Za-z0-9_-]{0,63}/(?:install|manage|start|stop|restart|update|uninstall|direct_access|check_update)',
           ['ctl:ruleRemoveTargetById=932260;REQUEST_FILENAME'])
     # Bundled static assets have literal file names, not command arguments.
     # Keep this inside the known application profile, reject traversal/shell
@@ -458,21 +462,28 @@ def render_profile_rules(config: dict, method_controls=None, resource_controls=N
                       '    SecRule REQUEST_METHOD "@rx ^(?:GET|HEAD)$" "t:none,chain"',
                       '    SecRule REQUEST_FILENAME "@rx ^/(?:https?://)?[A-Za-z0-9-]+(?:[.][A-Za-z0-9-]+)+(?::[0-9]{1,5})?/" "t:none,ctl:ruleRemoveById=920440,ctl:ruleRemoveTargetById=930130;REQUEST_FILENAME"']
             rid+=1
+            # Smart HTTP appends service paths to the repository URL; .git is
+            # a naming convention, not a protocol requirement.
+            git_base = r'^/(?:https?://)?[A-Za-z0-9-]+(?:[.][A-Za-z0-9-]+)+(?::[0-9]{1,5})?/[A-Za-z0-9_-][A-Za-z0-9_.-]{0,127}/[A-Za-z0-9_-][A-Za-z0-9_.-]{0,127}/'
             lines += [f'SecRule UNIQUE_ID "@beginsWith {name}|" "id:{rid},phase:1,pass,nolog,t:none,chain"',
                       '    SecRule &REQUEST_HEADERS:/^(?i:x-(?!method$)(?:http-)?method(?:-override)?)$/ "@eq 0" "t:none,chain"',
                       '    SecRule REQUEST_METHOD "@rx ^(?:GET|HEAD|POST)$" "t:none,chain"',
-                      '    SecRule REQUEST_FILENAME "@rx ^/(?:https?://)?[A-Za-z0-9-]+(?:[.][A-Za-z0-9-]+)+(?::[0-9]{1,5})?/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\\.git/(?:info/refs|git-upload-pack)$" "t:none,ctl:ruleRemoveTargetById=930130;REQUEST_FILENAME"']
+                      '    SecRule REQUEST_URI_RAW "@rx ^/[^%?]*(?:[?].*)?$" "t:none,chain"',
+                      '    SecRule REQUEST_FILENAME "@rx '+git_base+'(?:info/refs|git-upload-pack)$" "t:none,ctl:ruleRemoveTargetById=930130;REQUEST_FILENAME"']
             rid+=1
             lines += [f'SecRule UNIQUE_ID "@beginsWith {name}|" "id:{rid},phase:1,pass,nolog,t:none,chain"',
                       '    SecRule &REQUEST_HEADERS:/^(?i:x-(?!method$)(?:http-)?method(?:-override)?)$/ "@eq 0" "t:none,chain"',
                       '    SecRule REQUEST_METHOD "@streq POST" "t:none,chain"',
-                      '    SecRule REQUEST_FILENAME "@rx ^/(?:https?://)?[A-Za-z0-9-]+(?:[.][A-Za-z0-9-]+)+(?::[0-9]{1,5})?/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\\.git/git-upload-pack$" "t:none,chain"',
+                      '    SecRule REQUEST_URI_RAW "@rx ^/[^%?]*(?:[?].*)?$" "t:none,chain"',
+                      '    SecRule REQUEST_FILENAME "@rx '+git_base+'git-upload-pack$" "t:none,chain"',
+                      '    SecRule &REQUEST_HEADERS:/^(?i:content-type)$/ "@eq 1" "t:none,chain"',
                       '    SecRule REQUEST_HEADERS:Content-Type "@streq application/x-git-upload-pack-request" "t:none,t:lowercase,ctl:ruleRemoveById=920420"']
             rid+=1
             lines += [f'SecRule UNIQUE_ID "@beginsWith {name}|" "id:{rid},phase:1,pass,nolog,t:none,chain"',
                       '    SecRule &REQUEST_HEADERS:/^(?i:x-(?!method$)(?:http-)?method(?:-override)?)$/ "@eq 0" "t:none,chain"',
                       '    SecRule REQUEST_METHOD "@streq POST" "t:none,chain"',
-                      '    SecRule REQUEST_FILENAME "@rx ^/(?:https?://)?[A-Za-z0-9-]+(?:[.][A-Za-z0-9-]+)+(?::[0-9]{1,5})?/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\\.git/git-upload-pack$" "t:none,chain"',
+                      '    SecRule REQUEST_URI_RAW "@rx ^/[^%?]*(?:[?].*)?$" "t:none,chain"',
+                      '    SecRule REQUEST_FILENAME "@rx '+git_base+'git-upload-pack$" "t:none,chain"',
                       '    SecRule &REQUEST_HEADERS:/^(?i:content-type)$/ "@eq 1" "t:none,chain"',
                       '    SecRule REQUEST_HEADERS:Content-Type "@streq application/x-git-upload-pack-request" "t:none,t:lowercase,chain"',
                       '    SecRule &REQUEST_HEADERS:/^(?i:content-encoding)$/ "@eq 1" "t:none,chain"',

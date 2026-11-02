@@ -321,6 +321,16 @@ EU 先后使用正式产物试点，语法、就绪、普通源站/公网请求�
 
 正式服使用同一产物试点后，该完整公开文件返回 200 且正文与上游一致；公共固定包 [`4c08b76`](https://github.com/kejilion/nginx/commit/4c08b76a38f08069a589aa48b2a80c55d61823ad) 的七文件摘要及字节、脚本 [`afa0330`](https://github.com/KUAILESHANGWEI/kejidalao/commit/afa03300e36794e555e1e9f8a27fa5e381c15cf3) 根/CN 字节均回读一致。两处实际脚本仅替换共享包 pin 与 `policy.py` 摘要，真实 `k web waf doctor` 通过，WAF On 且重复计划无差异。配置恢复点 `/home/web/backups/waf-managed/20261031T020745329530Z-policy`，脚本原件在 `/home/web/backups/waf-dotfile-20261031`；回退时先恢复配置，再恢复两处脚本固定引用。只验证了短窗口，未验证登录后的管理操作；日志中的搜索类及不透明加密字段请求仍需独立核实，不借本次修复扩大排除。已有用户须更新脚本并通过原受管应用/刷新入口取得新包；公共默认不自动添加文件例外。
 
+### 2026-11-02 Git Smart HTTP 无后缀仓库兼容
+
+镜像站现有 Git 只读协议守卫同时接受带或不带 `.git` 后缀的仓库 URL，不绑定具体域名或仓库；[Git HTTP 协议](https://git-scm.com/docs/http-protocol#_url_format)规定在用户提供的仓库 URL 后追加服务路径，不要求仓库名以 `.git` 结尾。复用原有 `artifact-proxy` 声明，只对单层 owner/repository 的 `info/refs` / `git-upload-pack` 处理既有协议例外，仓库段有长度边界、拒绝编码路径；Content-Type 兼容只允许 POST、单个精确 Git media type，gzip 仍须单个对应头。方法覆盖、写入服务、其他站点/路径、查询攻击及其他受限请求头继续拦截，不新增全局 Content-Type 或正文排除。
+
+日志确认无后缀仓库的正常发现请求返回 200、后续 `git-upload-pack` 被 `920420` 阻断 17 次；另核实一个公开 `.gitattributes` 文件源站和镜像后端均为 200、66 字节正文摘要一致，前端守卫拦截 3 次，直接复用现有精确路径排除。固定 amd64 镜像 `sha256:5cdeeb593a6a1f517acb733e5f92cb33695e2d84847e3955d763008ca12993c1` 的无网络隔离验证通过 197 项引擎（含新增 16 项无后缀 Git 正反例）、198 项应用和 23 项 HTTP/1.1 / HTTP/2 / HTTP/3 检查。全量单测 197 项中 195 通过，两个既有 ban 用例在原始 `1ad9ad8` 基线和候选同环境均失败，未修改或计为通过。独立只读复核未发现新增可确认缺陷；复核环境未执行运行时测试。首次单测因暂存目录权限失败，收紧测试副本权限后重跑，不放宽管理工具检查。公共代码回退基线 `1ad9ad8e57c83317d4fe1f418054195f653e79cb`，脚本基线 `d2156444add457973d4a84634653aa10cece712f`；保留公共主线既有卸载兼容修复，不在生产执行卸载或攻击测试。
+
+108 试点已完成无 `.git` 后缀 URL 的真实浅克隆（`--depth=1 --filter=blob:none --no-checkout`），取得提交 `f3f264d9cbae059d9b96289ee33ce444b5c8e7e6` 和 63 个对象的 pack，未执行仓库内容或测试推送。该公开点文件恢复 200 且 66 字节正文摘要匹配，常用业务及私有管理入口为 200。固定包 [`980feb1`](https://github.com/kejilion/nginx/commit/980feb1e06496674914ca137da655fdbff2b3fcd) 七文件公开摘要/字节、脚本 [`d8c41e0`](https://github.com/KUAILESHANGWEI/kejidalao/commit/d8c41e0e7939cc6a82258f3f5596e44ad5c6f803) 根/CN 各自公开字节已回读，12 项引导及 Shell 语法检查通过。两处实际脚本仅更新包 pin、`policy.py` 及继承的 `ban.py` 摘要；真实 `k web waf doctor` 通过，WAF On，重复计划无差异。首次入口检查因缓存已有 17 份触发既定 16 份上限，核实无活动进程引用后将一份旧包完整归档至 `/home/web/backups/waf-git-20261102/archived-packages/`，逐文件摘要保持一致，当前/回滚版本保留，未放宽上限或自动清理。
+
+配置事务回退点 `/home/web/backups/waf-managed/20261102T020647238838Z-policy`，两处原脚本和原策略在 `/home/web/backups/waf-git-20261102`；回退先恢复配置，再恢复脚本固定引用，正式服原包为 `87848a0`。仅完成浅克隆、正常入口及短窗口观察，不宣称完整历史/所有 Git 服务已验证；正文攻击及压力反例只在隔离环境执行。未知搜索、异常编码和上游自身 403 不扩大豁免。现有用户更新脚本后通过原受管应用/刷新入口取得新包，既有站点配置档及精确排除保留。
+
 ### 2026-11-01 URL 前缀精确文件声明
 
 点文件守卫的 `ruleId:1110` / `REQUEST_FILENAME` 精确例外现支持下载网关的字面 `/http://host.example/路径` 与 `/https://host.example/路径`。完整路径上限仍为 251 字符；仅校验声明时识别一个普通域名的 URL 前缀，不改写请求、不自动信任任意远程地址、不依赖配置档类型。原始请求必须逐字匹配声明，仍仅支持 GET/HEAD 且无方法覆盖头；路径中的重复斜杠、`.` / `..` 段、编码别名、用户信息、端口及额外冒号不纳入兼容。其他 CRS 规则的声明语法不变。公共默认没有具体下载路径，管理员须先核实资源为公开且实际由预期后端提供。
@@ -346,3 +356,44 @@ EU 试点只更新受管 `modsecurity.conf` 与 `policy.py`，保留模式 On、
 独立复核通过，独立 Linux 单元 179 项通过；Fail2Ban 1.0.2 和 1.1.0 的隔离真实联动各 86 项通过，包括旧超长票据保护、递进期限、源站、多站点隔离及失败恢复。108 试点回读三条 Jail 的递进设置、Nginx 语法、源站表与 3 个 CF 区域规则均一致；短时只读观察到 4 条 API 自然封禁升至 1 小时，状态期限均与实际票据相符。公开七文件及脚本根/CN 摘要已核对；未在生产注入攻击。旧代码回退点为共享包 `fbb736a39235af21ad50a3f66fa2264c10136199` 和脚本 `4d2e36392de7a28003e723e72866ce7d41d6721f`，生产事务备份为 `/home/web/backups/waf-managed/20261029T035131118861Z-unified-bans`。
 
 限制：Fail2Ban 的持续命中可延长运行中票据；数据库或 Jail 长期异常时保护会保守保留且显示待核验，实际拦截可能超过最初 24 小时，异常恢复后重新同步或明确解封。Fail2Ban 服务与同步进程的时区不一致、个别异常票据或持续高频并发可能使整轮同步暂停，现有封禁保留并显示异常。既存超长或永久票据、未知自定义后端不静默接管。所有发行版及长期故障恢复未逐一实测。KPanel 配套仅为本地候选，专项审计和完整验收待完成。
+
+### 2026-11-02 KPanel 应用安装端口检查误报修复
+
+KPanel 配置档对 GET `/api/v1/apps/<受限应用ID>/install-port` 精确排除 CRS 932260 的 REQUEST_FILENAME 目标，修复 builtin 前缀被当作 Unix 命令的误报。保留方法覆盖头拒绝、查询/正文和其他规则检查，不关闭 WAF，不改镜像或版本号。依据为 CRS 官方运行期目标排除机制。
+
+固定生产 amd64 镜像的无网络隔离应用回归 207/207、策略单测 28/28 通过；独立静态复核无阻断。第一轮夹具因 umask 077 导致后端 socket 目录不可访问而失败，以 022 重建测试目录后通过，未改产品权限检查。108 受管 apply、Nginx 语法与 doctor 通过，WAF 保持 On；无登录请求不再被 932260 拦截，返回应用入口的 404，尚未验证用户登录后的完整安装。生产配置备份 `/home/web/backups/waf-managed/20261102T021425945247Z-policy`，原脚本在 `/home/web/backups/waf-app-install-20261102`。代码回退点 `98acdd8`；共享包发布与原生脚本固定引用以对应公开提交为准。长期观察、其他架构和实际安装完成未验证。
+
+同一固定包 `d5f237df04a3b4384a0aceb5ee1e716e4ca074d1` 七文件公开摘要与脚本 `00709e171ea3eda3846ba2875cd0f50feaa5c01e` 根/CN 各自公开字节回读一致，12 项引导检查及根/CN Shell 语法通过。108 两处实际脚本只更新包 revision/manifest；旧缓存达到16份上限，已将历史 `3e705b8` 缓存移至上述备份目录而未删除，再由真实 `k web waf apply` 下载并校验新包，重复应用无差异，doctor通过。KPanel 1.28.0 镜像未更换；既有用户需更新脚本并通过原受管应用/刷新入口取得新包。
+
+### 2026-11-02 应用实际提交链路补充修复
+
+前次修复只覆盖 GET 端口检查；用户复测显示 POST install 仍因 builtin 前缀命中 932260。本次将既有 POST manage 精确路径排除扩展到 KPanel 明确支持的 install/start/stop/restart/update/uninstall/direct_access/check_update，保持受限 App ID、站点配置档、方法覆盖限制，以及查询/正文和其他规则检测。未使用任意动作通配符。
+
+相同生产镜像的隔离请求回归244/244、策略单测28/28、真实KPanel1.28.0无Agent隔离检查26/26通过。真实检查确认未登录401、缺CSRF403、非法端口422、合法安装503且code=agent_unavailable；这证明通过WAF到达Agent边界，不代表应用已安装。独立静态复核无阻断，两项测试改进（合法动作输入、精确错误码）均已采纳并复跑。108受管apply/doctor通过，WAF保持On；备份 `/home/web/backups/waf-managed/20261102T022419795573Z-policy`，脚本备份 `/home/web/backups/waf-app-actions-20261102`。回退基线 `b830c04`；完整生产登录安装及长期观察仍待验证。无需重发KPanel或Nginx镜像。
+
+共享包 `041d91a` 的七文件公开摘要、脚本 `9951a8d` 根/CN公开字节均已回读一致，12项引导检查和Shell语法通过。108实际脚本固定引用已更新，真实入口下载新包并重复apply无差异、doctor通过，运行中policy与缓存逐字一致。上轮 `d5f237d` 缓存移入上述备份目录保留回退，未删除；原版本仍可公开下载。
+# 独立稳定通道（2026-11-02）
+
+原生脚本 4.5.17 起不再为每次共享包更新改 pin。`channels/stable-v1.json` 是 API 1 稳定通道的签名信封，包含不可变 Git revision、七文件 SHA-256、递增 sequence、签发/过期时间。引导器先用内置 RSA-3072 公钥验证原始清单字节，再检查兼容性、时效和摘要。依据：[OpenSSL SHA-256 签名与验签](https://docs.openssl.org/3.0/man1/openssl-dgst/)。本机制不是完整 TUF 实现，也不代表签名代码没有缺陷。
+
+API 1 固定 `configure.py`、`policy.py`、`nginx_edit.py`、`ban.py`、`example-policy.json`、`cloudflare-ips.json`、`legacy-jails.local` 七文件及现有命令/策略 schema。更新器还依赖 configure 的 `locked`、`make_plan`、`snapshot`、`apply(lock_held=True)`、`restore`、`configured_status` 和 nginx 检查/重载函数；这些接口和备份格式必须向后兼容。破坏性接口/数据迁移需新通道与新版引导器，不能冒充 API 1 热更新。
+
+发布者先完成包的隔离验证、独立复核和已授权试点，将确切源码合入并发布 main；再在本地签名新清单，以新的 main 提交发布清单。不可修改已签发 sequence 的身份。签名工具不会自动推送：
+
+```bash
+python3 waf/sign-channel.py --revision <已验证且公开的40位提交> --sequence <递增整数> --private-key <库外私钥> --output waf/channels/stable-v1.json
+```
+
+工具签发有效期90天的清单。即使源码未变化，过期前也需用更高 sequence 重新签发；过期不影响已有离线 active，但会拒绝新安装/更新。发布后回读签名清单和七文件字节，再测试实际脚本消费。私钥只由发布者保管，不入 Git、镜像、共享包或生产主机；公钥为 `release-public.pem`，脚本中固定相同公钥。丢失/泄露时必须更换签名密钥并发布新引导器；旧脚本无法自动撤销其信任根。
+
+用户命令：`k web waf package-check` / `package-update` / `package-status` / `package-rollback` / `package-recover`。首次新安装读取最新签名稳定包；现有安装与普通状态/配置操作不自动升级。更早的旧安装须先更新引导脚本并执行一次受管 `apply` 对齐迁移基线，未对齐时更新拒绝且保留原防护。旧固定脚本仍可能重新部署旧版本；新版 `package-update` 即使版本相同也检查并重应用全部受管文件，不覆盖前一版本身份。旧 KPanel 内嵌脚本须另按其发行流程接入，不将原生发布称作全部 KPanel 已迁移。
+
+包状态保存在 `config/waf/package-state.json`，位于严格七文件缓存外。更新先持有 package 锁，再持有既有 install 锁，记录确切配置快照与 pending 后热应用、检查并切换 active；失败恢复快照，中断后显式 recover。发现第三方配置冲突或恢复失败时保留 pending。回退不降低已接受版本的序号水位。缓存仍限制16份/总字节预算，满时要求管理员归档明确不在用版本，不自动删除未知内容。签名与兼容失败不静默退回旧下载；不会创建后台更新任务。进程终止恢复和持久化顺序通过专项验证，不声称物理断电或所有文件系统已实测。
+
+### 独立通道首发验证与试点
+
+2026-11-02 已公开通道提交 `f7e5475` 和原生脚本 4.5.17 `c2993d5`。首个签名 sequence 为1，仍指向已公开并验证的七文件包 `041d91ac33e8c74d8fcf97d30a73cef5910e6528`，没有借此更换规则或镜像。通道字节、七文件摘要、根/CN脚本各自公开字节均回读一致。
+
+最终候选通过26项真实RSA/缓存/状态/恢复单测、既有原生smoke、根/CN同步与内嵌一致性；真实生产镜像的无网络隔离Nginx通过19项检查，覆盖热更新不重启容器、旧脚本源码漂移修复、回滚/再升级、应用后验证失败的精确恢复、真实SIGKILL后恢复、离线active及实际shell的凭据stdin传递。下载中途SIGKILL另在单测中验证。独立静态复核发现并修正了暂存残留、持久化顺序、同版本漂移及旧安装身份/锁边界后无试点阻断；Windows编辑工具首次默认编码读取失败，改为显式UTF-8，未发布失败产物。
+
+108 两处实际入口仅替换WAF引导函数与版本号，保留其他业务脚本；备份 `/home/web/backups/waf-independent-20261102`。真实 `package-check`、`package-update`、重复更新、`package-status` 和doctor通过，active为041d91a、sequence1、pending为空、WAF On，公开业务首页200。配置快照位于 `/home/web/backups/waf-managed/*-package-update`；试点未实际改变包代码，版本切换与故障注入只在隔离环境完成。证据在试点机 `/root/waf-independent-tests-20261102`，私钥只留发布者本机受限目录。物理断电、长期负载和所有发行版未实测；旧KPanel内嵌固定脚本未重发。回退引导器可恢复上述两份脚本；回退包使用显式package-rollback，恢复未完成先package-recover，不删除签名状态或降低防重放水位。
