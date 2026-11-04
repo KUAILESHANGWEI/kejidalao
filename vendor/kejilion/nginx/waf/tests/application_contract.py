@@ -127,6 +127,18 @@ def cases():
     add('override-keeps-strict-targets','POST','/api/v1/terminal-batches',{'command':'cat /etc/passwd'},403,{'X-HTTP-Method-Override':'DELETE'})
     for path in ['/api/v1/desktop/workspace','/api/v1/docker/tasks']:
         add('metadata-still-inspected-'+path,'PUT'if path.endswith('workspace')else'POST',path,{'name':'<script>alert(1)</script>'},403)
+    summary_path = '/api/v2/federation/summary'
+    ciphertext = '1--' + 'AaBbCcDd' * 16
+    envelope = {'protocol':'noise-fixture','message':ciphertext}
+    add('federation-summary-ciphertext','POST',summary_path,envelope)
+    add('federation-summary-other-site','POST',summary_path,envelope,403,host='other.example')
+    add('federation-summary-other-route','POST',summary_path+'-other',envelope,403)
+    add('federation-summary-other-method','PUT',summary_path,envelope,403)
+    add('federation-summary-metadata','POST',summary_path,{**envelope,'requestId':"1' UNION SELECT password FROM users--"},403)
+    add('federation-summary-plaintext','POST',summary_path+'?fixture=plaintext-summary',{'message':"1' UNION SELECT password FROM users--"},403)
+    add('federation-summary-query-alias','POST',summary_path+'?json.message='+ciphertext,envelope,403)
+    add('federation-summary-duplicate-field','POST',summary_path,('{"message":"'+ciphertext+'","message":"safe"}').encode(),403)
+    add('federation-summary-method-override','POST',summary_path,envelope,403,headers={'X-HTTP-Method-Override':'PATCH'})
     for path,field in [('/api/v1/terminal-batches','command'),('/api/v2/federation/terminal/relay','message')]:
         add('query-cannot-borrow-json-selector-'+field,'POST',path+'?json.'+field+'=1%27%20UNION%20SELECT%20password%20FROM%20users--',{'command':'echo hello','message':'fixture'},403)
     keys=[f'nav:/app-script/builtin-{i}'for i in range(512)]
@@ -266,6 +278,21 @@ def main():
             c.request(item['method'],item['path'],body,headers);r=c.getresponse();payload=r.read();status=r.status;cache=r.getheader('X-Fixture-Cache');c.close()
             passed=status==item['expected'] and (item['expected_body'] is None or payload==item['expected_body']) and (item['expected_cache'] is None or cache==item['expected_cache'])
             results.append({'test':item['label'],'status':status,'expected':item['expected'],'passed':passed,'cache':cache,'elapsed_ms':round((time.monotonic()-started)*1000,2)})
+        # The HTTP response can finish before the phase-5 audit record.
+        deadline = time.monotonic() + 2
+        while True:
+            with (logs/'waf-audit.json').open() as audit:
+                plaintext = [transaction for line in audit if line.endswith('\n')
+                             and (transaction := json.loads(line)['transaction'])['request']['uri']
+                             == '/api/v2/federation/summary?fixture=plaintext-summary']
+            if plaintext:
+                break
+            if time.monotonic() >= deadline:
+                raise AssertionError('Summary plaintext audit transaction did not finish')
+            time.sleep(.025)
+        assert any(message['details']['ruleId'] == '942100' and
+                   'ARGS:json.message:' in message['details'].get('data', '')
+                   for transaction in plaintext for message in transaction['messages'])
         failures=[r for r in results if not r['passed']]
         print(json.dumps({'cases':len(results),'passed':len(results)-len(failures),'failures':failures,'workspace':str(work)}),flush=True)
         if failures and not args.observe:raise AssertionError('KPanel contract regression failed')
