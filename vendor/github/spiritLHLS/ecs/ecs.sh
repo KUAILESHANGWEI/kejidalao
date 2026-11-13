@@ -4,7 +4,7 @@
 
 cd /root >/dev/null 2>&1
 myvar=$(pwd)
-ver="2026.08.27"
+ver="2026.11.13"
 ORIGINAL_ARGS=("$@")
 
 # =============== 默认输入设置 ===============
@@ -624,8 +624,8 @@ check_and_cat_file() {
     else
         return
     fi
-    # 检测文件内容是否包含"error"，如果包含则不打印文件内容
-    if grep -q "error" "$file"; then
+    # 检测文件内容是否包含"error"（忽略 portchecker 的 ER=error 图例），如果包含则不打印文件内容
+    if grep -v 'ER=error' "$file" | grep -q "error"; then
         return
     fi
     cat "$file"
