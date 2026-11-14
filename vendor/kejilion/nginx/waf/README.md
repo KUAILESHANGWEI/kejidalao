@@ -65,9 +65,19 @@ python3 -B configure.py status
 "sourceText": [{"method":"POST","path":"/api/source-note","fields":["content"]}]
 ```
 
-声明与应用类型无关，只适用于管理员确认作为代码或富文本处理的 JSON 字段。要求指定方法、精确路径、单个 JSON 媒体头、无压缩和方法覆盖、无 `json.*` 查询参数；指定字段在 phase 2 恰好出现一次时才排除该字段的代码注入目标及重复的原始正文检查，其他 JSON 字段继续扫描。应用仍负责身份、CSRF、内容渲染和存储安全。每站最多 16 个端点、每端点 8 个字面字段，未知键/模式/重复字段拒绝。
+`sourceText` 声明与应用类型无关，只适用于管理员确认作为代码或富文本处理的 JSON 字段。要求指定方法、精确路径、单个 JSON 媒体头、无压缩和方法覆盖、无 `json.*` 查询参数；指定字段在 phase 2 恰好出现一次时才排除该字段的代码注入目标及重复的原始正文检查，其他 JSON 字段继续扫描。应用仍负责身份、CSRF、内容渲染和存储安全。每站最多 16 个端点、每端点 8 个字面字段，未知键/模式/重复字段拒绝。
 
-`status`/`doctor` 的 `requestSemantics` 回读静态例外的证明或保守拒绝原因、正文声明数量和同步状态；配置漂移令 doctor 失败。删除声明并 apply 可撤销正文例外，静态处理能力消失后受管刷新也会撤销例外。旧 profile 和精确 exclusions 仍兼容，不自动把任意正文识别为安全内容。
+文件名可通过通用 `fileMetadata` 声明按单个文件系统组件处理，不依赖站点类型或文件扩展名：
+
+```json
+"fileMetadata": [{"method":"POST","path":"/api/upload-meta","fields":["file.name"]}]
+```
+
+声明前须确认字段只作为普通文件名交给文件系统 API，不拼接 SQL、命令或解释器源码。共享守卫限定可信站点、方法、规范字面路径、唯一 JSON 媒体类型、成功 JSON 解析、无方法覆盖和无同名 query 参数；只有恰好一个值、1–255 字节、无路径分隔符/控制字符且非 `.`/`..` 的字段，才排除其 `942100`（libinjection）目标。其他 SQL 规则、路径/查询/正文/头部检查及应用权限、文件名和目录验证继续执行。不会因字段叫 `name` 或后缀为 MP3 自动放行。声明与 `sourceText` 共享全局 256 契约/1024 字段预算，每站每类最多 16 契约、每契约最多 8 字段。
+
+KPanel 的接收会话、新建目录/归档动作和归档任务自动复用同一守卫；不需要添加试点域名或逐文件例外。完整 `target`/`sources[]` 路径、旧版 query 上传名称不属于本次单文件名能力。已有用户需通过原有签名包更新并应用配置取得能力；自定义 `fileMetadata` 声明回退到不支持它的旧包前须先撤销该声明，保留用户配置及签名水位。依据：[CRS 运行时目标排除](https://coreruleset.org/docs/2-how-crs-works/2-3-false-positives-and-tuning/)、[OWASP 文件名安全](https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html#filename-safety)。
+
+`status`/`doctor` 的 `requestSemantics` 回读静态例外的证明或保守拒绝原因、正文与文件名契约数量和同步状态；配置漂移令 doctor 失败。删除声明并 apply 可撤销相应例外，静态处理能力消失后受管刷新也会撤销例外。旧 profile 和精确 exclusions 仍兼容，不自动把任意正文识别为安全内容。
 
 2026-10-30，最终功能候选 `1000ad1` 通过同正式服镜像的隔离应用矩阵 164 项、引擎集成 181 项及相关单测；专项包含 10 项能力/声明测试和 38 项配置管理检查。完整单测中的两项封禁检查在未修改基线上也失败，未将其记为通过；本轮未改封禁逻辑。独立静态复核已完成，发现的公共模板遗漏、方法参数覆盖、默认未登记站点及首次迁移能力图问题均已修复并回归。复核环境没有 Python，执行测试由独立的 Linux 容器环境承担，不能声称复核者独立运行了测试。
 
@@ -423,6 +433,18 @@ python3 waf/sign-channel.py --revision <已验证且公开的40位提交> --sequ
 用户命令：`k web waf package-check` / `package-update` / `package-status` / `package-rollback` / `package-recover`。首次新安装读取最新签名稳定包；现有安装与普通状态/配置操作不自动升级。更早的旧安装须先更新引导脚本并执行一次受管 `apply` 对齐迁移基线，未对齐时更新拒绝且保留原防护。旧固定脚本仍可能重新部署旧版本；新版 `package-update` 即使版本相同也检查并重应用全部受管文件，不覆盖前一版本身份。旧 KPanel 内嵌脚本须另按其发行流程接入，不将原生发布称作全部 KPanel 已迁移。
 
 包状态保存在 `config/waf/package-state.json`，位于严格七文件缓存外。更新先持有 package 锁，再持有既有 install 锁，记录确切配置快照与 pending 后热应用、检查并切换 active；失败恢复快照，中断后显式 recover。发现第三方配置冲突或恢复失败时保留 pending。回退不降低已接受版本的序号水位。缓存仍限制16份/总字节预算，满时要求管理员归档明确不在用版本，不自动删除未知内容。签名与兼容失败不静默退回旧下载；不会创建后台更新任务。进程终止恢复和持久化顺序通过专项验证，不声称物理断电或所有文件系统已实测。
+
+### 2026-11-14：通用单文件名元数据与 EU 试点发布
+
+共享包 [`d8cb4f7`](https://github.com/kejilion/nginx/commit/d8cb4f7f22e16418f723e9d834df088ed528be65) 提供不依赖应用类型的 `fileMetadata` 声明，KPanel 的接收会话、目录/归档动作和归档任务复用同一守卫。公共默认不包含试点域名、音乐目录或文件名。配置包版本仍为 1.1.0；稳定 API 1 通道 sequence 4 由 [`bebbe46`](https://github.com/kejilion/nginx/commit/bebbe46) 发布，七文件公开字节与冻结候选、签名摘要一致。此次无需重建 Nginx 或 KPanel 镜像。
+
+相对公共基线 `5b30ea4`，未声明能力的 generic 站点生成内容不变；1 个和 200 个 KPanel 均只增加共享的 6 条根规则、3546 字节。移除新增块并规范化生成编号后，其余规则语义一致。文件名仍受单值、解析、来源与方法边界保护，其他字段、其他 SQL 规则和应用权限继续检查；完整路径及旧 query 上传不属于此次能力。
+
+固定 Nginx/ModSecurity 镜像的隔离应用矩阵 306 项、引擎集成 197 项、实际 Panel/Agent 的完整上传/读回/目录/ZIP 内容检查 30 项、受管应用/幂等/精确回滚/重载故障恢复 11 项通过。独立复核对最终候选执行 12 项真实引擎边界探针通过，包含 UTF-8 255/258 字节、字段大小写、同名前缀字段、编码 query 碰撞及任意应用声明。Linux 单测 203 项中 201 通过；`test_busy_install_still_persists_ticket_for_cron`、`test_full_cf_switch_preserves_origin_bans_and_modes` 在原基线同环境仍失败，未计为通过，本轮未改封禁后端。首轮夹具的目录权限、无效样本期望和重载接管等待经修正后复验，失败轮次不计入上述通过结果。原始隔离证据保留于验证机 `/root/waf-file-metadata-20261113/`；不作长期或跨平台性能收益承诺。
+
+EU ARM64 试点保持 WAF On，原误报上传的创建、分块和提交自然请求返回 200，原目标目录的文件实际落盘约 1.13 MiB。试点验证后先精确恢复原像，再经真实 `k web waf package-update` 安装同一签名包，active 为 `d8cb4f7`、previous 为 `041d91a`、maximumSequence 为 4，无待恢复事务；doctor、重复 plan 和本地封禁健康检查通过。正式安装后继续观察到上传 200、文件读取 200/206 和管理 API 正常响应。未在生产执行攻击、压力或故障注入。
+
+恢复点为 `/home/web/backups/waf-managed/20261113T162537892685Z-package-update`，另保留试点前配置归档。回退使用 `k web waf package-rollback`，不降低签名水位；自定义新声明按上文先撤销再回退。具备签名入口的已有用户需主动执行 `k web waf package-update`，旧入口先更新原生脚本；没有引入自动升级，也未重发旧面板内嵌脚本。公开七文件和实际缓存逐字相同；六个运行代码/模板文件与缓存一致，运行中的 Cloudflare 地址 JSON 仅规范化排版，值一致。
 
 ### 独立通道首发验证与试点
 
